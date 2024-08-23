@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTML Form to JSON</title>
+<style>
+  body {
+    margin-left: 10%;
+    background-color: gray;
+  }
+  button, h2, h3, p, label {
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  }
+  input {
+    margin-bottom: 10px;
+  }
+  .notification {
+    margin-top: 10px;
+    padding: 10px;
+    width: 20%;
+    border-radius: 5px;
+    display: none;
+    position: absolute;
+  }
+  .success {
+    background-color: green;
+    color: white;
+  }
+  .error {
+    background-color: red;
+    color: white;
+  }
+</style>
+</head>
+<body>
+  <a href="/embu">
+    <button type="button"><h2>VOLTAR</h2></button>
+  </a>
+
+<h2>Controle do DASHBOARD Embu</h2>
+
+<div class="form-section">
+  <h3>Excluir pedido</h3>
+  <form id="form1">
+    <label for="field1a">Pedido:</label>
+    <input type="text" id="field1a" name="field1a" required><br>
+    <button type="button" id="btnExcluirPedido">Excluir</button>
+    <div id="notification1" class="notification"></div>
+  </form>
+</div>
+
+<div class="form-section">
+  <h3>Excluir recibo</h3>
+  <form id="form2">
+    <label for="field2a">Recibo:</label>
+    <input type="text" id="field2a" name="field2a" required><br>
+    <button type="button" id="btnExcluirRecibo">Excluir</button>
+    <div id="notification2" class="notification"></div>
+  </form>
+</div>
+
+<div class="counter" id="counterSection">
+  <h3>Reduzir SLA</h3>
+  <p>SLA check-in: - <span id="counterValue1">0</span></p>
+  <button type="button" id="btnCheckin">confirmar erro</button>
+  <p>SLA picking: - <span id="counterValue2">0</span></p>
+  <button type="button" id="btnPicking">confirmar erro</button>
+  <p>SLA packing: - <span id="counterValue3">0</span></p>
+  <button type="button" id="btnPacking">confirmar erro</button>
+</div>
+
+<script>
+function showNotification(elementId, message, isSuccess) {
+  const notification = document.getElementById(elementId);
+  notification.textContent = message;
+  notification.className = 'notification ' + (isSuccess ? 'success' : 'error');
+  notification.style.display = 'block';
+  setTimeout(() => {
+    notification.style.display = 'none';
+  }, 3000);
+}
+
+function atualizarConteudo() {
+  fetch('/json/sla_embu.json?v=' + Math.random())
+    .then(response => response.json())
+    .then(data => {
+      console.log('JSON data:', data);
+      document.getElementById('counterValue1').textContent = data.ajuste_recibos;
+      document.getElementById('counterValue2').textContent = data.ajuste_picking;
+      document.getElementById('counterValue3').textContent = data.ajuste_pedidos;
+    })
+    .catch(error => console.error('Error fetching JSON:', error));
+}
+
+function updateJSON(url, data, notificationElementId, inputFieldId) {
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => {
+    if (response.ok) {
+      document.getElementById(inputFieldId).value = '';
+      showNotification(notificationElementId, 'Excluido', true);
+    } else {
+      throw new Error('Network response was not ok.');
+    }
+  })
+  .catch(error => {
+    console.error('Error updating JSON:', error);
+    showNotification(notificationElementId, 'ERRO', false);
+  });
+}
+
+document.getElementById('btnCheckin').addEventListener('click', () => {
+  const counter = document.getElementById('counterValue1');
+  const newValue = parseInt(counter.textContent) + 1;
+  counter.textContent = newValue;
+  updateJSON('/update-json', { local: 'embu', ajuste_recibos: newValue });
+});
+
+document.getElementById('btnPicking').addEventListener('click', () => {
+  const counter = document.getElementById('counterValue2');
+  const newValue = parseInt(counter.textContent) + 1;
+  counter.textContent = newValue;
+  updateJSON('/update-json', { local: 'embu', ajuste_picking: newValue });
+});
+
+document.getElementById('btnPacking').addEventListener('click', () => {
+  const counter = document.getElementById('counterValue3');
+  const newValue = parseInt(counter.textContent) + 1;
+  counter.textContent = newValue;
+  updateJSON('/update-json', { local: 'embu', ajuste_pedidos: newValue });
+});
+
+document.getElementById('btnExcluirPedido').addEventListener('click', () => {
+  const fieldValue = document.getElementById('field1a').value;
+  if (fieldValue) {
+    updateJSON('/update-excluded-orders', { excluded_order: fieldValue }, 'notification1', 'field1a');
+  }
+});
+
+document.getElementById('btnExcluirRecibo').addEventListener('click', () => {
+  const fieldValue = document.getElementById('field2a').value;
+  if (fieldValue) {
+    updateJSON('/update-excluded-recibos', { excluded_recibo: fieldValue }, 'notification2', 'field2a');
+  }
+});
+
+atualizarConteudo();
+</script>
+
+</body>
+</html>

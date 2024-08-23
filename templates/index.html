@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dash Cubbo</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='estilo.css') }}">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #0741dd;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="g_id_onload"
+         data-client_id="952863528271-1m2j30cft58v7n92egidnjm4jf01pv2p.apps.googleusercontent.com"
+         data-callback="handleCredentialResponse">
+    </div>
+    <div class="g_id_signin" data-type="standard"></div>
+    
+    <script>
+        function handleCredentialResponse(response) {
+            // Decode the JWT token
+            const responsePayload = jwt_decode(response.credential);
+            
+            // Get the email from the decoded token
+            const email = responsePayload.email;
+            
+            // Store the email in localStorage
+            localStorage.setItem('userEmail', email);
+            
+            // Check if the email is authorized
+            if (email.endsWith('@cubbo.com')) {
+                window.location.href = '/embu';
+            } else {
+                alert('Não Autorizado');
+            }
+        }
+    </script>
+    
+    <!-- Include JWT Decode library -->
+    <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
+</body>
+</html>

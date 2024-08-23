@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incentivos</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='estilo.css') }}">
+    <meta http-equiv="refresh" content="10" >
+</head>
+<body>
+    <div id="tudo">
+        <div class="main" id="cima">
+            <div id="cima_esquerda">
+                <a href="/extrema">
+                    <button type="button" class="titulo_btn">EMBU</button>
+                </a>
+                <h2>TOTAIS SEMANAIS</h2>
+                    <div id="all_semanas">
+                        <div id="semana1">
+                            <svg width="70%" height="70%" viewBox="0 0 40 40" class="donut">
+                                <circle class="donut-hole" cx="20" cy="20" r="15.91549430918954" fill="#221F1C"></circle>
+                                <circle class="donut-ring" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5"></circle>
+                                <circle id="total_s1_circulo" class="donut-segment donut-segment-2" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5" stroke-dasharray="90 10" stroke-dashoffset="25"></circle>  <!--- aqui define o tamanho final depois da animação "stroke-dasharray"-->
+                                <g class="donut-text donut-text-1">
+                                    
+                                    <text y="50%" transform="translate(0, 2)">
+                                        <tspan id="total_s1" x="50%" text-anchor="middle" class="donut-percent"></tspan>   <!-- aqui muda a porcentagem escrita no circulo -->
+                                    </text>
+                                    <text y="60%" transform="translate(0, 2)">
+                                        <tspan x="50%" text-anchor="middle" class="donut-data">SLA Semana 1</tspan>   <!-- aqui muda o escrito dentro do circulo -->
+                                    </text>
+
+                                </g>
+                            </svg>
+                        </div>
+                        <div id="semana2">
+                            <svg width="70%" height="70%" viewBox="0 0 40 40" class="donut">
+                                <circle class="donut-hole" cx="20" cy="20" r="15.91549430918954" fill="#221F1C"></circle>
+                                <circle class="donut-ring" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5"></circle>
+                                <circle id="total_s2_circulo" class="donut-segment donut-segment-2" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5" stroke-dasharray="90 10" stroke-dashoffset="25"></circle>  <!--- aqui define o tamanho final depois da animação "stroke-dasharray"-->
+                                <g class="donut-text donut-text-1">
+                                    
+                                    <text y="50%" transform="translate(0, 2)">
+                                        <tspan id="total_s2" x="50%" text-anchor="middle" class="donut-percent"></tspan>   <!-- aqui muda a porcentagem escrita no circulo -->
+                                    </text>
+                                    <text y="60%" transform="translate(0, 2)">
+                                        <tspan x="50%" text-anchor="middle" class="donut-data">SLA Semana 2</tspan>   <!-- aqui muda o escrito dentro do circulo -->
+                                    </text>
+                                </g>
+                            </svg>
+                        </div>
+                        <div id="semana3">
+                            <svg width="70%" height="70%" viewBox="0 0 40 40" class="donut">
+                                <circle class="donut-hole" cx="20" cy="20" r="15.91549430918954" fill="#221F1C"></circle>
+                                <circle class="donut-ring" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5"></circle>
+                                <circle id="total_s3_circulo" class="donut-segment donut-segment-2" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5" stroke-dasharray="90 10" stroke-dashoffset="25"></circle>  <!--- aqui define o tamanho final depois da animação "stroke-dasharray"-->
+                                <g class="donut-text donut-text-1">
+                                    
+                                    <text y="50%" transform="translate(0, 2)">
+                                        <tspan id="total_s3" x="50%" text-anchor="middle" class="donut-percent"></tspan>   <!-- aqui muda a porcentagem escrita no circulo -->
+                                    </text>
+                                    <text y="60%" transform="translate(0, 2)">
+                                        <tspan x="50%" text-anchor="middle" class="donut-data">SLA Semana 3</tspan>   <!-- aqui muda o escrito dentro do circulo -->
+                                    </text>
+                                </g>
+                            </svg>
+                        </div>
+                        <div id="semana4">
+                            <svg width="70%" height="70%" viewBox="0 0 40 40" class="donut">
+                                <circle class="donut-hole" cx="20" cy="20" r="15.91549430918954" fill="#221F1C"></circle>
+                                <circle class="donut-ring" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5"></circle>
+                                <circle id="total_s4_circulo" class="donut-segment donut-segment-2" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5" stroke-dasharray="90 10" stroke-dashoffset="25"></circle>  <!--- aqui define o tamanho final depois da animação "stroke-dasharray"-->
+                                <g class="donut-text donut-text-1">
+                                    
+                                    <text y="50%" transform="translate(0, 2)">
+                                        <tspan id="total_s4" x="50%" text-anchor="middle" class="donut-percent"></tspan>   <!-- aqui muda a porcentagem escrita no circulo -->
+                                    </text>
+                                    <text y="60%" transform="translate(0, 2)">
+                                        <tspan x="50%" text-anchor="middle" class="donut-data">SLA Semana 4</tspan>   <!-- aqui muda o escrito dentro do circulo -->
+                                    </text>
+                                </g>
+                            </svg>
+                        </div>
+                    </div>    
+            </div>
+            <div class="main" id="cima_direita">
+                <h2>TOTAL MENSAL</h2>
+                <svg width="70%" height="70%" viewBox="0 0 40 40" class="donut">
+                    <circle class="donut-hole" cx="20" cy="20" r="15.91549430918954" fill="#221F1C"></circle>
+                    <circle class="donut-ring" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5"></circle>
+                    <circle id="sla_total_circulo" class="donut-segment donut-segment-3" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5" stroke-dasharray="90 10" stroke-dashoffset="25"></circle>  <!--- aqui define o tamanho final depois da animação "stroke-dasharray"-->
+                    <g class="donut-text donut-text-1">   
+                        
+                        <text y="50%" transform="translate(0, 2)">
+                            <tspan id="sla_total" x="50%" text-anchor="middle" class="donut-percent"></tspan>   <!-- aqui muda a porcentagem escrita no circulo -->
+                        </text>                      
+                        <text y="60%" transform="translate(0, 2)">
+                            <tspan x="50%" text-anchor="middle" class="donut-data">SLA Mensal</tspan>   <!-- aqui muda o escrito dentro do circulo -->
+                        </text>
+                        
+                    </g>
+                </svg>
+                <a href="/controlembu" class="config_btn">
+                    <button type="button" class="btn"><img class="config_gen" src="/static/images/config.png" alt="config"></button>
+                </a>
+            </div>
+        </div>
+        <div class="main" id="baixo">
+            <div class="main" id="checkin">
+                <h2 id="checkin_erro">Check-in</h2>
+                <svg width="60%" height="60%" viewBox="0 0 40 40" class="donut">
+                    <circle class="donut-hole" cx="20" cy="20" r="15.91549430918954" fill="#221F1C"></circle>
+                    <circle class="donut-ring" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5"></circle>
+                    <circle id="sla_total_ci_circulo" class="donut-segment donut-segment-4" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5" stroke-dasharray="90 10" stroke-dashoffset="25"></circle>  <!--- aqui define o tamanho final depois da animação "stroke-dasharray"-->
+                    <g class="donut-text donut-text-1">  
+
+                        <text y="50%" transform="translate(0, 2)">
+                            <tspan id="sla_ci" x="50%" text-anchor="middle" class="donut-percent"></tspan>   <!-- aqui muda a porcentagem escrita no circulo -->
+                        </text> 
+
+                      <text y="60%" transform="translate(0, 2)">
+                        <tspan x="50%" text-anchor="middle" class="donut-data">SLA Check-in</tspan>   <!-- aqui muda o escrito dentro do circulo -->
+                      </text>
+                    </g>
+                </svg>
+                    <div id="checkin_semana">
+                        <div>
+                            <h3 id="ci_s1" class="checkin_fundo">XX,X% - S1</h3>
+                        </div>
+                        <div>
+                            <h3 id="ci_s2" class="checkin_fundo">XX,X% - S2</h3>
+                        </div>
+                        <div>
+                            <h3 id="ci_s3" class="checkin_fundo">XX,X% - S3</h3>
+                        </div>
+                        <div>
+                            <h3 id="ci_s4" class="checkin_fundo">XX,X% - S4</h3>
+                        </div>
+                    </div>
+            </div>
+            <div class="main" id="picking">
+                <h2 id="picking_erro">Picking</h2>
+                <svg width="60%" height="60%" viewBox="0 0 40 40" class="donut">
+                    <circle class="donut-hole" cx="20" cy="20" r="15.91549430918954" fill="#221F1C"></circle>
+                    <circle class="donut-ring" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5"></circle>
+                    <circle id="sla_total_pi_circulo" class="donut-segment donut-segment-5" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5" stroke-dasharray="90 10" stroke-dashoffset="25"></circle>  <!--- aqui define o tamanho final depois da animação "stroke-dasharray"-->
+                    <g class="donut-text donut-text-1">
+                
+                      <text y="50%" transform="translate(0, 2)">
+                        <tspan id="sla_pi" x="50%" text-anchor="middle" class="donut-percent">??</tspan>   <!-- aqui muda a porcentagem escrita no circulo -->
+                      </text>
+                      <text y="60%" transform="translate(0, 2)">
+                        <tspan x="50%" text-anchor="middle" class="donut-data">SLA Pickng</tspan>   <!-- aqui muda o escrito dentro do circulo -->
+                      </text>
+                    </g>
+                </svg>
+                  <div id="picking_semana">
+                      <div>
+                        <h3 id="pi_s1" class="picking_fundo">XX,X% - S1</h3>
+                      </div>
+                      <div>
+                          <h3 id="pi_s2" class="picking_fundo">XX,X% - S2</h3>
+                      </div>
+                      <div>
+                          <h3 id="pi_s3" class="picking_fundo">XX,X% - S3</h3>
+                      </div>
+                      <div>
+                          <h3 id="pi_s4" class="picking_fundo">XX,X% - S4</h3>
+                      </div>
+                  </div>
+            </div>
+            <div class="main" id="packing">
+                <h2 id="packing_erro">Packing</h2>
+                <svg width="60%" height="60%" viewBox="0 0 40 40" class="donut">
+                    <circle class="donut-hole" cx="20" cy="20" r="15.91549430918954" fill="#221F1C"></circle>
+                    <circle class="donut-ring" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5"></circle>
+                    <circle id="sla_total_pa_circulo" class="donut-segment donut-segment-6" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5" stroke-dasharray="90 10" stroke-dashoffset="25"></circle>  <!--- aqui define o tamanho final depois da animação "stroke-dasharray"-->
+                    <g class="donut-text donut-text-1">                
+                      <text y="50%" transform="translate(0, 2)">
+                        <tspan id="sla_pa" x="50%" text-anchor="middle" class="donut-percent">??</tspan>   <!-- aqui muda a porcentagem escrita no circulo -->
+                      </text>
+                      <text y="60%" transform="translate(0, 2)">
+                        <tspan x="50%" text-anchor="middle" class="donut-data">SLA Packing</tspan>   <!-- aqui muda o escrito dentro do circulo -->
+                      </text>
+                    </g>
+                </svg>
+                  <div id="packing_semana">
+                    <div>
+                        <h3 id="pa_s1" class="packing_fundo">XX,X% - S1</h3>
+                      </div>
+                      <div>
+                          <h3 id="pa_s2" class="packing_fundo">XX,X% - S2</h3>
+                      </div>
+                      <div>
+                          <h3 id="pa_s3" class="packing_fundo">XX,X% - S3</h3>
+                      </div>
+                      <div>
+                          <h3 id="pa_s4" class="packing_fundo">XX,X% - S4</h3>
+                      </div>
+                  </div>
+            </div>
+        </div>
+    </div>
+<script>
+        function atualizarConteudo() {
+            fetch('json/sla_embu.json?v='+Math.random())
+                .then(response => response.json())
+                .then(data => {
+                    console.log('JSON data:', data);
+
+                    // Update semana1
+                    document.getElementById('total_s1').textContent = data.s1_total + '%';
+                    // Update semana2
+                    document.getElementById('total_s2').textContent = data.s2_total + '%';
+                    // Update semana3
+                    document.getElementById('total_s3').textContent = data.s3_total + '%';
+                    // Update semana4
+                    document.getElementById('total_s4').textContent = data.s4_total + '%';
+                    // Update SLA Mensal
+                    document.getElementById('sla_total').textContent = data.sla_mes + '%';
+                    // Update Check-in semana content
+                    document.getElementById('sla_ci').textContent = data.sla_recibos_total + '%';
+                    document.getElementById('ci_s1').textContent = data.sla_recibo_1 + '% - S1';
+                    document.getElementById('ci_s2').textContent = data.sla_recibo_2 + '% - S2';
+                    document.getElementById('ci_s3').textContent = data.sla_recibo_3 + '% - S3';
+                    document.getElementById('ci_s4').textContent = data.sla_recibo_4 + '% - S4';
+                    // Repeat similar updates for Picking and Packing semana content
+                    // Update Picking semana content
+                    document.getElementById('sla_pi').textContent = data.sla_picking_total + '%';
+                    document.getElementById('pi_s1').textContent = data.sla_picking_semana_1 + '% - S1';
+                    document.getElementById('pi_s2').textContent = data.sla_picking_semana_2 + '% - S2';
+                    document.getElementById('pi_s3').textContent = data.sla_picking_semana_3 + '% - S3';
+                    document.getElementById('pi_s4').textContent = data.sla_picking_semana_4 + '% - S4';
+                    // Update Packing semana content
+                    document.getElementById('sla_pa').textContent = data.sla_porcent + '%';
+                    document.getElementById('pa_s1').textContent = data.sla_semana_1 + '% - S1';
+                    document.getElementById('pa_s2').textContent = data.sla_semana_2 + '% - S2';
+                    document.getElementById('pa_s3').textContent = data.sla_semana_3 + '% - S3';
+                    document.getElementById('pa_s4').textContent = data.sla_semana_4 + '% - S4';
+
+                    // Quanto o circulo está preencido
+                    document.getElementById('total_s1_circulo').setAttribute('stroke-dasharray', data.total_s1_circulo);
+                    document.getElementById('total_s2_circulo').setAttribute('stroke-dasharray', data.total_s2_circulo);
+                    document.getElementById('total_s3_circulo').setAttribute('stroke-dasharray', data.total_s3_circulo);
+                    document.getElementById('total_s4_circulo').setAttribute('stroke-dasharray', data.total_s4_circulo);
+                    document.getElementById('sla_total_circulo').setAttribute('stroke-dasharray', data.sla_total_circulo);
+                    document.getElementById('sla_total_ci_circulo').setAttribute('stroke-dasharray', data.sla_total_ci_circulo);
+                    document.getElementById('sla_total_pi_circulo').setAttribute('stroke-dasharray', data.sla_total_pi_circulo);
+                    document.getElementById('sla_total_pa_circulo').setAttribute('stroke-dasharray', data.sla_total_pa_circulo);
+
+                    document.getElementById('checkin_erro').textContent = 'Check-in'+' | '+'Erros'+':'+" "+ data.ajuste_recibos;
+                    document.getElementById('picking_erro').textContent = 'Picking'+' | '+'Erros'+':'+" "+ data.ajuste_picking;
+                    document.getElementById('packing_erro').textContent = 'Packing'+' | '+'Erros'+':'+" "+data.ajuste_pedidos;
+
+
+                    var hoje = new Date();
+
+                    // Obter o número da semana (0-6, onde 0 é Domingo e 6 é Sábado)
+                    var semana = Math.ceil((hoje.getDate())/8);
+                    console.log(semana)
+                    
+                    // Verificar se a semana é maior que 3 (ou seja, quarta-feira ou posterior)
+                    if (semana == 1) {
+                        document.getElementById('pa_s2').style.backgroundColor = 'grey';
+                        document.getElementById('pa_s3').style.backgroundColor = 'grey';
+                        document.getElementById('pa_s4').style.backgroundColor = 'grey';
+                        document.getElementById('pi_s2').style.backgroundColor = 'grey';
+                        document.getElementById('pi_s3').style.backgroundColor = 'grey';
+                        document.getElementById('pi_s4').style.backgroundColor = 'grey';
+                        document.getElementById('ci_s2').style.backgroundColor = 'grey';
+                        document.getElementById('ci_s3').style.backgroundColor = 'grey';
+                        document.getElementById('ci_s4').style.backgroundColor = 'grey';
+                        document.getElementById('total_s2_circulo').style.stroke = 'grey';
+                        document.getElementById('total_s3_circulo').style.stroke = 'grey';
+                        document.getElementById('total_s4_circulo').style.stroke = 'grey';
+                    }
+                    if (semana > 1 && semana == 2) {
+                        document.getElementById('pa_s3').style.backgroundColor = 'grey';
+                        document.getElementById('pa_s4').style.backgroundColor = 'grey';
+                        document.getElementById('pi_s3').style.backgroundColor = 'grey';
+                        document.getElementById('pi_s4').style.backgroundColor = 'grey';
+                        document.getElementById('ci_s3').style.backgroundColor = 'grey';
+                        document.getElementById('ci_s4').style.backgroundColor = 'grey';
+                        document.getElementById('total_s3_circulo').style.stroke = 'grey';
+                        document.getElementById('total_s4_circulo').style.stroke = 'grey';
+                    }
+                    if (semana > 2 && semana == 3) {
+                        document.getElementById('pa_s4').style.backgroundColor = 'grey';
+                        document.getElementById('pi_s4').style.backgroundColor = 'grey';
+                        document.getElementById('ci_s4').style.backgroundColor = 'grey';
+                        document.getElementById('total_s4_circulo').style.stroke = 'grey';
+                    }
+
+
+                })
+                .catch(error => console.error('Error fetching JSON:', error));
+        }
+
+    // Chama a função inicialmente para que o conteúdo seja atualizado assim que o script é executado
+    atualizarConteudo();
+
+
+</script>
+</body>
+</html>
+
+

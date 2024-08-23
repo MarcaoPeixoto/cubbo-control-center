@@ -1,0 +1,215 @@
+body {
+    min-height: 95vh;
+    background-color: #191910;
+    overflow: hidden;
+}
+
+#tudo {
+    height: 100vh;
+}
+
+p {
+    font-size: larger;
+}
+
+#semana1, #semana2, #semana3, #semana4 {
+    padding-top: 15%;
+    padding-bottom: 15%;
+    height: 80%;
+    width: 80%;
+}
+
+h2 {
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    text-align: left;
+    margin-left: 50px;
+    color: white;
+    text-wrap: nowrap;
+}
+
+h3 {
+    border-style: solid;
+    border-color: #191910;
+    border-width: 7px;
+    padding-left: 15%;
+    padding-right: 15%;
+    padding-top: 10%;
+    padding-bottom: 10%;
+    width: max-content;
+    float: initial;
+    position: relative;
+    margin: 0;
+    color: #191910;
+}
+
+.main {
+    flex-wrap: wrap;
+}
+
+#cima {
+    width: 100%;
+    height: 50%;
+    display: flex;
+}
+
+#cima_esquerda {
+    background-color: #221F1C;
+    width: 50%;
+    height: 100%;
+    text-align: center;
+}
+
+#all_semanas {
+    display: flex;
+}
+
+#checkin_semana, #picking_semana, #packing_semana {
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-size: medium;
+    float: inline-end;
+    margin-right: 15%;
+    margin-top: 5%;
+    color: white;
+    margin-bottom: 10%;
+    text-align: start;
+}
+
+#cima_direita {
+    background-color: #221F1C;
+    width: 50%;
+    height: 100%;
+    text-align: center;
+}
+
+
+#baixo {
+    width: 100%;
+    height: 48%;
+    display: flex;
+}
+
+#checkin {
+    background-color: #221F1C;
+    width: 33%;
+    height: 100%;
+    text-align: center;
+}
+
+#picking {
+    background-color: #221F1C;
+    width: 34%;
+    height: 100%;
+    text-align: center;
+}
+
+#packing {
+    background-color: #221F1C;
+    width: 33%;
+    height: 100%;
+    text-align: center;
+}
+
+.packing_fundo {
+    background-color: #ed1e79;
+}
+
+.checkin_fundo {
+    background-color: chartreuse;
+}
+
+.picking_fundo {
+    background-color: #d9e021;
+}
+
+
+#cima_esquerda, #cima_direita, #picking, #packing, #checkin {
+    -webkit-box-shadow:inset 0px 0px 0px 5px #191910;
+    -moz-box-shadow:inset 0px 0px 0px 5px #191910;
+    box-shadow:inset 0px 0px 0px 5px #191910;
+  }
+
+.donut-ring {
+    stroke: #221F1C;
+}
+
+.donut-segment-2 {
+    stroke: blueviolet;
+}
+
+.donut-segment-3 {
+    stroke: aqua;
+}
+
+.donut-segment-4 {
+    stroke: chartreuse;
+}
+
+.donut-segment-5 {
+    stroke: #d9e021;
+}
+
+.donut-segment-6 {
+    stroke: #ed1e79;
+}
+
+.donut-text {
+    font-family: Arial, Helvetica, sans-serif;
+}
+.donut-text-1 {
+    fill: white;
+}
+
+.donut-percent {
+    font-size: 0.5em;
+    line-height: 1;
+    transform: translateY(0.5em);
+    font-weight: bold;
+}
+
+.donut-data {
+    font-size: 0.15em;
+    line-height: 1;
+    transform: translateY(0.5em);
+    text-align: center;
+    text-anchor: middle;
+    color:white;
+    fill: white;
+
+}
+
+
+#fundo_cinza {
+    background-color: gray;
+    stroke: gray;
+}
+
+.titulo_btn {
+    color: white;
+    background-color: #191910;
+    padding: 3px;
+    margin-top: 10px;
+    margin-right: 10px;
+    float: inline-end;
+    font-size: xx-large;
+}
+
+.config_btn {
+    width: 30px;
+    height: 30px;
+    position: fixed;
+    top: 25px;
+    right: 40px;
+    padding: 0px;
+}
+
+.btn {
+    background-color: grey;
+    border-radius: 5px;
+}
+
+.config_gen {
+    background-color: grey;
+    margin: 0px;
+    width: 30px;
+    height: 30px;
+}
