@@ -3,3 +3,4 @@ Flask-Cors==4.0.1
 
 numpy==1.24.2
 gunicorn==22.0.0
+python-dotenv==1.0.1
