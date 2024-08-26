@@ -3,6 +3,7 @@ import json
 from datetime import datetime, timedelta
 import numpy as np
 import os
+from dotenv import dotenv_values
 
 
 #import pandas as pd
@@ -83,7 +84,7 @@ class CONFIG:
             self.FERIADOS_ACCOUNTS = self.JSON_CONFIG["BR"]["holidays"]
 
     def get_configurations(self):
-            with open("/home/ubuntu/marco/www/json/config.json", "r", ) as f:
+            with open("json/config.json", "r", ) as f:
                 config = json.load(f)
             return config
         
@@ -92,34 +93,34 @@ config = CONFIG()
 #funcao para pegar os dados dos pedidos e do check-in e fazer uma avaliacao da performance
 def load_excluded_orders():
     try:
-        with open("/home/ubuntu/marco/www/json/excluded_orders.json", "r") as file:
+        with open("json/excluded_orders.json", "r") as file:
             return json.load(file)
     except FileNotFoundError:
         return []
 
 def save_excluded_orders(excluded_orders):
-    with open("/home/ubuntu/marco/www/json/excluded_orders.json", "w") as file:
+    with open("json/excluded_orders.json", "w") as file:
         json.dump(excluded_orders, file)
 
 def load_excluded_recibos():
     try:
-        with open("/home/ubuntu/marco/www/json/excluded_recibos.json", "r") as file:
+        with open("json/excluded_recibos.json", "r") as file:
             return json.load(file)
     except FileNotFoundError:
         return []
 
 def save_excluded_recibos(excluded_recibos):
-    with open("/home/ubuntu/marco/www/json/excluded_recibos.json", "w") as file:
+    with open("json/excluded_recibos.json", "w") as file:
         json.dump(excluded_recibos, file)
 
 def save_to_json(data):
 
-    with open("/home/ubuntu/marco/www/json/sla_embu.json", "w") as json_file:
+    with open("json/sla_embu.json", "w") as json_file:
         json.dump(data, json_file)
 
 def load_to_json():
     try:
-        with open("/home/ubuntu/marco/www/json/sla_embu.json", "r") as file:
+        with open("json/sla_embu.json", "r") as file:
             return json.load(file)
     except FileNotFoundError:
         return []
@@ -161,7 +162,7 @@ def adjust_receiving_date(recibo):
     return adjusted_datetime
 
 dir_path = os.path.dirname(os.path.abspath(__file__))
-with open(os.path.join(dir_path, "/home/ubuntu/marco/www/json/config.json"), "r") as f:
+with open(os.path.join(dir_path, "json/config.json"), "r") as f:
     CONFIG = json.load(f)
 
 from datetime import datetime, timedelta
