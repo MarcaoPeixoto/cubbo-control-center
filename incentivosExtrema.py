@@ -20,9 +20,12 @@ date_format2 = "%d-%m-%Y, %H:%M:%S.%f"
 
 def create_metabase_token():
     url = 'https://cubbo.metabaseapp.com/api/session'
+    env_config = dotenv_values(".env")
+    metabase_user = env_config.get('METABASE_USER')
+    metabase_password = env_config.get('METABASE_PASSWORD')
     data = {
-        'username': "marco.peixoto@cubbo.com",
-        'password': "Cabin-eyepiece-rain1"
+        'username': metabase_user,
+        'password': metabase_password
     }
     headers = {'Content-Type': 'application/json'}
     response = requests.post(url, headers=headers, data=json.dumps(data))
