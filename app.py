@@ -2,9 +2,29 @@ from flask import Flask, render_template, send_from_directory, request, jsonify
 from flask_cors import CORS
 import json
 import os
+from apscheduler.schedulers.background import BackgroundScheduler
+import subprocess
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
+scheduler = BackgroundScheduler()
+
+@app.before_request
+def start_scheduler():
+    if not scheduler.running:
+        scheduler.start()
+
+
+def job():
+    try:
+        subprocess.run(['python', 'incentivosEmbu.py'])
+        subprocess.run(['python', 'incentivosExtrema.py'])
+        print("SLAs atualizados")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred: {e}")
+
+scheduler.add_job(job, 'interval', minutes=10)
+
 
 @app.route('/')
 def home():
@@ -108,4 +128,5 @@ def update_excluded_recibos():
         return jsonify(error=str(e)), 500
 
 if __name__ == '__main__':
+    scheduler.start()
     app.run(host='0.0.0.0', debug=True)

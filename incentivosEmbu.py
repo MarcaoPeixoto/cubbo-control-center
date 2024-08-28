@@ -35,7 +35,7 @@ def create_metabase_token():
         'username': metabase_user,
         'password': metabase_password
     }
-    print(data)
+
     headers = {'Content-Type': 'application/json'}
     response = requests.post(url, headers=headers, data=json.dumps(data))
     if response.status_code == 200:
