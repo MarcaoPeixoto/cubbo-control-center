@@ -24,7 +24,7 @@ def create_metabase_token():
     env_config = dotenv_values(".env")
     metabase_user = env_config.get('METABASE_USER')
     
-    if metabase_user is not None or metabase_user != "":
+    if metabase_user is not None:
         metabase_password = env_config.get('METABASE_PASSWORD')
     else:
         metabase_user = os.environ["METABASE_USER"]
