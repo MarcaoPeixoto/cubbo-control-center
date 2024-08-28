@@ -20,9 +20,16 @@ date_format = "%d-%m-%Y, %H:%M:%S"
 date_format2 = "%d-%m-%Y, %H:%M:%S.%f"
 
 def create_metabase_token():
+
     env_config = dotenv_values(".env")
     metabase_user = env_config.get('METABASE_USER')
-    metabase_password = env_config.get('METABASE_PASSWORD')
+    
+    if metabase_user is not None or metabase_user != "":
+        metabase_password = env_config.get('METABASE_PASSWORD')
+    else:
+        metabase_user = os.environ["METABASE_USER"]
+        metabase_password = os.environ["METABASE_PASSWORD"]
+
     url = 'https://cubbo.metabaseapp.com/api/session'
     data = {
         'username': metabase_user,
