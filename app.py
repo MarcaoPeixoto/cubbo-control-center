@@ -65,7 +65,7 @@ def logout():
     session.pop('logged_in', None)
     return redirect('/login')
 
-@app.route('/')
+@app.route('/home')
 @login_required
 def home():
     return render_template('home.html')
