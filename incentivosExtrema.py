@@ -13,7 +13,8 @@ from dotenv import dotenv_values
 
 #locale.setlocale(locale.LC_TIME, "es_ES")
 
-hora_agora = datetime.now().strftime("%H:%M")
+hora_agora = datetime.now()
+nova_hora = (hora_agora - timedelta(hours=3)).strftime("%H:%M")
 
 date_format = "%d-%m-%Y, %H:%M:%S"
 
@@ -748,7 +749,7 @@ def main():
         "ajuste_recibos": ajuste_recibos,
         "ajuste_picking": ajuste_picking,
         "ajuste_pedidos": ajuste_pedidos,
-        "hora_agora": hora_agora        
+        "hora_agora": nova_hora        
     }
 
     data.update(data2)
