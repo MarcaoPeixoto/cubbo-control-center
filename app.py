@@ -54,7 +54,7 @@ def login():
             session['logged_in'] = True
             return jsonify({"success": True})
         return jsonify({"success": False}), 401
-    return render_template('login.html')
+    return render_template('index.html')
 
 @app.route('/check_auth')
 def check_auth():
@@ -68,7 +68,7 @@ def logout():
 @app.route('/')
 @login_required
 def home():
-    return render_template('index.html')
+    return render_template('home.html')
 
 @app.route('/embu')
 @login_required
