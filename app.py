@@ -9,30 +9,16 @@ app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
 scheduler = BackgroundScheduler()
 
-@app.before_request
-def start_scheduler():
-    if not scheduler.running:
-        scheduler.start()
-
 
 def job():
     try:
+        subprocess.run(['python', 'incentivosExtrema.py'])
         subprocess.run(['python', 'incentivosEmbu.py'])
         print("SLAs atualizados")
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
 scheduler.add_job(job, 'interval', minutes=10)
-
-def job2():
-    try:
-        subprocess.run(['python', 'incentivosExtrema.py'])
-        print("SLAs atualizados")
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred: {e}")
-
-scheduler.add_job(job2, 'interval', minutes=10)
-
 
 @app.route('/')
 def home():
