@@ -2,20 +2,41 @@ from flask import Flask, render_template, send_from_directory, request, jsonify
 from flask_cors import CORS
 import json
 import os
+from apscheduler.schedulers.background import BackgroundScheduler
 import subprocess
-import time
-import threading
 
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # Enable Cross-Origin Resource Sharing if needed
+scheduler = BackgroundScheduler()
+scheduler2 = BackgroundScheduler()
 
-def run_scripts():
-    while True:
-        subprocess.run(['python', 'incentivosExtrema.py'])
+
+def job():
+    try:
         subprocess.run(['python', 'incentivosEmbu.py'])
-        time.sleep(300)
+        print("SLAs atualizados")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred: {e}")
 
-      
+scheduler.add_job(job, 'interval', minutes=5)
+
+def job2():
+    try:
+        subprocess.run(['python', 'incentivosExtrema.py'])
+        print("SLAs atualizados")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred: {e}")
+
+scheduler2.add_job(job2, 'interval', minutes=5)
+
+
+@app.before_request
+def start_scheduler():
+    if not scheduler.running:
+        scheduler.start()
+    if not scheduler2.running:
+        scheduler2.start()
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -117,9 +138,7 @@ def update_excluded_recibos():
         app.logger.error('Error updating excluded recibos JSON: %s', e)
         return jsonify(error=str(e)), 500
 
-def start_background_job():
-    threading.Thread(target=run_scripts, daemon=True).start()
-
 if __name__ == '__main__':
-    start_background_job() 
+    scheduler.start()
+    scheduler2.start()
     app.run(host='0.0.0.0', debug=True)
