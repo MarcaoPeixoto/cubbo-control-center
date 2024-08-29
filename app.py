@@ -38,12 +38,10 @@ def home():
 
 @app.route('/embu')
 def embu():
-    subprocess.run(['python', 'incentivosEmbu.py'])
     return render_template('dashCUBBOembu.html')
 
 @app.route('/extrema')
 def extrema():
-    subprocess.run(['python', 'incentivosExtrema.py'])
     return render_template('dashCUBBOextrema.html')
 
 @app.route('/controlembu')
