@@ -107,6 +107,7 @@
         </div>
         <div class="main" id="baixo">
             <div class="main" id="checkin">
+                <h4 id="updated_at">teste</h4>
                 <h2 id="checkin_erro">Check-in</h2>
                 <svg width="60%" height="60%" viewBox="0 0 40 40" class="donut">
                     <circle class="donut-hole" cx="20" cy="20" r="15.91549430918954" fill="#221F1C"></circle>
@@ -208,6 +209,7 @@
                 .then(data => {
                     console.log('JSON data:', data);
 
+                    document.getElementById('updated_at').textContent = data.hora_agora;
                     // Update semana1
                     document.getElementById('total_s1').textContent = data.s1_total + '%';
                     // Update semana2
