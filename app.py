@@ -46,6 +46,10 @@ def start_scheduler():
     if not scheduler.running:
         scheduler.start()
 
+@app.route('/')
+def inico():
+    return redirect('/login')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
