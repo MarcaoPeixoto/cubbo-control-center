@@ -18,12 +18,20 @@ def start_scheduler():
 def job():
     try:
         subprocess.run(['python', 'incentivosEmbu.py'])
-        subprocess.run(['python', 'incentivosExtrema.py'])
         print("SLAs atualizados")
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
 scheduler.add_job(job, 'interval', minutes=10)
+
+def job2():
+    try:
+        subprocess.run(['python', 'incentivosExtrema.py'])
+        print("SLAs atualizados")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred: {e}")
+
+scheduler.add_job(job2, 'interval', minutes=10)
 
 
 @app.route('/')
