@@ -9,24 +9,22 @@ app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
 scheduler = BackgroundScheduler()
 
-def job():
+def job_embu():
     try:
         subprocess.run(['python', 'incentivosEmbu.py'])
-        print("SLAs atualizados")
+        print("SLAs Embu atualizados")
     except subprocess.CalledProcessError as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred in Embu job: {e}")
 
-scheduler.add_job(job, 'interval', minutes=5)
-
-def job2():
+def job_extrema():
     try:
         subprocess.run(['python', 'incentivosExtrema.py'])
-        print("SLAs atualizados")
+        print("SLAs Extrema atualizados")
     except subprocess.CalledProcessError as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred in Extrema job: {e}")
 
-scheduler.add_job(job2, 'interval', minutes=7)
-
+scheduler.add_job(job_embu, 'interval', minutes=5)
+scheduler.add_job(job_extrema, 'interval', minutes=7)
 
 @app.before_request
 def start_scheduler():
@@ -134,8 +132,9 @@ def update_excluded_recibos():
     except Exception as e:
         app.logger.error('Error updating excluded recibos JSON: %s', e)
         return jsonify(error=str(e)), 500
-
+    
 if __name__ == '__main__':
+    # Run both scripts initially
     subprocess.run(['python', 'incentivosEmbu.py'])
     subprocess.run(['python', 'incentivosExtrema.py'])
     scheduler.start()
