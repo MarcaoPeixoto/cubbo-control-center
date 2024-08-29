@@ -20,6 +20,13 @@ def job():
 
 scheduler.add_job(job, 'interval', minutes=10)
 
+
+@app.before_request
+def start_scheduler():
+    if not scheduler.running:
+        scheduler.start()
+
+        
 @app.route('/')
 def home():
     return render_template('index.html')
