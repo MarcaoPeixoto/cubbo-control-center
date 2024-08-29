@@ -8,8 +8,6 @@ import subprocess
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
 scheduler = BackgroundScheduler()
-scheduler2 = BackgroundScheduler()
-
 
 def job():
     try:
@@ -27,15 +25,14 @@ def job2():
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
-scheduler2.add_job(job2, 'interval', minutes=5)
+scheduler.add_job(job2, 'interval', minutes=7)
 
 
 @app.before_request
 def start_scheduler():
     if not scheduler.running:
         scheduler.start()
-    if not scheduler2.running:
-        scheduler2.start()
+
 
 @app.route('/')
 def home():
@@ -139,6 +136,7 @@ def update_excluded_recibos():
         return jsonify(error=str(e)), 500
 
 if __name__ == '__main__':
+    subprocess.run(['python', 'incentivosEmbu.py'])
+    subprocess.run(['python', 'incentivosExtrema.py'])
     scheduler.start()
-    scheduler2.start()
     app.run(host='0.0.0.0', debug=True)
