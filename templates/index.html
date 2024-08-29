@@ -16,10 +16,16 @@
         }
         .login-container {
             background-color: white;
+            width: 90%;
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
+        
+        #password {
+            width: 90%;
+        }
+
         input, button {
             display: block;
             width: 100%;
@@ -45,7 +51,7 @@
 </head>
 <body>
     <div class="login-container">
-        <input type="password" id="password" placeholder="Enter password">
+        <input type="password" id="password" placeholder="Entrar com Senha">
         <button onclick="login()">Login</button>
         <p id="error-message" class="error-message"></p>
     </div>
