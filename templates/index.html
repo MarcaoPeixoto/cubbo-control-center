@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dash Cubbo</title>
+    <title>Login</title>
     <style>
         body, html {
             height: 100%;
@@ -74,7 +74,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    window.location.href = '/dashboard';  // Redirect to dashboard on successful login
+                    window.location.href = '/home';  // Redirect to dashboard on successful login
                 } else {
                     errorMessage.textContent = 'Access denied. Incorrect password.';
                 }
