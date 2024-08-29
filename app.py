@@ -1,13 +1,28 @@
-from flask import Flask, render_template, send_from_directory, request, jsonify
+from flask import Flask, render_template, send_from_directory, request, jsonify, session, redirect
 from flask_cors import CORS
 import json
 import os
 from apscheduler.schedulers.background import BackgroundScheduler
 import subprocess
+from functools import wraps
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
 scheduler = BackgroundScheduler()
+
+# Set a secret key for sessions
+app.secret_key = os.urandom(24)
+
+# Get password from environment variable
+CORRECT_PASSWORD = os.environ.get('LOGIN_PASSWORD')
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            return redirect('/login')
+        return f(*args, **kwargs)
+    return decorated_function
 
 def job_embu():
     try:
@@ -31,32 +46,57 @@ def start_scheduler():
     if not scheduler.running:
         scheduler.start()
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        data = request.json
+        if data and data.get('password') == CORRECT_PASSWORD:
+            session['logged_in'] = True
+            return jsonify({"success": True})
+        return jsonify({"success": False}), 401
+    return render_template('login.html')
+
+@app.route('/check_auth')
+def check_auth():
+    return jsonify({"authenticated": 'logged_in' in session})
+
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect('/login')
 
 @app.route('/')
+@login_required
 def home():
     return render_template('index.html')
 
 @app.route('/embu')
+@login_required
 def embu():
     return render_template('dashCUBBOembu.html')
 
 @app.route('/extrema')
+@login_required
 def extrema():
     return render_template('dashCUBBOextrema.html')
 
 @app.route('/controlembu')
+@login_required
 def controle_sp():
     return render_template('controleEmbu.html')
 
 @app.route('/controlextrema')
+@login_required
 def controle_mg():
     return render_template('controleExtrema.html')
 
 @app.route('/json/<path:filename>')
+@login_required
 def serve_json(filename):
     return send_from_directory('json', filename)
 
 @app.route('/update-json', methods=['POST'])
+@login_required
 def update_json():
     new_data = request.get_json()
 
@@ -86,6 +126,7 @@ def update_json():
         return jsonify(error=str(e)), 500
 
 @app.route('/update-excluded-orders', methods=['POST'])
+@login_required
 def update_excluded_orders():
     try:
         new_data = request.get_json()
@@ -110,6 +151,7 @@ def update_excluded_orders():
         return jsonify(error=str(e)), 500
 
 @app.route('/update-excluded-recibos', methods=['POST'])
+@login_required
 def update_excluded_recibos():
     try:
         new_data = request.get_json()
@@ -132,7 +174,7 @@ def update_excluded_recibos():
     except Exception as e:
         app.logger.error('Error updating excluded recibos JSON: %s', e)
         return jsonify(error=str(e)), 500
-    
+
 if __name__ == '__main__':
     # Run both scripts initially
     subprocess.run(['python', 'incentivosEmbu.py'])

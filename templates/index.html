@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dash Cubbo</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='estilo.css') }}">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         body, html {
             height: 100%;
@@ -16,36 +14,76 @@
             background-color: #0741dd;
             font-family: Arial, sans-serif;
         }
+        .login-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        input, button {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #0741dd;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0536b5;
+        }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
-    <div id="g_id_onload"
-         data-client_id="952863528271-1m2j30cft58v7n92egidnjm4jf01pv2p.apps.googleusercontent.com"
-         data-callback="handleCredentialResponse">
+    <div class="login-container">
+        <input type="password" id="password" placeholder="Enter password">
+        <button onclick="login()">Login</button>
+        <p id="error-message" class="error-message"></p>
     </div>
-    <div class="g_id_signin" data-type="standard"></div>
-    
+
     <script>
-        function handleCredentialResponse(response) {
-            // Decode the JWT token
-            const responsePayload = jwt_decode(response.credential);
+        // Check if user is already logged in
+        fetch('/check_auth')
+            .then(response => response.json())
+            .then(data => {
+                if (data.authenticated) {
+                    window.location.href = '/dashboard';  // Redirect to dashboard if authenticated
+                }
+            });
+
+        function login() {
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('error-message');
             
-            // Get the email from the decoded token
-            const email = responsePayload.email;
-            
-            // Store the email in localStorage
-            localStorage.setItem('userEmail', email);
-            
-            // Check if the email is authorized
-            if (email.endsWith('@cubbo.com')) {
-                window.location.href = '/embu';
-            } else {
-                alert('Não Autorizado');
-            }
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({password: password}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/dashboard';  // Redirect to dashboard on successful login
+                } else {
+                    errorMessage.textContent = 'Access denied. Incorrect password.';
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                errorMessage.textContent = 'An error occurred. Please try again.';
+            });
         }
     </script>
-    
-    <!-- Include JWT Decode library -->
-    <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
 </body>
 </html>
