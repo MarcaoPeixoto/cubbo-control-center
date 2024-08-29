@@ -18,7 +18,7 @@ def job():
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
-scheduler.add_job(job, 'interval', minutes=10)
+scheduler.add_job(job, 'interval', minutes=5)
 
 
 @app.before_request
