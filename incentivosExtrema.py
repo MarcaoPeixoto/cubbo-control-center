@@ -99,7 +99,53 @@ class CONFIG:
         
 config = CONFIG()
 
-#funcao para pegar os dados dos pedidos e do check-in e fazer uma avaliacao da performance
+def erase_json_files():
+    # List of all JSON files to erase
+    json_files = ["json/excluded_orders.json", "json/excluded_recibos.json", "json/sla_extrema.json"]
+
+    for file_path in json_files:
+        with open(file_path, "w") as file:
+            json.dump([], file)
+
+def check_and_erase_json_files():
+    # Path to the file storing the last cleanup date
+    last_cleanup_file = "last_cleanup.txt"
+
+    # Get the current date
+    now = datetime.now()
+    current_month = now.month
+    current_year = now.year
+
+    # Check if the last_cleanup_file exists and is not empty
+    if os.path.exists(last_cleanup_file):
+        with open(last_cleanup_file, "r") as f:
+            last_cleanup_date = f.read().strip()
+        
+        try:
+            # Extract the last cleanup month and year
+            last_cleanup_month, last_cleanup_year = map(int, last_cleanup_date.split("-"))
+        except (ValueError, IndexError):
+            # If the file is empty or has invalid format, perform cleanup and write the current date
+            erase_json_files()
+            with open(last_cleanup_file, "w") as f:
+                f.write(f"{current_month}-{current_year}")
+            return
+
+        # Check if it is a new month
+        if (current_month != last_cleanup_month or current_year != last_cleanup_year) and now.day == 1:
+            erase_json_files()
+            # Update the last cleanup date
+            with open(last_cleanup_file, "w") as f:
+                f.write(f"{current_month}-{current_year}")
+
+    else:
+        # If file does not exist, perform cleanup and create the file
+        if now.day == 1:
+            erase_json_files()
+            with open(last_cleanup_file, "w") as f:
+                f.write(f"{current_month}-{current_year}")
+
+
 def load_excluded_orders():
     try:
         with open("json/excluded_orders.json", "r") as file:
@@ -641,6 +687,8 @@ def calculate_complementary(value):
     return result
  
 def main():
+
+    check_and_erase_json_files()
 
     todos_pedidos = ajuste_pendentes()
 

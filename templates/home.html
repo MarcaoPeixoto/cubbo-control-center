@@ -3,11 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='estilo.css') }}">
     <title>Dash Cubbo</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #0741dd;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+
 <body>
-   <h1>
-    vamos testar isso agora
-   </h1>
+    <a href="/embu">
+        <button type="button" class="titulo_btn">EMBU</button>
+    </a>
+    <a href="/extrema">
+        <button type="button" class="titulo_btn">EXTREMA</button>
+    </a>
 
 </body>
 </html>
