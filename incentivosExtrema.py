@@ -297,8 +297,10 @@ def ajuste_pendentes():
             if order['shipping_date'].month == datetime.now().month - 1:
                 continue
             carrier = order['carrier_name']
-            if carrier == 'CORREIOS' or carrier == 'LOGGI':
-                shipping_time_limit = 15             
+            if  carrier == 'LOGGI':
+                shipping_time_limit = 14
+            elif carrier == 'CORREIOS':
+                shipping_time_limit = 12      
             elif carrier == 'Mercado Envíos':
                 shipping_time_limit = 14  # Orders must be shipped by 14:30
             elif carrier == 'Armazém' or carrier == 'Externo':
