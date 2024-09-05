@@ -29,8 +29,9 @@ def create_metabase_token():
     metabase_password = env_config.get('METABASE_PASSWORD')
 
     # Check if credentials are missing
-    if not metabase_user or not metabase_password:
-        raise Exception(f"Metabase credentials missing: USER='{metabase_user}', PASSWORD='{metabase_password}'")
+    if metabase_user == 'None':
+        metabase_user=METABASE_USER
+        metabase_password=METABASE_PASSWORD
 
     url = 'https://cubbo.metabaseapp.com/api/session'
     data = {'username': metabase_user, 'password': metabase_password}

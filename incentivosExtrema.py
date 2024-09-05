@@ -20,6 +20,12 @@ redis_port = env_config.get('REDIS_PORT')
 
 # Initializing Redis client
 redis_password = env_config.get('REDIS_PASSWORD')  # Add this line to get the password from your .env file
+
+if redis_end == 'None':
+    redis_end=REDIS_END
+    redis_port=REDIS_PORT
+    redis_password=REDIS_PASSWORD
+
 redis_client = redis.StrictRedis(host=redis_end, port=redis_port, password=redis_password, db=0, decode_responses=True)
 
 def create_metabase_token():
@@ -28,8 +34,9 @@ def create_metabase_token():
     metabase_password = env_config.get('METABASE_PASSWORD')
 
     # Check if credentials are missing
-    if not metabase_user or not metabase_password:
-        raise Exception(f"Metabase credentials missing: USER='{metabase_user}', PASSWORD='{metabase_password}'")
+    if metabase_user == 'None':
+        metabase_user=METABASE_USER
+        metabase_password=METABASE_PASSWORD
 
     url = 'https://cubbo.metabaseapp.com/api/session'
     data = {'username': metabase_user, 'password': metabase_password}
