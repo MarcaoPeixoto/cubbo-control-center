@@ -15,16 +15,19 @@ date_format2 = "%d-%m-%Y, %H:%M:%S.%f"
 
 # Loading environment variables
 env_config = dotenv_values(".env")
-redis_end = env_config.get('REDIS_END')
-redis_port = env_config.get('REDIS_PORT')
+
 
 # Initializing Redis client
 redis_password = env_config.get('REDIS_PASSWORD')  # Add this line to get the password from your .env file
+redis_end=os.environ["REDIS_END"]
 
-if redis_end == 'None':
-    redis_end=REDIS_END
-    redis_port=REDIS_PORT
-    redis_password=REDIS_PASSWORD
+if redis_end is not None:
+    redis_end = env_config.get('REDIS_END')
+    redis_port = env_config.get('REDIS_PORT')
+else:
+    redis_end=os.environ["REDIS_END"]
+    redis_port=os.environ["REDIS_PORT"]
+    redis_password=os.environ["REDIS_PASSWORD"]
 
 redis_client = redis.StrictRedis(host=redis_end, port=redis_port, password=redis_password, db=0, decode_responses=True)
 
@@ -34,9 +37,11 @@ def create_metabase_token():
     metabase_password = env_config.get('METABASE_PASSWORD')
 
     # Check if credentials are missing
-    if metabase_user == 'None':
-        metabase_user=METABASE_USER
-        metabase_password=METABASE_PASSWORD
+    if metabase_user is not None:
+        metabase_password = env_config.get('METABASE_PASSWORD')
+    else:
+        metabase_user = os.environ["METABASE_USER"]
+        metabase_password = os.environ["METABASE_PASSWORD"]
 
     url = 'https://cubbo.metabaseapp.com/api/session'
     data = {'username': metabase_user, 'password': metabase_password}
