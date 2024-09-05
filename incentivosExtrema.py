@@ -25,9 +25,9 @@ redis_client = redis.StrictRedis(host=redis_end, port=redis_port, password=redis
 def create_metabase_token():
     env_config = dotenv_values(".env")
     metabase_user = env_config.get('METABASE_USER')
-    metabase_password = env_config.get('METABASE_PASSWORD') if metabase_user else os.environ.get("METABASE_PASSWORD")
+    metabase_password = env_config.get('METABASE_PASSWORD')
 
-    # Debugging statement to check environment variables
+    # Check if credentials are missing
     if not metabase_user or not metabase_password:
         raise Exception(f"Metabase credentials missing: USER='{metabase_user}', PASSWORD='{metabase_password}'")
 
@@ -40,7 +40,7 @@ def create_metabase_token():
         return response.json().get('id')
     else:
         raise Exception(f'Failed to create token: {response.content}')
-
+    
 def get_dataset(question, params={}):
     METABASE_ENDPOINT = "https://cubbo.metabaseapp.com"
     METABASE_TOKEN = create_metabase_token()
