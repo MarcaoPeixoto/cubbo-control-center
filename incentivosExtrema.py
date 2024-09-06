@@ -89,6 +89,9 @@ config = CONFIG()
 
 def save_to_redis(key, data):
     try:
+        # Ensure data is not None and can be converted to JSON
+        if data is None:
+            raise ValueError("Cannot save None data to Redis.")
         json_data = json.dumps(data)
         redis_client.set(key, json_data)
     except Exception as e:
@@ -97,7 +100,9 @@ def save_to_redis(key, data):
 def load_from_redis(key):
     try:
         json_data = redis_client.get(key)
-        return json.loads(json_data) if json_data else {}
+        if json_data is None:
+            raise ValueError(f"No data found in Redis for key: {key}")
+        return json.loads(json_data)
     except Exception as e:
         print(f"Error loading data from Redis: {e}")
         return {}
