@@ -147,7 +147,9 @@ def adjust_shipping_date(shipping_date, carrier):
 def adjust_receiving_date(recibo):
     recibo_np = np.datetime64(recibo.strftime('%Y-%m-%d'))
     adjusted_date_np = np.busday_offset(recibo_np, 1, roll='backward', holidays=config.JSON_CONFIG['BR']['holidays'])
-    adjusted_datetime = datetime.utcfromtimestamp(adjusted_date_np.astype('datetime64[s]').astype(int))
+# Replace deprecated usage
+    adjusted_datetime = datetime.fromtimestamp(adjusted_date_np.astype('datetime64[s]').astype(int), tz=datetime.timezone.utc)
+
     return adjusted_datetime
 
 def last_workday_of_previous_month():
