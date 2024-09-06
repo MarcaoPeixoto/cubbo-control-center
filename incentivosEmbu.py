@@ -412,6 +412,10 @@ def incentivos_recibo():
 
             if recibo['completed_at'].month == datetime.now().month - 1:
                 continue
+
+            recibo['arrived_at'] = recibo['arrived_at'].replace(tzinfo=None)
+            recibo['completed_at'] = recibo['completed_at'].replace(tzinfo=None)
+            
             if recibo['arrived_at'] > recibo['completed_at']:
                 recibo['SLA']="HIT"          
             else:
