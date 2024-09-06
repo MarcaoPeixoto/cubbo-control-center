@@ -1,6 +1,6 @@
 import requests
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import numpy as np
 import os
 from dotenv import dotenv_values
@@ -148,7 +148,7 @@ def adjust_receiving_date(recibo):
     recibo_np = np.datetime64(recibo.strftime('%Y-%m-%d'))
     adjusted_date_np = np.busday_offset(recibo_np, 1, roll='backward', holidays=config.JSON_CONFIG['BR']['holidays'])
 # Replace deprecated usage
-    adjusted_datetime = datetime.fromtimestamp(adjusted_date_np.astype('datetime64[s]').astype(int), tz=datetime.timezone.utc)
+    adjusted_datetime = datetime.fromtimestamp(adjusted_date_np.astype('datetime64[s]').astype(int), tz=timezone.utc)
 
     return adjusted_datetime
 
