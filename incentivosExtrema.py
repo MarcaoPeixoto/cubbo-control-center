@@ -16,14 +16,13 @@ date_format2 = "%d-%m-%Y, %H:%M:%S.%f"
 # Loading environment variables
 env_config = dotenv_values(".env")
 
-
-# Initializing Redis client
-redis_password = env_config.get('REDIS_PASSWORD')  # Add this line to get the password from your .env file
-redis_end=os.environ["REDIS_END"]
+# Add this line to get the password from your .env file
+redis_end = env_config.get('REDIS_END')
 
 if redis_end is not None:
     redis_end = env_config.get('REDIS_END')
     redis_port = env_config.get('REDIS_PORT')
+    redis_password = env_config.get('REDIS_PASSWORD')
 else:
     redis_end=os.environ["REDIS_END"]
     redis_port=os.environ["REDIS_PORT"]
@@ -34,7 +33,6 @@ redis_client = redis.StrictRedis(host=redis_end, port=redis_port, password=redis
 def create_metabase_token():
     env_config = dotenv_values(".env")
     metabase_user = env_config.get('METABASE_USER')
-    metabase_password = env_config.get('METABASE_PASSWORD')
 
     # Check if credentials are missing
     if metabase_user is not None:
