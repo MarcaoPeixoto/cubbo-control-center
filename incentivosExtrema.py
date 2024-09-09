@@ -1,9 +1,10 @@
 import requests
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import numpy as np
 import os
 from dotenv import dotenv_values
+import redis
 
 
 #import pandas as pd
@@ -19,6 +20,21 @@ nova_hora = (hora_agora - timedelta(hours=3)).strftime("%H:%M")
 date_format = "%d-%m-%Y, %H:%M:%S"
 
 date_format2 = "%d-%m-%Y, %H:%M:%S.%f"
+
+env_config = dotenv_values(".env")
+
+redis_end = env_config.get('REDIS_END')
+
+if redis_end is not None:
+    redis_end = env_config.get('REDIS_END')
+    redis_port = env_config.get('REDIS_PORT')
+    redis_password = env_config.get('REDIS_PASSWORD')
+else:
+    redis_end=os.environ["REDIS_END"]
+    redis_port=os.environ["REDIS_PORT"]
+    redis_password=os.environ["REDIS_PASSWORD"]
+
+redis_client = redis.StrictRedis(host=redis_end, port=redis_port, password=redis_password, db=0, decode_responses=True)
 
 def create_metabase_token():
 
@@ -101,12 +117,19 @@ config = CONFIG()
 
 def erase_json_files():
     # List of all JSON files to erase
-    json_files = ["json/excluded_orders.json", "json/excluded_recibos.json", "json/sla_extrema.json"]
+    json_files = ["json/excluded_orders.json", "json/excluded_recibos.json", "json/sla_embu.json"]
 
     for file_path in json_files:
         with open(file_path, "w") as file:
             json.dump([], file)
+    save_to_redis("sla_extrema", "[]")
+    save_to_redis("excluded_orders", "[]")
+    save_to_redis("excluded_recibos", "[]")
+    print("jsons apagados")
 
+
+    print("jsons apagados")
+    
 def check_and_erase_json_files():
     # Path to the file storing the last cleanup date
     last_cleanup_file = "last_cleanup.txt"
@@ -132,7 +155,7 @@ def check_and_erase_json_files():
             return
 
         # Check if it is a new month
-        if (current_month != last_cleanup_month or current_year != last_cleanup_year) and now.day == 1:
+        if (current_month != last_cleanup_month or current_year != last_cleanup_year):
             erase_json_files()
             # Update the last cleanup date
             with open(last_cleanup_file, "w") as f:
@@ -140,10 +163,20 @@ def check_and_erase_json_files():
 
     else:
         # If file does not exist, perform cleanup and create the file
-        if now.day == 1:
-            erase_json_files()
-            with open(last_cleanup_file, "w") as f:
-                f.write(f"{current_month}-{current_year}")
+        erase_json_files()
+        with open(last_cleanup_file, "w") as f:
+            f.write(f"{current_month}-{current_year}")
+
+
+def save_to_redis(key, data):
+    try:
+        # Ensure data is not None and can be converted to JSON
+        if data is None:
+            raise ValueError("Cannot save None data to Redis.")
+        json_data = json.dumps(data)
+        redis_client.set(key, json_data)
+    except Exception as e:
+        print(f"Error saving data to Redis: {e}")
 
 
 def load_excluded_orders():
@@ -212,15 +245,16 @@ def adjust_receiving_date(recibo):
     # Convert recibo to numpy datetime64[D] format
     recibo_np = np.datetime64(recibo.strftime('%Y-%m-%d'))
 
-    adjusted_date_np = np.busday_offset(recibo_np, 1, roll='backward', holidays=CONFIG['BR']['holidays'])
-    adjusted_datetime = datetime.utcfromtimestamp(adjusted_date_np.astype('datetime64[s]').astype(int))
+    adjusted_date_np = np.busday_offset(recibo_np, 1, roll='backward', holidays=config.JSON_CONFIG['BR']['holidays'])
+# Replace deprecated usage
+    adjusted_datetime = datetime.fromtimestamp(adjusted_date_np.astype('datetime64[s]').astype(int), tz=timezone.utc)
+    
     return adjusted_datetime
 
 dir_path = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(dir_path, "json/config.json"), "r") as f:
     CONFIG = json.load(f)
 
-from datetime import datetime, timedelta
 
 def last_workday_of_previous_month():
     today = datetime.now()
@@ -336,6 +370,10 @@ def ajuste_pendentes():
 
 
     return sorted_data
+
+
+
+
 
 def incentivos_pedidos(todos_pedidos):
 
@@ -474,6 +512,10 @@ def incentivos_recibo():
 
             if recibo['completed_at'].month == datetime.now().month - 1:
                 continue
+
+            recibo['arrived_at'] = recibo['arrived_at'].replace(tzinfo=None)
+            recibo['completed_at'] = recibo['completed_at'].replace(tzinfo=None)
+            
             if recibo['arrived_at'] > recibo['completed_at']:
                 recibo['SLA']="HIT"          
             else:
@@ -803,6 +845,7 @@ def main():
 
     # Save to JSON
     save_to_json(data)
+    save_to_redis("sla_extrema", data)
     print("Done")
     print(datetime.now())
 

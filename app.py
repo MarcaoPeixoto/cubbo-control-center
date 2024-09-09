@@ -5,6 +5,9 @@ import os
 from apscheduler.schedulers.background import BackgroundScheduler
 import subprocess
 from functools import wraps
+import redis
+from dotenv import dotenv_values
+import threading
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
@@ -15,6 +18,21 @@ app.secret_key = os.urandom(24)
 
 # Get password from environment variable
 CORRECT_PASSWORD = os.environ.get('LOGIN_PASSWORD')
+
+env_config = dotenv_values(".env")
+
+redis_end = env_config.get('REDIS_END')
+
+if redis_end is not None:
+    redis_port = env_config.get('REDIS_PORT')
+    redis_password = env_config.get('REDIS_PASSWORD')
+else:
+    redis_end=os.environ["REDIS_END"]
+    redis_port=os.environ["REDIS_PORT"]
+    redis_password=os.environ["REDIS_PASSWORD"]
+
+redis_client = redis.StrictRedis(host=redis_end, port=redis_port, password=redis_password, db=0, decode_responses=True)
+
 
 def login_required(f):
     @wraps(f)
@@ -99,35 +117,63 @@ def controle_mg():
 def serve_json(filename):
     return send_from_directory('json', filename)
 
+from flask import jsonify, request
+import json
+import os
+import threading
+
 @app.route('/update-json', methods=['POST'])
 @login_required
 def update_json():
     new_data = request.get_json()
 
-    if new_data['local'] == 'embu':
+    if not new_data:
+        return jsonify({"error": "No data provided"}), 400
+
+    # Determine the JSON file path based on the 'local' field
+    json_file_path = ''
+    if new_data.get('local') == 'embu':
         json_file_path = 'json/sla_embu.json'
-    elif new_data['local'] == 'extrema':
+        redis_key = "sla_embu"
+    elif new_data.get('local') == 'extrema':
         json_file_path = 'json/sla_extrema.json'
+        redis_key = "sla_extrema"
+    else:
+        return jsonify({"error": "Invalid 'local' value"}), 400
+
+    # Check if file exists and is accessible
+    if not os.path.exists(json_file_path):
+        return jsonify({"error": f"File {json_file_path} does not exist"}), 404
 
     try:
-        with open(json_file_path, 'r') as file:
+        # Acquire a lock to prevent concurrent access
+        file_lock = threading.Lock()
+        with file_lock, open(json_file_path, 'r') as file:
             json_data = json.load(file)
 
-        if 'ajuste_recibos' in new_data:
-            json_data['ajuste_recibos'] = new_data['ajuste_recibos']
-        if 'ajuste_picking' in new_data:
-            json_data['ajuste_picking'] = new_data['ajuste_picking']
-        if 'ajuste_pedidos' in new_data:
-            json_data['ajuste_pedidos'] = new_data['ajuste_pedidos']
+        # Safely update JSON data
+        for key in ['ajuste_recibos', 'ajuste_picking', 'ajuste_pedidos']:
+            if key in new_data:
+                json_data[key] = new_data[key]
 
-        with open(json_file_path, 'w') as file:
+        # Write the updated data back to the file
+        with file_lock, open(json_file_path, 'w') as file:
             json.dump(json_data, file, indent=2)
+
+        # Save the updated data to Redis
+        try:
+            save_to_redis(redis_key, json_data)
+            print(f"Data saved to Redis for {redis_key}")
+        except Exception as e:
+            app.logger.error(f"Failed to save data to Redis: {e}")
+            return jsonify({"error": f"Failed to save to Redis: {str(e)}"}), 500
 
         return jsonify(json_data)
 
-    except Exception as e:
-        app.logger.error('Error updating JSON: %s', e)
-        return jsonify(error=str(e)), 500
+    except (IOError, json.JSONDecodeError) as e:
+        app.logger.error(f"Error processing JSON file: {e}")
+        return jsonify({"error": f"Error processing JSON file: {str(e)}"}), 500
+
 
 @app.route('/update-excluded-orders', methods=['POST'])
 @login_required
@@ -149,7 +195,9 @@ def update_excluded_orders():
         with open(json_file_path, 'w') as file:
             json.dump(json_data, file, indent=2)
 
+        save_to_redis("excluded_orders", json_data)
         return jsonify(json_data)
+    
     except Exception as e:
         app.logger.error('Error updating excluded orders JSON: %s', e)
         return jsonify(error=str(e)), 500
@@ -174,14 +222,92 @@ def update_excluded_recibos():
         with open(json_file_path, 'w') as file:
             json.dump(json_data, file, indent=2)
 
+        save_to_redis("excluded_recibos", json_data)
         return jsonify(json_data)
+    
     except Exception as e:
         app.logger.error('Error updating excluded recibos JSON: %s', e)
         return jsonify(error=str(e)), 500
 
+
+#redis funtions
+
+def save_to_redis(key, data):
+    try:
+        # Ensure data is not None and can be converted to JSON
+        if data is None:
+            raise ValueError("Cannot save None data to Redis.")
+        json_data = json.dumps(data)
+        redis_client.set(key, json_data)
+    except Exception as e:
+        print(f"Error saving data to Redis: {e}")
+  
+def load_from_redis(key):
+    try:
+        json_data = redis_client.get(key)
+        if json_data is None:
+            raise ValueError(f"No data found in Redis for key: {key}")
+        return json.loads(json_data)
+    except Exception as e:
+        print(f"Error loading data from Redis: {e}")
+        return {}
+
+# Adjust functions like load_excluded_orders and save_excluded_orders to use Redis
+def load_excluded_orders():
+    return load_from_redis("excluded_orders")
+
+def load_excluded_recibos():
+    return load_from_redis("excluded_recibos")
+
+def save_excluded_recibos(excluded_recibos):
+    with open("json/excluded_recibos.json", "w") as file:
+        json.dump(excluded_recibos, file)
+
+def save_excluded_orders(excluded_orders):
+    with open("json/excluded_orders.json", "w") as file:
+        json.dump(excluded_orders, file)
+
+def load_sla_embu():
+    return load_from_redis("sla_embu")
+
+def load_sla_extrema():
+    return load_from_redis("sla_extrema")
+
+def save_sla_embu(sla_embu):
+    with open("json/sla_embu.json", "w") as file:
+        json.dump(sla_embu, file)
+
+def save_sla_extrema(sla_extrema):
+    with open("json/sla_extrema.json", "w") as file:
+        json.dump(sla_extrema, file)
+        
+
+def update_jsons():
+    excluded_recibos = load_excluded_recibos()
+    excluded_orders = load_excluded_orders()
+    sla_embu = load_sla_embu()
+    sla_extrema = load_sla_extrema()
+    save_excluded_recibos(excluded_recibos)
+    save_excluded_orders(excluded_orders)
+    save_sla_embu(sla_embu)
+    save_sla_extrema(sla_extrema)
+    print("jsons updated!")
+
+def check_redis_connectivity():
+    try:
+        # Attempt to ping the Redis server
+        response = redis_client.ping()
+        if response:
+            print("Connected to Redis successfully!")
+            return True
+    except redis.ConnectionError as e:
+        print(f"Failed to connect to Redis: {e}")
+        return False
+
+
 if __name__ == '__main__':
     # Run both scripts initially
-    subprocess.run(['python', 'incentivosEmbu.py'])
-    subprocess.run(['python', 'incentivosExtrema.py'])
+    check_redis_connectivity()
+    update_jsons()
     scheduler.start()
     app.run(host='0.0.0.0', debug=True)
