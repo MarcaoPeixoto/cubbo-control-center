@@ -56,8 +56,8 @@ def job_extrema():
     except subprocess.CalledProcessError as e:
         print(f"An error occurred in Extrema job: {e}")
 
-scheduler.add_job(job_embu, 'interval', minutes=5, max_instances=2)
-scheduler.add_job(job_extrema, 'interval', minutes=7, max_instances=2)
+scheduler.add_job(job_embu, 'interval', minutes=5, max_instances=10)
+scheduler.add_job(job_extrema, 'interval', minutes=7, max_instances=10)
 
 @app.before_request
 def start_scheduler():
