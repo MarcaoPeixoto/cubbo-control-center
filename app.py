@@ -184,6 +184,7 @@ def update_excluded_orders():
 
         with open(json_file_path, 'r') as file:
             json_data = json.load(file)
+            json_data = json.loads(json_data)
 
         if isinstance(json_data, list):
             json_data.append(new_data['excluded_order'])
@@ -211,6 +212,7 @@ def update_excluded_recibos():
 
         with open(json_file_path, 'r') as file:
             json_data = json.load(file)
+            json_data = json.loads(json_data)
 
         if isinstance(json_data, list):
             json_data.append(new_data['excluded_recibo'])
