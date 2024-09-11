@@ -183,7 +183,8 @@ def update_excluded_orders():
         json_file_path = 'json/excluded_orders.json'
 
         with open(json_file_path, 'r') as file:
-            json_data = json.load(file)  # No need for json.loads()
+            json_data = json.load(file)
+            json_data = json.loads(json_data)
 
         if isinstance(json_data, list):
             json_data.append(new_data['excluded_order'])
@@ -202,7 +203,6 @@ def update_excluded_orders():
         app.logger.error('Error updating excluded orders JSON: %s', e)
         return jsonify(error=str(e)), 500
 
-
 @app.route('/update-excluded-recibos', methods=['POST'])
 @login_required
 def update_excluded_recibos():
@@ -211,7 +211,8 @@ def update_excluded_recibos():
         json_file_path = 'json/excluded_recibos.json'
 
         with open(json_file_path, 'r') as file:
-            json_data = json.load(file)  # No need for json.loads()
+            json_data = json.load(file)
+            json_data = json.loads(json_data)
 
         if isinstance(json_data, list):
             json_data.append(new_data['excluded_recibo'])
