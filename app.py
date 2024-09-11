@@ -181,22 +181,27 @@ def update_excluded_orders():
     try:
         new_data = request.get_json()
         json_file_path = 'json/excluded_orders.json'
-
+        
+        # Read existing data
         with open(json_file_path, 'r') as file:
             json_data = json.load(file)
-            json_data = json.loads(json_data)
-
-        if isinstance(json_data, list):
-            json_data.append(new_data['excluded_order'])
-        else:
-            if 'excluded_orders' not in json_data:
-                json_data['excluded_orders'] = []
-            json_data['excluded_orders'].append(new_data['excluded_order'])
-
+        
+        # Ensure json_data is a dictionary with 'excluded_orders' key
+        if not isinstance(json_data, dict):
+            json_data = {'excluded_orders': []}
+        elif 'excluded_orders' not in json_data:
+            json_data['excluded_orders'] = []
+        
+        # Append new excluded order
+        json_data['excluded_orders'].append(new_data['excluded_order'])
+        
+        # Write updated data back to file
         with open(json_file_path, 'w') as file:
             json.dump(json_data, file, indent=2)
-
+        
+        # Save to Redis
         save_to_redis("excluded_orders", json_data)
+        
         return jsonify(json_data)
     
     except Exception as e:
@@ -210,23 +215,28 @@ def update_excluded_recibos():
         new_data = request.get_json()
         json_file_path = 'json/excluded_recibos.json'
 
+        # Read existing data
         with open(json_file_path, 'r') as file:
             json_data = json.load(file)
-            json_data = json.loads(json_data)
 
-        if isinstance(json_data, list):
-            json_data.append(new_data['excluded_recibo'])
-        else:
-            if 'excluded_recibos' not in json_data:
-                json_data['excluded_recibos'] = []
-            json_data['excluded_recibos'].append(new_data['excluded_recibo'])
+        # Ensure json_data is a dictionary with 'excluded_recibos' key
+        if not isinstance(json_data, dict):
+            json_data = {'excluded_recibos': []}
+        elif 'excluded_recibos' not in json_data:
+            json_data['excluded_recibos'] = []
 
+        # Append new excluded recibo
+        json_data['excluded_recibos'].append(new_data['excluded_recibo'])
+
+        # Write updated data back to file
         with open(json_file_path, 'w') as file:
             json.dump(json_data, file, indent=2)
 
+        # Save to Redis
         save_to_redis("excluded_recibos", json_data)
+
         return jsonify(json_data)
-    
+
     except Exception as e:
         app.logger.error('Error updating excluded recibos JSON: %s', e)
         return jsonify(error=str(e)), 500
