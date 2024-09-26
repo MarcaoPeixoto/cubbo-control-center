@@ -88,7 +88,34 @@ h4 {
     top: 10px;
     left: 10px;
     padding: 0px;
+    margin: 0;
     
+}
+
+#phd_chart {
+    margin: 10px;
+    height: 100%;
+
+}
+
+#grafico {
+    padding: 10px;
+    height: 90%;
+    width: 80%;
+    position: relative;
+    left: 50px;
+}
+
+#media_phd {
+    position: absolute;
+    bottom: 25%;
+    right: 7%;
+}
+
+#media_mensal_phd {
+    position: absolute;
+    bottom: 20%;
+    right: 5%;
 }
 
 #cima {
@@ -125,6 +152,7 @@ h4 {
     margin-top: 10px;
     width: 99%;
     height: 500px;
+    padding-bottom: 20px;
 }
 
 #cima_esquerda {

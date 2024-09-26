@@ -77,10 +77,17 @@
             </div>
             <div id="painel_phd">
                 <h2 id="titulo_bonus_phd">P-H-D</h2>
+                <div id="grafico">
+                    <canvas id="phd_chart"></canvas>
+                </div>
+                <h2 id="media_phd">media</h2>
+                <h2 id="media_mensal_phd">Média mensal</h2>
                 <h4 id="updated_at">teste</h4>
             </div>
         </div>
     </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <script>
         function atualizarConteudo() {
             fetch('json/sla_embu.json?v='+Math.random())
@@ -104,15 +111,113 @@
                     document.getElementById('sla_total_pi_circulo').setAttribute('stroke-dasharray', data.sla_total_pi_circulo);
                     document.getElementById('sla_total_pa_circulo').setAttribute('stroke-dasharray', data.sla_total_pa_circulo);
 
+                    document.getElementById('updated_at').textContent = data.hora_agora;
+
 
                 })
                 .catch(error => console.error('Error fetching JSON:', error));
         }
+        var myChart;
 
-    // Chama a função inicialmente para que o conteúdo seja atualizado assim que o script é executado
+        function atualizarChart() {
+        fetch('json/phd_per_day.json?v=' + Math.random())
+            .then(response => response.json())
+            .then(data => {
+                console.log('JSON data:', data);
+
+                // Remove 'media' key if you don't want it in the chart
+                delete data['media'];
+
+                // Extract labels and values
+                var labels = Object.keys(data);
+                var values = Object.values(data);
+
+                // Convert labels to integers for proper sorting
+                var combinedData = labels.map((label, index) => {
+                    return { day: parseInt(label), value: values[index] };
+                });
+
+                // Sort data by day
+                combinedData.sort((a, b) => a.day - b.day);
+
+                // Update labels and values after sorting
+                labels = combinedData.map(item => item.day.toString().padStart(2, '0'));
+                values = combinedData.map(item => item.value);
+
+                var ctx = document.getElementById('phd_chart').getContext('2d');
+
+                if (myChart) {
+                    // Update existing chart
+                    myChart.data.labels = labels;
+                    myChart.data.datasets[0].data = values;
+                    myChart.update();
+                } else {
+                    // Create new chart
+                    myChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'P-H-D por Dia',
+                                data: values,
+                                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false, // Allow custom aspect ratio
+                            plugins: {
+                                datalabels: {
+                                    anchor: 'end',
+                                    align: 'end',
+                                    color: 'white',
+                                    font: {
+                                        weight: 'bold',
+                                        size: 12
+                                    },
+                                    formatter: function(value, context) {
+                                        return value.toFixed(2);
+                                    }
+                                },
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+
+                            },
+                                y: {
+                                    beginAtZero: true
+                                    
+                                }
+                            }
+                        },
+                        plugins: [ChartDataLabels]
+                    });
+                }
+
+                
+            })
+            .catch(error => console.error('Error fetching JSON:', error));
+        }
+        function atualizarMedia() {
+            fetch('json/phd_per_day.json?v=' + Math.random())
+            .then(response => response.json())
+            .then(data => {
+                console.log('JSON data:', data);
+                
+            document.getElementById('media_phd').textContent = data.media;
+            })
+        }
+
+    // Initial function calls
     atualizarConteudo();
-
-
+    atualizarChart();
+    atualizarMedia();
 </script>
 </body>
 </html>
