@@ -92,6 +92,11 @@ def logout():
 def home():
     return render_template('home.html')
 
+@app.route('/bonus')
+@login_required
+def bonus():
+    return render_template('bonus.html')
+
 @app.route('/embu')
 @login_required
 def embu():

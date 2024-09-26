@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incentivos</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='estilo.css') }}">
+
+</head>
+<body>
+    <div id="tudo">
+        <div class="main" id="bonus_main">
+            <div id ="painel_bonus_sla">
+                <h2 id="titulo_bonus_sla">SLAs</h2>
+                <div id="sla_circulos">
+                        <svg width="70%" height="70%" viewBox="0 0 40 40" class="donut">
+                            <circle class="donut-hole" cx="20" cy="20" r="15.91549430918954" fill="#221F1C"></circle>
+                            <circle class="donut-ring" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5"></circle>
+                            <circle id="sla_total_circulo" class="donut-segment donut-segment-3" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5" stroke-dasharray="90 10" stroke-dashoffset="25"></circle>  <!--- aqui define o tamanho final depois da animação "stroke-dasharray"-->
+                            <g class="donut-text donut-text-1">   
+                            
+                                <text y="50%" transform="translate(0, 2)">
+                                <tspan id="sla_total" x="50%" text-anchor="middle" class="donut-percent"></tspan>   <!-- aqui muda a porcentagem escrita no circulo -->
+                            </text>                      
+                            <text y="60%" transform="translate(0, 2)">
+                                <tspan x="50%" text-anchor="middle" class="donut-data">SLA Mensal</tspan>   <!-- aqui muda o escrito dentro do circulo -->
+                            </text>
+                            
+                        </g>
+                    </svg>
+                    <svg width="60%" height="60%" viewBox="0 0 40 40" class="donut">
+                        <circle class="donut-hole" cx="20" cy="20" r="15.91549430918954" fill="#221F1C"></circle>
+                        <circle class="donut-ring" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5"></circle>
+                        <circle id="sla_total_ci_circulo" class="donut-segment donut-segment-4" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5" stroke-dasharray="90 10" stroke-dashoffset="25"></circle>  <!--- aqui define o tamanho final depois da animação "stroke-dasharray"-->
+                        <g class="donut-text donut-text-1">  
+                            
+                            <text y="50%" transform="translate(0, 2)">
+                                <tspan id="sla_ci" x="50%" text-anchor="middle" class="donut-percent"></tspan>   <!-- aqui muda a porcentagem escrita no circulo -->
+                            </text> 
+                            
+                            <text y="60%" transform="translate(0, 2)">
+                                <tspan x="50%" text-anchor="middle" class="donut-data">SLA Check-in</tspan>   <!-- aqui muda o escrito dentro do circulo -->
+                            </text>
+                        </g>
+                    </svg>
+                    <svg width="60%" height="60%" viewBox="0 0 40 40" class="donut">
+                        <circle class="donut-hole" cx="20" cy="20" r="15.91549430918954" fill="#221F1C"></circle>
+                        <circle class="donut-ring" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5"></circle>
+                        <circle id="sla_total_pi_circulo" class="donut-segment donut-segment-5" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5" stroke-dasharray="90 10" stroke-dashoffset="25"></circle>  <!--- aqui define o tamanho final depois da animação "stroke-dasharray"-->
+                        <g class="donut-text donut-text-1">
+                            
+                            <text y="50%" transform="translate(0, 2)">
+                                <tspan id="sla_pi" x="50%" text-anchor="middle" class="donut-percent">??</tspan>   <!-- aqui muda a porcentagem escrita no circulo -->
+                            </text>
+                            <text y="60%" transform="translate(0, 2)">
+                                <tspan x="50%" text-anchor="middle" class="donut-data">SLA Pickng</tspan>   <!-- aqui muda o escrito dentro do circulo -->
+                            </text>
+                        </g>
+                    </svg>
+                    <svg width="60%" height="60%" viewBox="0 0 40 40" class="donut">
+                        <circle class="donut-hole" cx="20" cy="20" r="15.91549430918954" fill="#221F1C"></circle>
+                        <circle class="donut-ring" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5"></circle>
+                        <circle id="sla_total_pa_circulo" class="donut-segment donut-segment-6" cx="20" cy="20" r="15.91549430918954" fill="transparent" stroke-width="3.5" stroke-dasharray="90 10" stroke-dashoffset="25"></circle>  <!--- aqui define o tamanho final depois da animação "stroke-dasharray"-->
+                        <g class="donut-text donut-text-1">                
+                            <text y="50%" transform="translate(0, 2)">
+                                <tspan id="sla_pa" x="50%" text-anchor="middle" class="donut-percent">??</tspan>   <!-- aqui muda a porcentagem escrita no circulo -->
+                            </text>
+                            <text y="60%" transform="translate(0, 2)">
+                                <tspan x="50%" text-anchor="middle" class="donut-data">SLA Packing</tspan>   <!-- aqui muda o escrito dentro do circulo -->
+                            </text>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+            <div id="painel_bonus">
+                <H2 id="titulo_bonus_bonus">BONUS</H2>
+            </div>
+            <div id="painel_phd">
+                <h2 id="titulo_bonus_phd">P-H-D</h2>
+                <h4 id="updated_at">teste</h4>
+            </div>
+        </div>
+    </div>
+<script>
+        function atualizarConteudo() {
+            fetch('json/sla_embu.json?v='+Math.random())
+                .then(response => response.json())
+                .then(data => {
+                    console.log('JSON data:', data);
+
+                    // Update SLA Mensal
+                    document.getElementById('sla_total').textContent = data.sla_mes + '%';
+                    // Update Check-in semana content
+                    document.getElementById('sla_ci').textContent = data.sla_recibos_total + '%';
+                    // Repeat similar updates for Picking and Packing semana content
+                    // Update Picking semana content
+                    document.getElementById('sla_pi').textContent = data.sla_picking_total + '%';
+                    // Update Packing semana content
+                    document.getElementById('sla_pa').textContent = data.sla_porcent + '%';
+
+                    // Quanto o circulo está preencido
+                    document.getElementById('sla_total_circulo').setAttribute('stroke-dasharray', data.sla_total_circulo);
+                    document.getElementById('sla_total_ci_circulo').setAttribute('stroke-dasharray', data.sla_total_ci_circulo);
+                    document.getElementById('sla_total_pi_circulo').setAttribute('stroke-dasharray', data.sla_total_pi_circulo);
+                    document.getElementById('sla_total_pa_circulo').setAttribute('stroke-dasharray', data.sla_total_pa_circulo);
+
+
+                })
+                .catch(error => console.error('Error fetching JSON:', error));
+        }
+
+    // Chama a função inicialmente para que o conteúdo seja atualizado assim que o script é executado
+    atualizarConteudo();
+
+
+</script>
+</body>
+</html>
+
+
