@@ -53,6 +53,13 @@ h4 {
     padding: 0px;
 }
 
+h5 {
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    color: white;
+    margin: 2%;
+}
+
+
 .main {
     flex-wrap: wrap;
 }
@@ -65,7 +72,7 @@ h4 {
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
     color: white;
     position: fixed;
-    top: 10px;
+    top: 5%;
     left: 10px;
     padding: 0px;
     
@@ -74,9 +81,9 @@ h4 {
 #titulo_bonus_bonus {
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
     color: white;
-    position: relative;
-    top: 10px;
-    left: 10px;
+    position: absolute;
+    top: 5%;
+    left: 40%;
     padding: 0px;
     
 }
@@ -107,15 +114,68 @@ h4 {
 }
 
 #media_phd {
-    position: absolute;
-    bottom: 25%;
-    right: 7%;
+    margin-left: 50%;
 }
 
-#media_mensal_phd {
+#bonus_dados_direita {
+    width: 23%;
+    height: 65%;
+    padding: 15px;
+    margin: 1%;
+}
+
+#bonus_dados_centro {
+    width: 32%;
+}
+
+#bonus_dados_esquerda {
+    width: 40%;
+    height: 100%;
+}
+
+#pedidos_bonus_contagem, #multiplicador_bonus_contagem, #valor_bonus_contagem {
+    color: rgb(50, 225, 65);
+    font-size: 1em;
+}
+
+#valor_bonus_titulo {
+    color: rgba(200, 227, 20, 0.822);
+    font-size: 2.5em;
+    position: relative;
+    top: 10%;
+}
+
+#valor_bonus {
+    color: white;
+    font-size: 3em;
+    position: relative;
+    right: -3%;
+    top: 7%;
+}
+
+#contagem_bonus_titulo {
+    display: flex;
+    position: relative;
+    left: 8%;
+    top: 7%;
+}
+
+.espaço_bonus {
+    width: 6%;
+}
+
+#contagem_bonus {
+    display: flex;
+    position: relative;
+    left: 15%;
+    top: 7%;
+}
+
+#media_phd_div {
     position: absolute;
     bottom: 20%;
     right: 5%;
+    align-items: center;
 }
 
 #cima {
@@ -135,14 +195,78 @@ h4 {
     background-color: #221F1C;
     margin-top: 10px;
     padding-top: 70px;
-    padding-bottom: 70px;
-    align-items: center;
-    
+    padding-bottom: 90px;
+    align-items: center;  
+}
+
+#envios_hoje_titulo {
+    position: relative;
+    left: -4%;
+    top: 20%;
+}
+
+#progress-bar-container {
+    width: 30px;
+    height: 60%;
+    background-color: white;
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+    margin: 20px auto;
+    left: 10%;
+    bottom: 17%;
+}
+#progress-bar {
+    width: 100%;
+    background-color: green;
+    position: absolute;
+    bottom: 0;
+    transition: height 0.5s ease-in-out;
+}
+#nivel_bonus {
+    text-align: center;
+    color: white;
+    position: relative;
+    top: -15%;
+}
+
+#envios_mes_titulo {
+    position: relative;
+    left: 18%;
+    top: 0%;
+}
+
+#envios_mes {
+    position: relative;
+    left: 10%;
+    top: 40%;
+    color: rgb(26, 180, 26);
+}
+
+#pedidos_pendentes_titulo {
+    position: relative;
+    left: -15%;
+    top: 20%;
+}
+
+#envios_hoje {
+    position: relative;
+    left: 12%;
+    top: 15%;
+    color: #d9e021;
+}
+
+#pedidos_pendentes {
+    position: relative;
+    left: 10%;
+    top: 15%;
+    color: #d9e021;
 }
 
 #painel_bonus {
+    display: flex;
     background-color: #221F1C;
-    margin-left: 20px;
+    margin-left: 15px;
     margin-top: 10px;
     width: 58%;
 }

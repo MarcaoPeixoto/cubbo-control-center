@@ -74,14 +74,48 @@
             </div>
             <div id="painel_bonus">
                 <H2 id="titulo_bonus_bonus">BONUS</H2>
+                <div id="bonus_dados_direita">
+                    <h2 id="envios_hoje_titulo">ENVIOS HOJE</h2>
+                    <h2 id="envios_hoje">XXXX</h2>
+                    <h2 id="pedidos_pendentes_titulo">PEDIDOS PENDENTES</h2>
+                    <h2 id="pedidos_pendentes">XXXXX</h2>
+                </div>
+                <div id="bonus_dados_centro">
+                    <h2 id="envios_mes_titulo">ENVIOS MES</h2>
+                    <h2 id="envios_mes">XXXXX</h2>
+                    <h2 id="nivel_bonus">Nível X</h2>
+                    <div id="progress-bar-container">
+                        <div id="progress-bar"></div>
+                    </div>
+                </div>
+                <div id="bonus_dados_esquerda">
+                    <h2 id="valor_bonus_titulo">$$ BONUS $$</h2>
+                    <h2 id="valor_bonus">XXXXX</h2>
+                    <div id="contagem_bonus">
+                        <h5 id="multiplicador_bonus_contagem">multiplicador</h5>
+                        <h5 class="espaço_bonus"></h5>
+                        <h5 id="pedidos_bonus_contagem">pedidos</h5>
+                        <h5 class="espaço_bonus"></h5>
+                        <h5 id="valor_bonus_contagem">valor bonus</h5>
+                    </div>
+                    <div id="contagem_bonus_titulo">
+                        <h5>multiplicador</h5>
+                        <h5> * </h5>
+                        <h5>pedidos</h5>
+                        <h5> * </h5>
+                        <h5>valor bonus</h5>
+                    </div>
+                </div>
             </div>
             <div id="painel_phd">
                 <h2 id="titulo_bonus_phd">P-H-D</h2>
                 <div id="grafico">
                     <canvas id="phd_chart"></canvas>
                 </div>
-                <h2 id="media_phd">media</h2>
-                <h2 id="media_mensal_phd">Média mensal</h2>
+                <div id="media_phd_div">
+                    <h2 id="media_phd">media</h2>
+                    <h2>Média mensal</h2>
+                </div>
                 <h4 id="updated_at">teste</h4>
             </div>
         </div>
@@ -127,6 +161,14 @@
 
                 // Remove 'media' key if you don't want it in the chart
                 delete data['media'];
+                delete data['porcentagem_da_barra'];
+                delete data['multiplicador_bonus'];
+                delete data['nivel_de_bonus'];
+                delete data['valor_bonus'];
+                delete data['pedidos_pendentes'];
+                delete data['envios_dia'];
+                delete data['envios_mes'];
+                delete data['valor_bonus_total'];
 
                 // Extract labels and values
                 var labels = Object.keys(data);
@@ -211,10 +253,29 @@
                 console.log('JSON data:', data);
                 
             document.getElementById('media_phd').textContent = data.media;
+            document.getElementById('envios_hoje').textContent = data.envios_dia;
+            document.getElementById('pedidos_pendentes').textContent = data.pedidos_pendentes;
+            document.getElementById('envios_mes').textContent = data.envios_mes;
+            document.getElementById('valor_bonus').textContent = 'R$ ' + data.valor_bonus_total.toFixed(2);
+            document.getElementById('pedidos_bonus_contagem').textContent = data.envios_mes;
+            document.getElementById('multiplicador_bonus_contagem').textContent = data.multiplicador_bonus;
+            document.getElementById('valor_bonus_contagem').textContent = 'R$ ' + data.valor_bonus.toFixed(2);
             })
         }
-
-    // Initial function calls
+        function updateProgressBar() {
+                            fetch('json/phd_per_day.json?v=' + Math.random())
+                                .then(response => response.json())
+                                .then(data => {
+                                    const progressBar = document.getElementById('progress-bar');
+                                    const nivelBonus = document.getElementById('nivel_bonus');
+                                    progressBar.style.height = data.porcentagem_da_barra + '%';
+                                    nivelBonus.textContent = data.nivel_de_bonus;
+                                })
+                                .catch(error => console.error('Error fetching JSON:', error));
+                        }
+                        
+                        // Initial function calls
+    updateProgressBar();
     atualizarConteudo();
     atualizarChart();
     atualizarMedia();
