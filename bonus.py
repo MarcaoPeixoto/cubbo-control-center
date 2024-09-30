@@ -290,8 +290,11 @@ def compute_phd():
     multiplicador_bonus = round(avg_phd*0.01, 2)
         
 
+    
+    valor_bonus_total = envios_mes * valor_bonus * multiplicador_bonus
     # Add additional variables to the JSON
     #colocar aqui as questões de bonificação para serem adicionadas ao json
+    sorted_phd_per_day['valor_bonus_total'] = valor_bonus_total
     sorted_phd_per_day['porcentagem_da_barra'] = porcentagem_da_barra
     sorted_phd_per_day['multiplicador_bonus'] = multiplicador_bonus
     sorted_phd_per_day['nivel_de_bonus'] = nivel_de_bonus
