@@ -65,7 +65,7 @@ def job_bonus():
 
 scheduler.add_job(job_embu, 'interval', minutes=5, max_instances=10000)
 scheduler.add_job(job_extrema, 'interval', minutes=7, max_instances=10000)
-scheduler.add_job(job_bonus, 'interval', minutes=1, max_instances=10000)
+scheduler.add_job(job_bonus, 'interval', minutes=3, max_instances=10000)
 
 @app.before_request
 def start_scheduler():
