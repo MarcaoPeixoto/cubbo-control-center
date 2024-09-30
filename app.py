@@ -97,6 +97,11 @@ def home():
 def bonus():
     return render_template('bonus.html')
 
+@app.route('/ops')
+@login_required
+def ops():
+    return render_template('ops.html')
+
 @app.route('/embu')
 @login_required
 def embu():
