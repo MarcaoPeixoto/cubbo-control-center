@@ -26,11 +26,22 @@ redis_client = redis.StrictRedis(host=redis_end, port=redis_port, password=redis
 
 
 def create_metabase_token():
+
+    env_config = dotenv_values(".env")
+    metabase_user = env_config.get('METABASE_USER')
+    
+    if metabase_user is not None:
+        metabase_password = env_config.get('METABASE_PASSWORD')
+    else:
+        metabase_user = os.environ["METABASE_USER"]
+        metabase_password = os.environ["METABASE_PASSWORD"]
+
     url = 'https://cubbo.metabaseapp.com/api/session'
     data = {
-        'username': "marco.peixoto@cubbo.com",
-        'password': "KeffE2qvh3htUEa@!"
+        'username': metabase_user,
+        'password': metabase_password
     }
+
     headers = {'Content-Type': 'application/json'}
     response = requests.post(url, headers=headers, data=json.dumps(data))
     if response.status_code == 200:
@@ -126,7 +137,10 @@ def dt_processado():
                 continue
 
         else:
-            order['shipping_date'] = "processando"
+            if order['account_type'] != "CUSTOMER_ACCOUNT":
+                continue
+            else:
+                order['shipping_date'] = "processando"
 
 
         sorted_data.append({
@@ -259,19 +273,19 @@ def compute_phd():
         valor_bonus = 0
     if envios_mes > 55000:
         nivel_de_bonus = "Nivel 1"
-        valor_bonus = 0.01
+        valor_bonus = 0.02
     if envios_mes > 60000:
         nivel_de_bonus = "Nivel 2"
-        valor_bonus = 0.12
+        valor_bonus = 0.1
     if envios_mes > 65000:
         nivel_de_bonus = "Nivel 3"
-        valor_bonus = 0.15
+        valor_bonus = 0.18
     if envios_mes > 70000:
         nivel_de_bonus = "Nivel 4"
-        valor_bonus = 0.2
+        valor_bonus = 0.28
     if envios_mes > 100000:
         nivel_de_bonus = "Nivel 5"
-        valor_bonus = 0.25
+        valor_bonus = 0.30
     
     if avg_phd >= 100:
         avg_phd = 100

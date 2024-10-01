@@ -119,3 +119,7 @@ Desktop.ini
 
 # MacOS
 .DS_Store
+
+#google API credentials
+token.json
+credentials.json
