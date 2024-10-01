@@ -66,6 +66,7 @@ h5 {
 
 #bonus_main {
     display: flex;
+    height: 75%;
 }
 
 #titulo_bonus_sla {
@@ -107,7 +108,7 @@ h5 {
 
 #grafico {
     padding: 10px;
-    height: 90%;
+    flex: 1; /* Allow it to grow and fill available space */
     width: 80%;
     position: relative;
     left: 50px;
@@ -275,8 +276,10 @@ h5 {
     background-color: #221F1C;
     margin-top: 10px;
     width: 99%;
-    height: 30em;
+    height: 50%; /* Change to percentage */
     padding-bottom: 20px;
+    display: flex;
+    flex-direction: column;
 }
 
 #cima_esquerda {
