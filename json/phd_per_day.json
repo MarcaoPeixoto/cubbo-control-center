@@ -1,5 +1,5 @@
 {
-    "01": 33.16,
+    "01": 37.28,
     "02": 100,
     "03": 100,
     "04": 100,
@@ -22,13 +22,13 @@
     "29": 100,
     "30": 100,
     "31": 100,
-    "media": 97.09,
+    "media": 97.27,
     "valor_bonus_total": 0.0,
-    "porcentagem_da_barra": 1.93,
+    "porcentagem_da_barra": 2.17,
     "multiplicador_bonus": 0.97,
     "nivel_de_bonus": "Nivel 0",
     "valor_bonus": 0,
-    "pedidos_pendentes": 4598,
-    "envios_dia": 1061,
-    "envios_mes": 1061
+    "pedidos_pendentes": 4712,
+    "envios_dia": 1193,
+    "envios_mes": 1193
 }
