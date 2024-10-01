@@ -104,7 +104,6 @@ last_day_date = datetime(year=year, month=month, day=last_day)
 def dt_processado():
     sorted_data = []
 
-
     incentivo_inputs = process_data(
         {
             'pending_at_start_date': last_day_date,
@@ -112,7 +111,7 @@ def dt_processado():
         }
     )
 
-    orders_list = get_dataset('1496', incentivo_inputs)
+    orders_list = get_dataset('3379', incentivo_inputs)
 
     for order in orders_list:
         if order['shipping_date'] is not None and order['shipping_date'] != "":
@@ -125,8 +124,10 @@ def dt_processado():
 
             if shipping_date.month != today.month:
                 continue
+
         else:
             order['shipping_date'] = "processando"
+
 
         sorted_data.append({
             'order_number': order['order_number'],
@@ -161,36 +162,25 @@ def compute_phd():
     pedidos_pendentes = 0
     envios_hoje = 0
     envios_mes = 0
+    today = datetime.today()
 
     for order in sorted_data:
         if order['shipping_date'] != "processando":
-            envios_mes += 1
             shipping_date = order['shipping_date']
             if shipping_date is not None and shipping_date != "":
+                envios_mes += 1
                 if isinstance(shipping_date, datetime):
                     date_str = shipping_date.strftime('%d-%m-%Y')  # Full date
                     if date_str in orders_per_day:
                         orders_per_day[date_str] += 1
                     else:
                         orders_per_day[date_str] = 1
+                    
+                    if shipping_date.date() == today.date():
+                        envios_hoje += 1
         else:
             pedidos_pendentes += 1
-
-    today = datetime.today()  # Define 'today' at the beginning of the function
-    for order in sorted_data:
-        shipping_date = order['shipping_date']
-        if shipping_date != "processando":
-            if isinstance(shipping_date, str):
-                try:
-                    shipping_date = datetime.strptime(shipping_date, date_format)
-                except ValueError:
-                    shipping_date = datetime.strptime(shipping_date, date_format2)
-            
-            if shipping_date.day == today.day:
-                envios_hoje += 1
-
-
-    # Compute PHD per day
+ # Compute PHD per day
     phd_per_day_full_date = {}
 
     for day, orders_shipped in orders_per_day.items():
@@ -221,8 +211,6 @@ def compute_phd():
     workdays_in_month = sum(1 for day in range(1, num_days_in_month + 1)
                             if datetime(current_year, current_month, day).weekday() < 5)
 
-    pedidos_ideal_mes = workdays_in_month * operators_month_ideal * phd_ideal
-    pedidos_real_mes = workdays_in_month * operators_month_real * phd_real
 
     # For each day in the month, check if it's a weekday and not in phd_per_day
     for day in range(1, num_days_in_month + 1):
@@ -266,7 +254,9 @@ def compute_phd():
         porcentagem_da_barra = 100
 
     porcentagem_da_barra = round(porcentagem_da_barra, 2)
-
+    if envios_mes < 55000:
+        nivel_de_bonus = "Nivel 0"
+        valor_bonus = 0
     if envios_mes > 55000:
         nivel_de_bonus = "Nivel 1"
         valor_bonus = 0.01
