@@ -107,6 +107,7 @@ def home():
 def manifesto_route():
     if request.method == 'POST':
         transportadora = request.form.get('manifesto_option')
+        print(f"Selected transportadora: {transportadora}")
         if transportadora:
             try:
                 data = get_manifesto(transportadora)
