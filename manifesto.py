@@ -245,7 +245,7 @@ def save_to_google_docs(document_title, data):
 
         # Prepare the manifesto_text
         manifesto_text = (f"ROMANEIO\n\nData: {data['current_date']:%d/%m/%Y}\n"
-                          f"Transportadora: {data['carrier']}\nQuantidade: {data['dispatched_count']}\n\n")
+                          f"Transportadora: {data['carrier']}\nQuantidade: {data['total_pedidos']}\n\n")
 
         # Insert the manifesto_text into the header
         header_requests.append({
