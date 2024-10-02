@@ -253,6 +253,7 @@ def compute_phd():
     valor_bonus = 0
     multiplicador_bonus = 0
     porcentagem_da_barra = 0
+    proximo_nivel = 0
 
     if envios_mes <= 55000:
         porcentagem_da_barra = (envios_mes / 55000) * 100
@@ -271,18 +272,23 @@ def compute_phd():
     if envios_mes < 55000:
         nivel_de_bonus = "Nivel 0"
         valor_bonus = 0
+        proximo_nivel = 55000 - envios_mes
     if envios_mes > 55000:
         nivel_de_bonus = "Nivel 1"
         valor_bonus = 0.02
+        proximo_nivel = 60000 - envios_mes
     if envios_mes > 60000:
         nivel_de_bonus = "Nivel 2"
         valor_bonus = 0.1
+        proximo_nivel = 65000 - envios_mes
     if envios_mes > 65000:
         nivel_de_bonus = "Nivel 3"
         valor_bonus = 0.18
+        proximo_nivel = 70000 - envios_mes
     if envios_mes > 70000:
         nivel_de_bonus = "Nivel 4"
         valor_bonus = 0.28
+        proximo_nivel = 100000 - envios_mes
     if envios_mes > 100000:
         nivel_de_bonus = "Nivel 5"
         valor_bonus = 0.30
@@ -298,6 +304,7 @@ def compute_phd():
     valor_bonus_total = envios_mes * valor_bonus * multiplicador_bonus
     # Add additional variables to the JSON
     #colocar aqui as questões de bonificação para serem adicionadas ao json
+    sorted_phd_per_day['proximo_nivel'] = proximo_nivel
     sorted_phd_per_day['valor_bonus_total'] = valor_bonus_total
     sorted_phd_per_day['porcentagem_da_barra'] = porcentagem_da_barra
     sorted_phd_per_day['multiplicador_bonus'] = multiplicador_bonus

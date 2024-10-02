@@ -150,15 +150,15 @@ h5 {
     color: white;
     font-size: 3em;
     position: relative;
-    right: -3%;
-    top: 7%;
+    right: -10%;
+    top: 15%;
 }
 
 #contagem_bonus_titulo {
     display: flex;
     position: relative;
     left: 8%;
-    top: 7%;
+    top: 25%;
 }
 
 .espaço_bonus {
@@ -169,7 +169,7 @@ h5 {
     display: flex;
     position: relative;
     left: 15%;
-    top: 7%;
+    top: 25%;
 }
 
 #media_phd_div {
@@ -203,7 +203,7 @@ h5 {
 #envios_hoje_titulo {
     position: relative;
     left: -4%;
-    top: 20%;
+    top: 40%;
 }
 
 #progress-bar-container {
@@ -215,8 +215,9 @@ h5 {
     position: relative;
     margin: 20px auto;
     left: 10%;
-    bottom: 17%;
+    bottom: 15%;
 }
+
 #progress-bar {
     width: 100%;
     background-color: green;
@@ -224,6 +225,7 @@ h5 {
     bottom: 0;
     transition: height 0.5s ease-in-out;
 }
+
 #nivel_bonus {
     text-align: center;
     color: white;
@@ -244,23 +246,37 @@ h5 {
     color: rgb(26, 180, 26);
 }
 
+#proximo_nivel_titulo {
+    font-size: smaller;
+    position: relative;
+    left: 15%;
+    top: -15%;
+}
+
+#proximo_nivel {
+    position: relative;
+    font-size: medium;
+    left: 35%;
+    top: -15%;
+}
+
 #pedidos_pendentes_titulo {
     position: relative;
     left: -15%;
-    top: 20%;
+    top: 40%;
 }
 
 #envios_hoje {
     position: relative;
     left: 12%;
-    top: 15%;
+    top: 35%;
     color: #d9e021;
 }
 
 #pedidos_pendentes {
     position: relative;
     left: 10%;
-    top: 15%;
+    top: 35%;
     color: #d9e021;
 }
 

@@ -23,12 +23,13 @@
     "30": 100,
     "31": 100,
     "media": 97.29,
+    "proximo_nivel": 53645,
     "valor_bonus_total": 0.0,
-    "porcentagem_da_barra": 2.19,
+    "porcentagem_da_barra": 2.46,
     "multiplicador_bonus": 0.97,
     "nivel_de_bonus": "Nivel 0",
     "valor_bonus": 0,
-    "pedidos_pendentes": 4709,
-    "envios_dia": 1202,
-    "envios_mes": 1202
+    "pedidos_pendentes": 5055,
+    "envios_dia": 153,
+    "envios_mes": 1355
 }

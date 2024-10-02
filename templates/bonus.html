@@ -84,6 +84,8 @@
                     <h2 id="envios_mes_titulo">ENVIOS MES</h2>
                     <h2 id="envios_mes">XXXXX</h2>
                     <h2 id="nivel_bonus">Nível X</h2>
+                    <h2 id="proximo_nivel_titulo">Envios para o proximo nivel</h2>
+                    <h2 id="proximo_nivel">Proximo Nivel</h2>
                     <div id="progress-bar-container">
                         <div id="progress-bar"></div>
                     </div>
@@ -169,7 +171,7 @@
                 delete data['envios_dia'];
                 delete data['envios_mes'];
                 delete data['valor_bonus_total'];
-
+                delete data['proximo_nivel'];
                 // Extract labels and values
                 var labels = Object.keys(data);
                 var values = Object.values(data);
@@ -260,6 +262,7 @@
             document.getElementById('pedidos_bonus_contagem').textContent = data.envios_mes;
             document.getElementById('multiplicador_bonus_contagem').textContent = data.multiplicador_bonus;
             document.getElementById('valor_bonus_contagem').textContent = 'R$ ' + data.valor_bonus.toFixed(2);
+            document.getElementById('proximo_nivel').textContent = data.proximo_nivel;
             })
         }
         function updateProgressBar() {
