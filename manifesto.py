@@ -27,7 +27,9 @@ redis_client = redis.StrictRedis(host=redis_end, port=redis_port, password=redis
 
 # Replace the existing authentication code with this:
 def authenticate_google_docs():
-    SCOPES = ['https://www.googleapis.com/auth/documents.readonly', 'https://www.googleapis.com/auth/drive.file']
+    SCOPES = ['https://www.googleapis.com/auth/documents.readonly', 
+              'https://www.googleapis.com/auth/drive.file',
+              'https://www.googleapis.com/auth/drive']
     creds = None
     token_json = redis_client.get('token_json')
     if token_json:
@@ -198,13 +200,20 @@ def save_to_google_docs(document_title, data, folder_id=None):
             'title': document_title
         }
         
-        # If a folder_id is provided, set the parent folder
+        # If a folder_id is provided, create the document in that folder
         if folder_id:
-            document['parents'] = [folder_id]
-        
-        # Create the document in the specified folder (or root if no folder_id)
-        document = docs_service.documents().create(body=document).execute()
-        document_id = document.get('documentId')
+            drive_service = build('drive', 'v3', credentials=docs_service._credentials)
+            file_metadata = {
+                'name': document_title,
+                'parents': [folder_id],
+                'mimeType': 'application/vnd.google-apps.document'
+            }
+            file = drive_service.files().create(body=file_metadata, fields='id').execute()
+            document_id = file.get('id')
+        else:
+            # Create the document in the root folder
+            document = docs_service.documents().create(body=document).execute()
+            document_id = document.get('documentId')
 
         print(f"Document created with ID: {document_id}")
         print(f"Folder ID used: {folder_id}")
