@@ -110,13 +110,10 @@ def manifesto_route():
         print(f"Selected transportadora: {transportadora}")
         if transportadora:
             try:
-                data = get_manifesto(transportadora)
-                not_dispatched_count = nao_despachados(data)
-                current_date = datetime.now() - timedelta(hours=3)
-                document_title = f'Manifesto {transportadora} {current_date:%d/%m/%Y}'
-                document_id = save_to_google_docs(document_title, data)
-                if document_id:
-                    document_url = f'https://docs.google.com/document/d/{document_id}/edit'
+                document_url = link_docs(transportadora)
+                if document_url:
+                    data = get_manifesto(transportadora)
+                    not_dispatched_count = nao_despachados(data)
                     return render_template('manifesto.html', not_dispatched_count=not_dispatched_count, document_url=document_url)
                 else:
                     return render_template('manifesto.html', error="Failed to create the document.")
