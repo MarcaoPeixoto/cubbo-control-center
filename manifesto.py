@@ -27,7 +27,7 @@ redis_client = redis.StrictRedis(host=redis_end, port=redis_port, password=redis
 
 # Replace the existing authentication code with this:
 def authenticate_google_docs():
-    SCOPES = ['https://www.googleapis.com/auth/documents']
+    SCOPES = ['https://www.googleapis.com/auth/documents', 'https://www.googleapis.com/auth/drive.file']
     creds = None
     token_json = redis_client.get('token_json')
     if token_json:
