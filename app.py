@@ -8,6 +8,8 @@ from functools import wraps
 import redis
 from dotenv import dotenv_values
 import threading
+import manifesto
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
@@ -99,6 +101,11 @@ def logout():
 @login_required
 def home():
     return render_template('home.html')
+
+@app.route('/manifesto')
+@login_required
+def manifesto():
+    return render_template('manifesto.html')
 
 @app.route('/bonus')
 @login_required
@@ -258,7 +265,27 @@ def update_excluded_recibos():
     except Exception as e:
         app.logger.error('Error updating excluded recibos JSON: %s', e)
         return jsonify(error=str(e)), 500
+    
+@app.route('/', methods=['GET', 'POST'])
+def manifesto():
+    if request.method == 'POST':
+        transportadora = request.form.get('manifesto_option')
+        if transportadora:
+            try:
+                data = manifesto.get_manifesto(transportadora)
+                current_date = datetime.now() - timedelta(hours=3)
+                document_title = f'Manifesto {transportadora} {current_date:%d/%m/%Y}'
 
+                document_id = manifesto.save_to_google_docs(document_title, data)
+                if document_id:
+                    return f'Document created: https://docs.google.com/document/d/{document_id}/edit'
+                else:
+                    return "Failed to create the document."
+            except Exception as e:
+                return f"An error occurred: {str(e)}"
+        else:
+            return "Please select a valid option."
+    return render_template('manifesto.html')
 
 #redis funtions
 

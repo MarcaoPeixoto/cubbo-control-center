@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='estilo.css') }}">
+    <title>Manifesto</title>
+</head>
+<body>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        select {
+            width: 200px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #0741dd;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0536b5;
+        }
+    </style>
+    <div class="container">
+        <form action="{{ url_for('manifesto') }}" method="post">
+            <select name="manifesto_option" id="manifesto_option" required>
+                <option value="">Selecione uma opção</option>
+                <option value="LOGGI">Loggi</option>
+                <option value="MELI">Mercado Envios</option>
+                <option value="CORREIOS">Correios</option>
+                <option value="JT">JT Express</option>
+            </select>
+            <button type="submit">Enviar</button>
+        </form>
+    </div>
+
+</body>
+</html>
+
