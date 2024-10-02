@@ -27,15 +27,19 @@ redis_client = redis.StrictRedis(host=redis_end, port=redis_port, password=redis
 
 # Replace the existing authentication code with this:
 def authenticate_google_docs():
-    SCOPES = ['https://www.googleapis.com/auth/documents', 'https://www.googleapis.com/auth/drive.file']
+    SCOPES = ['https://www.googleapis.com/auth/documents.readonly', 'https://www.googleapis.com/auth/drive.file']
     creds = None
     token_json = redis_client.get('token_json')
     if token_json:
         creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            try:
+                creds.refresh(Request())
+            except Exception as e:
+                print(f"Error refreshing credentials: {e}")
+                creds = None
+        if not creds:
             credentials_json = redis_client.get('credentials_json')
             if not credentials_json:
                 raise Exception("credentials.json not found in Redis")
@@ -426,3 +430,5 @@ def link_docs(transportadora):
     else:
         print("Failed to create document")
         return None
+    
+authenticate_google_docs()
