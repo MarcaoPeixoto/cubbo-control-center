@@ -8,23 +8,41 @@ from googleapiclient.errors import HttpError
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
+import redis
 
+
+env_config = dotenv_values(".env")
+
+redis_end = env_config.get('REDIS_END')
+
+if redis_end is not None:
+    redis_port = env_config.get('REDIS_PORT')
+    redis_password = env_config.get('REDIS_PASSWORD')
+else:
+    redis_end=os.environ["REDIS_END"]
+    redis_port=os.environ["REDIS_PORT"]
+    redis_password=os.environ["REDIS_PASSWORD"]
+
+redis_client = redis.StrictRedis(host=redis_end, port=redis_port, password=redis_password, db=0, decode_responses=True)
 
 # Replace the existing authentication code with this:
 def authenticate_google_docs():
     SCOPES = ['https://www.googleapis.com/auth/documents']
     creds = None
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    token_json = redis_client.get('token_json')
+    if token_json:
+        creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'json/credentials.json', SCOPES)
+            credentials_json = redis_client.get('credentials_json')
+            if not credentials_json:
+                raise Exception("credentials.json not found in Redis")
+            flow = InstalledAppFlow.from_client_config(
+                json.loads(credentials_json), SCOPES)
             creds = flow.run_local_server(port=0)
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
+        redis_client.set('token_json', creds.to_json())
     return build('docs', 'v1', credentials=creds)
 
 # Replace the existing docs_service initialization with this:
@@ -33,7 +51,6 @@ docs_service = authenticate_google_docs()
 # Existing functions
 def create_metabase_token():
 
-    env_config = dotenv_values(".env")
     metabase_user = env_config.get('METABASE_USER')
     
     if metabase_user is not None:
