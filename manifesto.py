@@ -149,6 +149,43 @@ def get_manifesto(carrier):
 
 transportadora = "LOGGI"
 
+def nao_despachados(data):
+    quantidade_nao_despachados = data['not_dispatched_count']
+
+    if data['carrier'] in ["Mercado Envíos", "CORREIOS"]:
+        if quantidade_nao_despachados > 0:
+            warning_text = f"<p><strong>ATENÇÃO! {quantidade_nao_despachados} pedidos processados e não despachados:</strong></p>"
+            warning_text += "<p>Não foram despachados os seguintes pedidos:</p>"
+            warning_text += "<ul>"
+            warning_text += "".join([f"<li>{str(item) if item else 'ERRO'}</li>" for item in data['not_dispatched_trackings']])
+            warning_text += "</ul>"
+        elif quantidade_nao_despachados == 1:
+            warning_text = f"<p><strong>ATENÇÃO! {quantidade_nao_despachados} pedido processado e não despachado:</strong></p>"
+            warning_text += "<p>Não foi despachado o seguinte pedido:</p>"
+            warning_text += "<ul>"
+            warning_text += "".join([f"<li>{str(item) if item else 'ERRO'}</li>" for item in data['not_dispatched_trackings']])
+            warning_text += "</ul>"
+        else:
+            warning_text = "<p>Todos os pedidos foram despachados!</p>"
+    else:
+        if quantidade_nao_despachados > 0:
+            warning_text = f"<p><strong>ATENÇÃO! {quantidade_nao_despachados} pedidos processados e não despachados:</strong></p>"
+            warning_text += "<p>Não foram despachados os seguintes pedidos:</p>"
+            warning_text += "<ul>"
+            warning_text += "".join([f"<li>{str(item) if item else 'ERRO'}</li>" for item in data['not_dispatched_trackings']])
+            warning_text += "</ul>"
+        elif quantidade_nao_despachados == 1:
+            warning_text = f"<p><strong>ATENÇÃO! {quantidade_nao_despachados} pedido processado e não despachado:</strong></p>"
+            warning_text += "<p>Não foi despachado o seguinte pedido:</p>"
+            warning_text += "<ul>"
+            warning_text += "".join([f"<li>{str(item) if item else 'ERRO'}</li>" for item in data['not_dispatched_trackings']])
+            warning_text += "</ul>"
+        else:
+            warning_text = "<p>Todos os pedidos foram despachados!</p>"
+
+    return warning_text
+
+
 def save_to_google_docs(document_title, data):
     #colocar a transportadora em maiusculo aqui!
 
@@ -286,6 +323,7 @@ def save_to_google_docs(document_title, data):
               content += "\t\t".join(data['dispatched_trackings'])
               content += "\n\n\nAssinatura Transportadora:\n\nAssinatura Cubbo:"
 
+
         else:
           if data['not_dispatched_count'] > 0:
             warning_text = ""
@@ -345,18 +383,14 @@ def save_to_google_docs(document_title, data):
     except HttpError as err:
         print(err)
         return None
-    
-# Main execution
-if __name__ == "__main__":
-    try:
-        data = get_manifesto(transportadora)
-        current_date = datetime.now() - timedelta(hours=3)
-        document_title = f'Manifesto {transportadora} {current_date:%d/%m/%Y}'
 
-        document_id = save_to_google_docs(document_title, data)
-        if document_id:
-            print(f'Document created: https://docs.google.com/document/d/{document_id}/edit')
-        else:
-            print("Failed to create the document.")
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
+def link_docs(transportadora):
+    data = get_manifesto(transportadora)
+    current_date = datetime.now() - timedelta(hours=3)
+    document_title = f'Manifesto {transportadora} {current_date:%d/%m/%Y}'
+
+    document_id = save_to_google_docs(document_title, data)
+    if document_id:
+        return f'https://docs.google.com/document/d/{document_id}/edit'
+    else:
+        return None

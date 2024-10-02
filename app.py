@@ -8,7 +8,7 @@ from functools import wraps
 import redis
 from dotenv import dotenv_values
 import threading
-import manifesto
+from manifesto import save_to_google_docs, link_docs, nao_despachados, get_manifesto
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
@@ -75,7 +75,7 @@ def start_scheduler():
         scheduler.start()
 
 @app.route('/')
-def inico():
+def inicio():
     return redirect('/login')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -102,10 +102,29 @@ def logout():
 def home():
     return render_template('home.html')
 
-@app.route('/manifesto')
+@app.route('/manifesto', methods=['GET', 'POST'])
 @login_required
-def manifesto():
+def manifesto_route():
+    if request.method == 'POST':
+        transportadora = request.form.get('manifesto_option')
+        if transportadora:
+            try:
+                data = get_manifesto(transportadora)
+                not_dispatched_count = nao_despachados(data)
+                current_date = datetime.now() - timedelta(hours=3)
+                document_title = f'Manifesto {transportadora} {current_date:%d/%m/%Y}'
+                document_id = save_to_google_docs(document_title, data)
+                if document_id:
+                    document_url = f'https://docs.google.com/document/d/{document_id}/edit'
+                    return render_template('manifesto.html', not_dispatched_count=not_dispatched_count, document_url=document_url)
+                else:
+                    return render_template('manifesto.html', error="Failed to create the document.")
+            except Exception as e:
+                return render_template('manifesto.html', error=f"An error occurred: {str(e)}")
+        else:
+            return render_template('manifesto.html', error="Please select a valid option.")
     return render_template('manifesto.html')
+
 
 @app.route('/bonus')
 @login_required
@@ -266,27 +285,6 @@ def update_excluded_recibos():
         app.logger.error('Error updating excluded recibos JSON: %s', e)
         return jsonify(error=str(e)), 500
     
-@app.route('/', methods=['GET', 'POST'])
-def manifesto():
-    if request.method == 'POST':
-        transportadora = request.form.get('manifesto_option')
-        if transportadora:
-            try:
-                data = manifesto.get_manifesto(transportadora)
-                current_date = datetime.now() - timedelta(hours=3)
-                document_title = f'Manifesto {transportadora} {current_date:%d/%m/%Y}'
-
-                document_id = manifesto.save_to_google_docs(document_title, data)
-                if document_id:
-                    return f'Document created: https://docs.google.com/document/d/{document_id}/edit'
-                else:
-                    return "Failed to create the document."
-            except Exception as e:
-                return f"An error occurred: {str(e)}"
-        else:
-            return "Please select a valid option."
-    return render_template('manifesto.html')
-
 #redis funtions
 
 def save_to_redis(key, data):

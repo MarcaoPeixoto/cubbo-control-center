@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='estilo.css') }}">
     <title>Manifesto</title>
-</head>
-<body>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,6 +14,8 @@
             height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
+            overflow: scroll;
+            height: fit-content;
         }
         .container {
             background-color: white;
@@ -43,20 +43,57 @@
         button:hover {
             background-color: #0536b5;
         }
+        .result, .document-link {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e6f3ff;
+            border-radius: 4px;
+        }
+        .document-link a {
+            color: #0741dd;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .document-link a:hover {
+            text-decoration: underline;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
     </style>
+</head>
+<body>
     <div class="container">
-        <form action="{{ url_for('manifesto') }}" method="post">
+        <form action="{{ url_for('manifesto_route') }}" method="post">
             <select name="manifesto_option" id="manifesto_option" required>
                 <option value="">Selecione uma opção</option>
                 <option value="LOGGI">Loggi</option>
                 <option value="MELI">Mercado Envios</option>
                 <option value="CORREIOS">Correios</option>
-                <option value="JT">JT Express</option>
+                <!-- <option value="JT">JT Express</option> -->
             </select>
             <button type="submit">Enviar</button>
         </form>
-    </div>
+        
+        {% if not_dispatched_count is not none %}
+        <div class="result">
+            <p>{{ not_dispatched_count | safe }}</p>
+        </div>
+        {% endif %}
 
+        {% if document_url %}
+        <div class="document-link">
+            <p>Documento criado: <a href="{{ document_url }}" target="_blank">Abrir documento</a></p>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="error">
+            <p>{{ error }}</p>
+        </div>
+        {% endif %}
+    </div>
 </body>
 </html>
 
