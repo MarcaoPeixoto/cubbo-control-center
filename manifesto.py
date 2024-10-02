@@ -186,13 +186,20 @@ def nao_despachados(data):
     return warning_text
 
 
-def save_to_google_docs(document_title, data):
+def save_to_google_docs(document_title, data, folder_id=None):
     #colocar a transportadora em maiusculo aqui!
-
-
     try:
         # Create a new document
-        document = docs_service.documents().create(body={'title': document_title}).execute()
+        document = {
+            'title': document_title
+        }
+        
+        # If a folder_id is provided, set the parent folder
+        if folder_id:
+            document['parents'] = [folder_id]
+        
+        # Create the document in the specified folder (or root if no folder_id)
+        document = docs_service.documents().create(body=document).execute()
         document_id = document.get('documentId')
 
         requests_body = []
@@ -384,12 +391,30 @@ def save_to_google_docs(document_title, data):
         print(err)
         return None
 
-def link_docs(transportadora):
+def link_docs(transportadora, folder_id=None):
+
+    loggi_folder = env_config.get('LOGGI_FOLDER_ID')
+
+    if loggi_folder is not None:
+        meli_folder = env_config.get('MELI_FOLDER_ID')
+        correios_folder = env_config.get('CORREIOS_FOLDER_ID')
+    else:
+        loggi_folder = os.environ["LOGGI_FOLDER_ID"]
+        meli_folder = os.environ["MELI_FOLDER_ID"]
+        correios_folder = os.environ["CORREIOS_FOLDER_ID"]
+
+    if transportadora == "LOGGI":
+        folder_id = loggi_folder
+    elif transportadora == "MELI":
+        folder_id = meli_folder
+    elif transportadora == "CORREIOS":
+        folder_id = correios_folder
+    
     data = get_manifesto(transportadora)
     current_date = datetime.now() - timedelta(hours=3)
     document_title = f'Manifesto {transportadora} {current_date:%d/%m/%Y}'
 
-    document_id = save_to_google_docs(document_title, data)
+    document_id = save_to_google_docs(document_title, data, folder_id)
     if document_id:
         return f'https://docs.google.com/document/d/{document_id}/edit'
     else:
