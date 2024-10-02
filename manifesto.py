@@ -391,24 +391,24 @@ def save_to_google_docs(document_title, data, folder_id=None):
         print(err)
         return None
 
-def link_docs(transportadora, folder_id=None):
+def link_docs(transportadora):
+    # Load folder IDs from environment variables
+    loggi_folder = env_config.get('LOGGI_FOLDER_ID') or os.environ["LOGGI_FOLDER_ID"]
+    meli_folder = env_config.get('MELI_FOLDER_ID') or os.environ["MELI_FOLDER_ID"]
+    correios_folder = env_config.get('CORREIOS_FOLDER_ID') or os.environ["CORREIOS_FOLDER_ID"]
 
-    loggi_folder = env_config.get('LOGGI_FOLDER_ID')
-
-    if loggi_folder is not None:
-        meli_folder = env_config.get('MELI_FOLDER_ID')
-        correios_folder = env_config.get('CORREIOS_FOLDER_ID')
-    else:
-        loggi_folder = os.environ["LOGGI_FOLDER_ID"]
-        meli_folder = os.environ["MELI_FOLDER_ID"]
-        correios_folder = os.environ["CORREIOS_FOLDER_ID"]
-
+    # Determine the correct folder ID based on the transportadora
     if transportadora == "LOGGI":
         folder_id = loggi_folder
     elif transportadora == "MELI":
         folder_id = meli_folder
     elif transportadora == "CORREIOS":
         folder_id = correios_folder
+    else:
+        print(f"Unknown transportadora: {transportadora}")
+        return None
+
+    print(f"Using folder ID: {folder_id}")
     
     data = get_manifesto(transportadora)
     current_date = datetime.now() - timedelta(hours=3)
