@@ -202,6 +202,9 @@ def save_to_google_docs(document_title, data, folder_id=None):
         document = docs_service.documents().create(body=document).execute()
         document_id = document.get('documentId')
 
+        print(f"Document created with ID: {document_id}")
+        print(f"Folder ID used: {folder_id}")
+
         requests_body = []
 
         # Set document margins to 0.5 inches (36 points)
@@ -388,7 +391,7 @@ def save_to_google_docs(document_title, data, folder_id=None):
 
         return document_id
     except HttpError as err:
-        print(err)
+        print(f"An error occurred: {err}")
         return None
 
 def link_docs(transportadora):
@@ -414,8 +417,12 @@ def link_docs(transportadora):
     current_date = datetime.now() - timedelta(hours=3)
     document_title = f'Manifesto {transportadora} {current_date:%d/%m/%Y}'
 
+    print(f"Attempting to create document: {document_title}")
     document_id = save_to_google_docs(document_title, data, folder_id)
     if document_id:
-        return f'https://docs.google.com/document/d/{document_id}/edit'
+        doc_url = f'https://docs.google.com/document/d/{document_id}/edit'
+        print(f"Document created successfully: {doc_url}")
+        return doc_url
     else:
+        print("Failed to create document")
         return None
