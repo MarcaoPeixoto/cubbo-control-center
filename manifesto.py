@@ -195,6 +195,9 @@ def nao_despachados(data):
 def save_to_google_docs(document_title, data, folder_id=None):
     #colocar a transportadora em maiusculo aqui!
     try:
+        # Get the credentials from the docs_service
+        creds = docs_service._http.credentials
+
         # Create a new document
         document = {
             'title': document_title
@@ -202,7 +205,7 @@ def save_to_google_docs(document_title, data, folder_id=None):
         
         # If a folder_id is provided, create the document in that folder
         if folder_id:
-            drive_service = build('drive', 'v3', credentials=docs_service._credentials)
+            drive_service = build('drive', 'v3', credentials=creds)
             file_metadata = {
                 'name': document_title,
                 'parents': [folder_id],
