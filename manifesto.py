@@ -30,10 +30,13 @@ def authenticate_google_docs():
     SCOPES = ['https://www.googleapis.com/auth/documents.readonly', 
               'https://www.googleapis.com/auth/drive.file',
               'https://www.googleapis.com/auth/drive']
+    
     creds = None
     token_json = redis_client.get('token_json')
+
     if token_json:
         creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
+    
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             try:
@@ -41,6 +44,7 @@ def authenticate_google_docs():
             except Exception as e:
                 print(f"Error refreshing credentials: {e}")
                 creds = None
+        
         if not creds:
             credentials_json = redis_client.get('credentials_json')
             if not credentials_json:
@@ -48,7 +52,10 @@ def authenticate_google_docs():
             flow = InstalledAppFlow.from_client_config(
                 json.loads(credentials_json), SCOPES)
             creds = flow.run_local_server(port=0)
+        
+        # Update token in Redis
         redis_client.set('token_json', creds.to_json())
+
     return build('docs', 'v1', credentials=creds)
 
 # Replace the existing docs_service initialization with this:
