@@ -212,38 +212,18 @@ def compute_phd():
         day_only = full_date[:2]  # Extract day from 'DD-MM-YYYY'
         phd_per_day[day_only] = round(phd_value, 2)
 
-    # Now add missing workdays of the month with value 100
-    # Get current month and year
-    today = datetime.today()
-    current_month = today.month
-    current_year = today.year
-
-    # Get number of days in current month
-    num_days_in_month = calendar.monthrange(current_year, current_month)[1]
-
-    # Calculate the number of workdays in the current month
-    workdays_in_month = sum(1 for day in range(1, num_days_in_month + 1)
-                            if datetime(current_year, current_month, day).weekday() < 5)
-
-
-    # For each day in the month, check if it's a weekday and not in phd_per_day
-    for day in range(1, num_days_in_month + 1):
-        date_obj = datetime(current_year, current_month, day)
-        if date_obj.weekday() < 5:  # Monday=0, Sunday=6
-            day_str = date_obj.strftime('%d')
-            if day_str not in phd_per_day:
-                phd_per_day[day_str] = phd_ideal
-    # Sort the phd_per_day dictionary by day
-    sorted_phd_per_day = dict(sorted(phd_per_day.items(), key=lambda x: int(x[0])))
-
-    # Compute average PHD value including the added 100s
+    # Compute average PHD value
     if phd_per_day:
         avg_phd = sum(phd_per_day.values()) / len(phd_per_day)
         avg_phd = round(avg_phd, 2)
-        sorted_phd_per_day['media'] = avg_phd
     else:
         avg_phd = None  # Or 0
-        sorted_phd_per_day['media'] = avg_phd
+
+    # Sort the phd_per_day dictionary by day
+    sorted_phd_per_day = dict(sorted(phd_per_day.items(), key=lambda x: int(x[0])))
+
+    # Add the average to the sorted dictionary
+    sorted_phd_per_day['media'] = avg_phd
 
     #colocar aqui as questões de bonificação
     #os ifs para calcular o nivel de bonus e o que vai aparecer
@@ -269,6 +249,7 @@ def compute_phd():
         porcentagem_da_barra = 100
 
     porcentagem_da_barra = round(porcentagem_da_barra, 2)
+    
     if envios_mes < 55000:
         nivel_de_bonus = "Nivel 0"
         valor_bonus = 0

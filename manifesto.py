@@ -348,63 +348,61 @@ def save_to_google_docs(document_title, data, folder_id=None):
 
         # Add warning about not dispatched orders if any
         if transportadora == "MELI" or transportadora == "CORREIOS":
-          if data['not_dispatched_count'] > 0:
-              warning_text = ""
-              warning_text += "\t\t".join([str(item) if item else 'ERRO' for item in data['not_dispatched_trackings']])
-              warning_text += "\t\t"
-              content += warning_text
-              content += "\t\t".join(data['dispatched_trackings'])
-              content += "\n\n\nAssinatura Transportadora:\n\nAssinatura Cubbo:"
-
-
+            if data['not_dispatched_count'] > 0:
+                warning_text = ""
+                warning_text += "\t\t".join([str(item) if item else 'ERRO' for item in data['not_dispatched_trackings']])
+                warning_text += "\t\t"
+                content += warning_text
+            content += "\t\t".join(data['dispatched_trackings'])
+            content += "\n\n\nAssinatura Transportadora:\n\nAssinatura Cubbo:"
         else:
-          if data['not_dispatched_count'] > 0:
-            warning_text = ""
-            warning_text += "\t".join([str(item) if item else 'ERRO' for item in data['not_dispatched_trackings']])
-            warning_text += "\t"
-            content += warning_text
+            if data['not_dispatched_count'] > 0:
+                warning_text = ""
+                warning_text += "\t".join([str(item) if item else 'ERRO' for item in data['not_dispatched_trackings']])
+                warning_text += "\t"
+                content += warning_text
             content += "\t".join(data['dispatched_trackings'])
             content += "\n\n\nAssinatura Transportadora:\n\nAssinatura Cubbo:"
 
+        # Insert content into the document body only if it's not empty
+        if content:
+            body_requests.append({
+                'insertText': {
+                    'location': {'index': index},
+                    'text': content
+                }
+            })
 
-        # Insert content into the document body
-        body_requests.append({
-            'insertText': {
-                'location': {'index': index},
-                'text': content
-            }
-        })
+            # Apply 9 pt font size and justified alignment to all content
+            content_end_index = index + len(content)
 
-        # Apply 9 pt font size and justified alignment to all content
-        content_end_index = index + len(content)
+            # Update text style (font size)
+            body_requests.append({
+                'updateTextStyle': {
+                    'range': {
+                        'startIndex': index,
+                        'endIndex': content_end_index
+                    },
+                    'textStyle': {
+                        'fontSize': {'magnitude': 9, 'unit': 'PT'}
+                    },
+                    'fields': 'fontSize'
+                }
+            })
 
-        # Update text style (font size)
-        body_requests.append({
-            'updateTextStyle': {
-                'range': {
-                    'startIndex': index,
-                    'endIndex': content_end_index
-                },
-                'textStyle': {
-                    'fontSize': {'magnitude': 9, 'unit': 'PT'}
-                },
-                'fields': 'fontSize'
-            }
-        })
-
-        # Update paragraph style (justified alignment)
-        body_requests.append({
-            'updateParagraphStyle': {
-                'range': {
-                    'startIndex': index,
-                    'endIndex': content_end_index
-                },
-                'paragraphStyle': {
-                    'alignment': 'JUSTIFIED'
-                },
-                'fields': 'alignment'
-            }
-        })
+            # Update paragraph style (justified alignment)
+            body_requests.append({
+                'updateParagraphStyle': {
+                    'range': {
+                        'startIndex': index,
+                        'endIndex': content_end_index
+                    },
+                    'paragraphStyle': {
+                        'alignment': 'JUSTIFIED'
+                    },
+                    'fields': 'alignment'
+                }
+            })
 
         # Now execute the header and body requests
         all_requests = header_requests + body_requests
@@ -450,4 +448,3 @@ def link_docs(transportadora):
         print("Failed to create document")
         return None
     
-authenticate_google_docs()
