@@ -247,6 +247,9 @@ def compute_phd():
     phd_mini_low = phd_int
     phd_mini_high = phd_int + 1
     valor_bonus = (phd_full - 90) * 0.01
+    
+    if valor_bonus < 0.5:
+        valor_bonus = 0.5
 
     if sla_embu_full < 95 or phd_full < 90:
         bonus_valido = False
