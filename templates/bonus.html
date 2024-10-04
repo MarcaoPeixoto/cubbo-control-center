@@ -75,19 +75,41 @@
             <div id="painel_bonus">
                 <H2 id="titulo_bonus_bonus">BONUS</H2>
                 <div id="bonus_dados_direita">
-                    <h2 id="envios_hoje_titulo">ENVIOS HOJE</h2>
-                    <h2 id="envios_hoje">XXXX</h2>
-                    <h2 id="pedidos_pendentes_titulo">PEDIDOS PENDENTES</h2>
-                    <h2 id="pedidos_pendentes">XXXXX</h2>
+                    <ul id="lista_pedidos">
+                        <li id="envios_hoje_titulo">ENVIOS HOJE</li>
+                        <li id="envios_hoje">XXXX</li>
+                        <li id="pedidos_pendentes_titulo">PENDENTES</li>
+                        <li id="pedidos_pendentes">XXXXX</li>
+                        <li id="envios_mes_titulo">ENVIOS MES</li>
+                        <li id="envios_mes">XXXXX</li>
+                    </ul>
                 </div>
                 <div id="bonus_dados_centro">
-                    <h2 id="envios_mes_titulo">ENVIOS MES</h2>
-                    <h2 id="envios_mes">XXXXX</h2>
-                    <h2 id="nivel_bonus">Nível X</h2>
-                    <h2 id="proximo_nivel_titulo">Envios para o proximo nivel</h2>
-                    <h2 id="proximo_nivel">Proximo Nivel</h2>
-                    <div id="progress-bar-container">
-                        <div id="progress-bar"></div>
+                    <h2 id="titulo_bonus_phd2">P-H-D</h2>
+                    <div id="progress-bars-wrapper">
+                        <ul id="lista_phd_mini">
+                            <li id="phd_mini_high">XX</li>
+                            <li id="phd_mini_low">XX</li>
+                        </ul>
+                        <div id="progress-bar-container">
+                            <div id="progress-bar"></div>
+                        </div>
+                        <div id="progress-bar-container_full">
+                            <div id="progress-bar_full"></div>
+                        </div>
+                        <ul id="lista_phd_full">
+                            <li id="phd_full_10">- 100 R$282,30</li>
+                            <li id="phd_full_9">- 99 R$254,07</li>
+                            <li id="phd_full_8">- 98 R$225,84</li>
+                            <li id="phd_full_7">- 97 R$197,61</li>
+                            <li id="phd_full_6">- 96 R$169,38</li>
+                            <li id="phd_full_5">- 95 R$141,15</li>
+                            <li id="phd_full_4">- 94 R$112,92</li>
+                            <li id="phd_full_3">- 93 R$84,69</li>
+                            <li id="phd_full_2">- 92 R$56,46</li>
+                            <li id="phd_full_1">- 91 R$28,23</li>    
+                            <li id="phd_full_0">- 90 R$0</li>
+                        </ul>
                     </div>
                 </div>
                 <div id="bonus_dados_esquerda">
@@ -162,16 +184,27 @@
                 console.log('JSON data:', data);
 
                 // Remove 'media' key if you don't want it in the chart
+                delete data['phd_bonus_values'];
+                delete data['bonus_valido'];
+                delete data['phd_mini_low'];
+                delete data['phd_mini_high'];
+                delete data['phd_decimal'];
                 delete data['media'];
-                delete data['porcentagem_da_barra'];
-                delete data['multiplicador_bonus'];
+                delete data['media_full'];
+                delete data['multiplicador_bonus_sla'];
+                delete data['porcentagem_da_barra_sla'];
+                delete data['porcentagem_da_barra_pdh_mini'];
+                delete data['porcentagem_da_barra_pdh_full'];
                 delete data['nivel_de_bonus'];
                 delete data['valor_bonus'];
                 delete data['pedidos_pendentes'];
                 delete data['envios_dia'];
                 delete data['envios_mes'];
-                delete data['valor_bonus_total'];
+                delete data['multiplicador_bonus'];
+                delete data['porcentagem_da_barra'];
                 delete data['proximo_nivel'];
+                delete data['valor_bonus_total'];
+
                 // Extract labels and values
                 var labels = Object.keys(data);
                 var values = Object.values(data);
@@ -258,30 +291,33 @@
             document.getElementById('envios_hoje').textContent = data.envios_dia;
             document.getElementById('pedidos_pendentes').textContent = data.pedidos_pendentes;
             document.getElementById('envios_mes').textContent = data.envios_mes;
-            document.getElementById('valor_bonus').textContent = 'R$ ' + data.valor_bonus_total.toFixed(2);
             document.getElementById('pedidos_bonus_contagem').textContent = data.envios_mes;
             document.getElementById('multiplicador_bonus_contagem').textContent = data.multiplicador_bonus;
-            document.getElementById('valor_bonus_contagem').textContent = 'R$ ' + data.valor_bonus.toFixed(2);
-            document.getElementById('proximo_nivel').textContent = data.proximo_nivel;
+            document.getElementById('valor_bonus_contagem').textContent = 'R$ ' + data.valor_bonus.toFixed(2); 
+            document.getElementById('phd_mini_high').textContent = data.phd_mini_high + ' -';
+            document.getElementById('phd_mini_low').textContent = data.phd_mini_low + ' -';
             })
         }
+
         function updateProgressBar() {
-                            fetch('json/phd_per_day.json?v=' + Math.random())
-                                .then(response => response.json())
-                                .then(data => {
-                                    const progressBar = document.getElementById('progress-bar');
-                                    const nivelBonus = document.getElementById('nivel_bonus');
-                                    progressBar.style.height = data.porcentagem_da_barra + '%';
-                                    nivelBonus.textContent = data.nivel_de_bonus;
-                                })
-                                .catch(error => console.error('Error fetching JSON:', error));
-                        }
+            fetch('json/phd_per_day.json?v=' + Math.random())
+                .then(response => response.json())
+                .then(data => {
+                    const progressBarMini = document.getElementById('progress-bar');
+                    const progressBarFull = document.getElementById('progress-bar_full');
+                    const nivelBonus = document.getElementById('nivel_bonus');
+                    progressBarMini.style.height = data.porcentagem_da_barra_pdh_mini + '%';
+                    progressBarFull.style.height = data.porcentagem_da_barra_pdh_full + '%';
+                })
+                .catch(error => console.error('Error fetching JSON:', error));
+        }
                         
                         // Initial function calls
     updateProgressBar();
     atualizarConteudo();
     atualizarChart();
     atualizarMedia();
+
 </script>
 </body>
 </html>

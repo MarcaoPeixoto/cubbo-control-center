@@ -19,7 +19,7 @@ p {
     width: 80%;
 }
 
-h2 {
+h2, li {
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
     text-align: left;
     margin-left: 50px;
@@ -62,6 +62,15 @@ h5 {
 
 .main {
     flex-wrap: wrap;
+}
+
+#lista_pedidos {
+    position: relative;
+    top: 40%;
+    left: -20%;
+    text-align: left;
+    padding-left: 0;
+    list-style-type: none;
 }
 
 #bonus_main {
@@ -127,6 +136,16 @@ h5 {
 
 #bonus_dados_centro {
     width: 32%;
+    align-items: flex;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#titulo_bonus_phd2 {
+    position: relative;
+    left: 3%;
+    top: 2%;
 }
 
 #bonus_dados_esquerda {
@@ -200,30 +219,57 @@ h5 {
     align-items: center;  
 }
 
-#envios_hoje_titulo {
-    position: relative;
-    left: -4%;
-    top: 40%;
+
+#progress-bars-wrapper {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    height: 80%;
+    width: 100%;
 }
 
-#progress-bar-container {
+#progress-bar-container, #progress-bar-container_full {
     width: 30px;
-    height: 60%;
+    height: 100%;
     background-color: white;
     border-radius: 15px;
     overflow: hidden;
     position: relative;
-    margin: 20px auto;
-    left: 10%;
-    bottom: 15%;
+    margin: 0 22px;
 }
 
-#progress-bar {
+#progress-bar, #progress-bar_full {
     width: 100%;
-    background-color: green;
+    background-color: #4CAF50;
     position: absolute;
     bottom: 0;
     transition: height 0.5s ease-in-out;
+}
+
+#lista_phd_mini, #lista_phd_full {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+#lista_phd_mini li, #lista_phd_full li {
+    font-size: 12px;
+    color: white;
+    margin: 0 5px;
+}
+
+#lista_phd_mini {
+    width: 40px;
+    margin-right: -10%;
+}
+
+#lista_phd_full {
+    width: 70px;
+    margin-left: -5%;
 }
 
 #nivel_bonus {
@@ -233,17 +279,9 @@ h5 {
     top: -15%;
 }
 
-#envios_mes_titulo {
-    position: relative;
-    left: 18%;
-    top: 0%;
-}
-
 #envios_mes {
-    position: relative;
-    left: 10%;
-    top: 40%;
     color: rgb(26, 180, 26);
+    font-size: 2em;
 }
 
 #proximo_nivel_titulo {
@@ -260,24 +298,13 @@ h5 {
     top: -15%;
 }
 
-#pedidos_pendentes_titulo {
-    position: relative;
-    left: -15%;
-    top: 40%;
+#envios_hoje, #pedidos_pendentes {
+    color: #d9e021;
+    font-size: 2em;
 }
 
-#envios_hoje {
-    position: relative;
-    left: 12%;
-    top: 35%;
-    color: #d9e021;
-}
-
-#pedidos_pendentes {
-    position: relative;
-    left: 10%;
-    top: 35%;
-    color: #d9e021;
+#envios_hoje_titulo, #pedidos_pendentes_titulo, #envios_mes_titulo {
+    font-size: 1.5em;
 }
 
 #painel_bonus {
