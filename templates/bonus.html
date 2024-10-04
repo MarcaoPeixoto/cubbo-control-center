@@ -118,8 +118,8 @@
                         <h2 id="valor_bonus_contagem">XXXXX</h2>
                     </div>
                     <div id="sla-bonus-container">
-                        <h2>SLA</h2>
                         <div id="sla-progress-wrapper">
+                            <h2 id="sla-bonus-titulo">SLA</h2>
                             <div id="sla-percentages">
                                 <span>95%</span>
                                 <span>97,5%</span>
@@ -211,6 +211,8 @@
                 delete data['porcentagem_da_barra'];
                 delete data['proximo_nivel'];
                 delete data['valor_bonus_total'];
+                delete data['sla_embu_full'];
+                delete data['valor_bonus_contagem'];
 
                 // Extract labels and values
                 var labels = Object.keys(data);
@@ -293,6 +295,13 @@
             .then(response => response.json())
             .then(data => {
                 console.log('JSON data:', data);
+
+            var valorBonusElement = data.bonus_valido;
+            if (valorBonusElement == true) {
+                document.getElementById('valor_bonus_contagem').style.color = 'rgb(50, 225, 65)';
+            } else {
+                document.getElementById('valor_bonus_contagem').style.color = 'red';
+            }
                 
             document.getElementById('media_phd').textContent = data.media;
             document.getElementById('envios_hoje').textContent = data.envios_dia;
@@ -311,7 +320,6 @@
                 .then(data => {
                     const progressBarMini = document.getElementById('progress-bar');
                     const progressBarFull = document.getElementById('progress-bar_full');
-                    const nivelBonus = document.getElementById('nivel_bonus');
                     progressBarMini.style.height = data.porcentagem_da_barra_pdh_mini + '%';
                     progressBarFull.style.height = data.porcentagem_da_barra_pdh_full + '%';
                 })

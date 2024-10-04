@@ -251,13 +251,6 @@ def compute_phd():
     if valor_bonus < 0.01:
         valor_bonus = 0.01
 
-    if sla_embu_full < 95 or phd_full < 90:
-        bonus_valido = False
-        phd_full = 90
-        sla_embu_full = 95
-    else:
-        bonus_valido = True
-
     phd_full_str = f"{phd_full}"
     phd_parts = phd_full_str.split('.')
     phd_first_digit = phd_parts[0][-1]
@@ -308,6 +301,8 @@ def compute_phd():
     # Add additional variables to the JSON
     #colocar aqui as questões de bonificação para serem adicionadas ao json
 
+    sorted_phd_per_day['phd_full'] = phd_full   
+    sorted_phd_per_day['sla_embu_full'] = sla_embu_full
     sorted_phd_per_day['bonus_valido'] = bonus_valido
     sorted_phd_per_day['valor_bonus_contagem'] = valor_bonus_contagem
     sorted_phd_per_day['phd_bonus_values'] = phd_bonus_dict
@@ -320,7 +315,6 @@ def compute_phd():
     sorted_phd_per_day['porcentagem_da_barra_sla'] = porcentagem_da_barra_sla
     sorted_phd_per_day['porcentagem_da_barra_pdh_mini'] = porcentagem_da_barra_pdh_mini
     sorted_phd_per_day['porcentagem_da_barra_pdh_full'] = porcentagem_da_barra_pdh_full
-    sorted_phd_per_day['nivel_de_bonus'] = nivel_de_bonus
     sorted_phd_per_day['valor_bonus'] = valor_bonus
     sorted_phd_per_day['pedidos_pendentes'] = pedidos_pendentes
     sorted_phd_per_day['envios_dia'] = envios_hoje

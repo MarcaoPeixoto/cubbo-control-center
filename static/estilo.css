@@ -153,24 +153,30 @@ h5 {
     height: 100%;
 }
 
-#pedidos_bonus_contagem, #multiplicador_bonus_contagem, #valor_bonus_contagem {
+#pedidos_bonus_contagem, #multiplicador_bonus_contagem {
     color: rgb(50, 225, 65);
     font-size: 1em;
 }
 
 #valor_bonus_titulo {
     color: rgba(200, 227, 20, 0.822);
-    font-size: 2.5em;
+    font-size: 2.2em;
     position: relative;
-    top: 10%;
+    right: 6%;
 }
 
-#valor_bonus {
+#valor_bonus_contagem {
+    color: rgb(50, 225, 65);
+    font-size: 4.5em;
+    margin: 0;
+}
+
+#sla-bonus-titulo {
     color: white;
-    font-size: 3em;
+    font-size: 1em;
     position: relative;
-    right: -10%;
-    top: 15%;
+    left: -12%;
+    top: 25%;
 }
 
 #contagem_bonus_titulo {
@@ -248,13 +254,26 @@ h5 {
 
 #sla-bonus-container {
     text-align: center;
+    margin-top: 30%;
 }
 
 #sla-progress-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin-left: 5%;
+    margin-top: 25%;
     width: 75%;
+}
+
+#apenas_bonus {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    right: 10%;
+    top: 10%;
+    margin-bottom: 10%;
 }
 
 #sla-percentages, #sla-multipliers {
