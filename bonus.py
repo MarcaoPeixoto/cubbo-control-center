@@ -208,14 +208,16 @@ def compute_phd():
 
     # Round PHD values to 2 decimal places and modify keys before saving to JSON
     phd_per_day = {}
+
+
     for full_date, phd_value in phd_per_day_full_date.items():
         day_only = full_date[:2]  # Extract day from 'DD-MM-YYYY'
         phd_per_day[day_only] = round(phd_value, 2)
 
-    # Compute average PHD value
+
     if phd_per_day:
         avg_phd = sum(phd_per_day.values()) / len(phd_per_day)
-        pdh_full = avg_phd
+        phd_full = avg_phd
         avg_phd = round(avg_phd, 2)
     else:
         avg_phd = None  # Or 0
@@ -224,73 +226,94 @@ def compute_phd():
     sorted_phd_per_day = dict(sorted(phd_per_day.items(), key=lambda x: int(x[0])))
 
     # Add the average to the sorted dictionary
-    sorted_phd_per_day['media'] = avg_phd
-    sorted_phd_per_day['media_full'] = pdh_full
 
-    #colocar aqui as questões de bonificação
-    #os ifs para calcular o nivel de bonus e o que vai aparecer
-    #assim como o valor do bonus por pedido e o multiplicador de bonus
+
 
     nivel_de_bonus = "Nivel 0"
-    valor_bonus = 0
-    multiplicador_bonus = 0
-    porcentagem_da_barra = 0
-    proximo_nivel = 0
+    multiplicador_bonus_sla = 0
+    porcentagem_da_barra_sla = 0
+    porcentagem_da_barra_pdh_mini = 0
+    porcentagem_da_barra_pdh_full = 0
+    sla_embu_full = json.load(open('json/sla_embu.json'))['sla_mes']
+    sla_embu_full = float(sla_embu_full)
 
-    if envios_mes <= 55000:
-        porcentagem_da_barra = (envios_mes / 55000) * 100
-    elif envios_mes <= 60000:
-        porcentagem_da_barra = ((envios_mes - 55000) / 5000) * 100
-    elif envios_mes <= 65000:
-        porcentagem_da_barra = ((envios_mes - 60000) / 5000) * 100
-    elif envios_mes <= 70000:
-        porcentagem_da_barra = ((envios_mes - 65000) / 5000) * 100
-    elif envios_mes <= 100000:
-        porcentagem_da_barra = ((envios_mes - 70000) / 30000) * 100
+
+    phd_int = int(phd_full)
+    phd_decimal = (phd_full - phd_int)*100
+
+    if phd_int < 90:
+        phd_int = 90
+
+    phd_mini_low = phd_int
+    phd_mini_high = phd_int + 1
+    valor_bonus = (phd_full - 90) * 0.01
+
+    if sla_embu_full < 95 or phd_full < 90:
+        bonus_valido = False
+        phd_full = 90
+        sla_embu_full = 95
     else:
-        porcentagem_da_barra = 100
+        bonus_valido = True
 
-    porcentagem_da_barra = round(porcentagem_da_barra, 2)
-    
-    if envios_mes < 55000:
-        nivel_de_bonus = "Nivel 0"
-        valor_bonus = 0
-        proximo_nivel = 55000 - envios_mes
-    if envios_mes > 55000:
-        nivel_de_bonus = "Nivel 1"
-        valor_bonus = 0.02
-        proximo_nivel = 60000 - envios_mes
-    if envios_mes > 60000:
-        nivel_de_bonus = "Nivel 2"
-        valor_bonus = 0.1
-        proximo_nivel = 65000 - envios_mes
-    if envios_mes > 65000:
-        nivel_de_bonus = "Nivel 3"
-        valor_bonus = 0.18
-        proximo_nivel = 70000 - envios_mes
-    if envios_mes > 70000:
-        nivel_de_bonus = "Nivel 4"
-        valor_bonus = 0.28
-        proximo_nivel = 100000 - envios_mes
-    if envios_mes > 100000:
-        nivel_de_bonus = "Nivel 5"
-        valor_bonus = 0.30
-    
-    if avg_phd >= 100:
-        avg_phd = 100
+    phd_full_str = f"{phd_full}"
+    phd_parts = phd_full_str.split('.')
+    phd_first_digit = phd_parts[0][-1]
+    phd_decimals = phd_parts[1] if len(phd_parts) > 1 else '0'    
+    phd_combined = float(f"{phd_first_digit}.{phd_decimals}")
+
+
+    phd_full_start = phd_full - phd_combined
+
+    if phd_full_start < 90:
+        phd_full_start = 90
+
+    phd_var = phd_full_start - 1
+    phd_bonus_dict = {}
+
+    for i in range(11):
+        phd_var += 1
+        valor_bonus_var = (phd_var - 90) * 0.01
+        valor_barra_var = valor_bonus_var * envios_mes
+        valor_barra_var = round(valor_barra_var, 2)
+        phd_bonus_dict[str(phd_var)] = valor_barra_var
+        # print(f"PHD: {phd_var} --> Valor Barra: {valor_barra_var}")  # Commented out print statement
+
+    # Add the phd_bonus_dict to the sorted_phd_per_day dictionary
+    if sla_embu_full < 95 or phd_full < 90:
+        bonus_valido = False
+        phd_full = 90
+        sla_embu_full = 95
     else:
-        avg_phd = avg_phd
-    multiplicador_bonus = round(avg_phd*0.01, 2)
-        
-
+        bonus_valido = True
     
-    valor_bonus_total = envios_mes * valor_bonus * multiplicador_bonus
+    if sla_embu_full < 96:
+        multiplicador_bonus_sla = 0.5
+    elif sla_embu_full >= 96 and sla_embu_full < 97:
+        multiplicador_bonus_sla = 0.75
+    elif sla_embu_full >= 97 and sla_embu_full < 98:
+        multiplicador_bonus_sla = 1
+    elif sla_embu_full >= 98 and sla_embu_full < 99:
+        multiplicador_bonus_sla = 1.25
+    elif sla_embu_full >= 99 and sla_embu_full < 100:
+        multiplicador_bonus_sla = 1.5
+    
+    # Calculate SLA bonus percentage
+  # Linear interpolation between 95% and 100%
+    porcentagem_da_barra_sla = (sla_embu_full - 95) * 20  # 20 is the factor to scale 0-5 to 0-100
+
     # Add additional variables to the JSON
     #colocar aqui as questões de bonificação para serem adicionadas ao json
-    sorted_phd_per_day['proximo_nivel'] = proximo_nivel
-    sorted_phd_per_day['valor_bonus_total'] = valor_bonus_total
-    sorted_phd_per_day['porcentagem_da_barra'] = porcentagem_da_barra
-    sorted_phd_per_day['multiplicador_bonus'] = multiplicador_bonus
+    sorted_phd_per_day['bonus_valido'] = bonus_valido
+    sorted_phd_per_day['phd_bonus_values'] = phd_bonus_dict
+    sorted_phd_per_day['phd_mini_low'] = phd_mini_low
+    sorted_phd_per_day['phd_mini_high'] = phd_mini_high
+    sorted_phd_per_day['phd_decimal'] = phd_decimal
+    sorted_phd_per_day['media'] = avg_phd
+    sorted_phd_per_day['media_full'] = phd_full
+    sorted_phd_per_day['multiplicador_bonus_sla'] = multiplicador_bonus_sla
+    sorted_phd_per_day['porcentagem_da_barra_sla'] = porcentagem_da_barra_sla
+    sorted_phd_per_day['porcentagem_da_barra_pdh_mini'] = porcentagem_da_barra_pdh_mini
+    sorted_phd_per_day['porcentagem_da_barra_pdh_full'] = porcentagem_da_barra_pdh_full
     sorted_phd_per_day['nivel_de_bonus'] = nivel_de_bonus
     sorted_phd_per_day['valor_bonus'] = valor_bonus
     sorted_phd_per_day['pedidos_pendentes'] = pedidos_pendentes
