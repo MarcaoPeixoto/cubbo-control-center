@@ -230,7 +230,7 @@ h5 {
 
 #progress-bar-container, #progress-bar-container_full {
     width: 30px;
-    height: 100%;
+    height: 95%;
     background-color: white;
     border-radius: 15px;
     overflow: hidden;
@@ -253,7 +253,7 @@ h5 {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: 100%;
+    height: 95%;
 }
 
 #lista_phd_mini li, #lista_phd_full li {
