@@ -247,9 +247,9 @@ def compute_phd():
     phd_mini_low = phd_int
     phd_mini_high = phd_int + 1
     valor_bonus = (phd_full - 90) * 0.01
-    
-    if valor_bonus < 0.5:
-        valor_bonus = 0.5
+
+    if valor_bonus < 0.01:
+        valor_bonus = 0.01
 
     if sla_embu_full < 95 or phd_full < 90:
         bonus_valido = False
@@ -303,10 +303,13 @@ def compute_phd():
     # Calculate SLA bonus percentage
   # Linear interpolation between 95% and 100%
     porcentagem_da_barra_sla = (sla_embu_full - 95) * 20  # 20 is the factor to scale 0-5 to 0-100
-
+    valor_bonus_contagem = envios_mes * multiplicador_bonus_sla * valor_bonus
+    valor_bonus_contagem = round(valor_bonus_contagem, 2)
     # Add additional variables to the JSON
     #colocar aqui as questões de bonificação para serem adicionadas ao json
+
     sorted_phd_per_day['bonus_valido'] = bonus_valido
+    sorted_phd_per_day['valor_bonus_contagem'] = valor_bonus_contagem
     sorted_phd_per_day['phd_bonus_values'] = phd_bonus_dict
     sorted_phd_per_day['phd_mini_low'] = phd_mini_low
     sorted_phd_per_day['phd_mini_high'] = phd_mini_high

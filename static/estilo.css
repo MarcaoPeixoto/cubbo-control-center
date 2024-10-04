@@ -246,6 +246,46 @@ h5 {
     transition: height 0.5s ease-in-out;
 }
 
+#sla-bonus-container {
+    text-align: center;
+}
+
+#sla-progress-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 75%;
+}
+
+#sla-percentages, #sla-multipliers {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+#sla-progress-container {
+    width: 100%;
+    background-color: white;
+    height: 20px;
+    margin: 15px 0;
+}
+
+#sla-progress-bar {
+    height: 100%;
+    background-color: green;
+    width: 0; /* This will be updated dynamically */
+}
+
+#sla-multipliers span:nth-child(2) {
+    font-size: 0.8em;
+}
+
+span {
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size: 0.8em;
+    color: white;
+}
+
 #lista_phd_mini, #lista_phd_full {
     list-style-type: none;
     padding: 0;

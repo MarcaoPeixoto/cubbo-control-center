@@ -113,21 +113,28 @@
                     </div>
                 </div>
                 <div id="bonus_dados_esquerda">
-                    <h2 id="valor_bonus_titulo">$$ BONUS $$</h2>
-                    <h2 id="valor_bonus">XXXXX</h2>
-                    <div id="contagem_bonus">
-                        <h5 id="multiplicador_bonus_contagem">multiplicador</h5>
-                        <h5 class="espaço_bonus"></h5>
-                        <h5 id="pedidos_bonus_contagem">pedidos</h5>
-                        <h5 class="espaço_bonus"></h5>
-                        <h5 id="valor_bonus_contagem">valor bonus</h5>
+                    <div id="apenas_bonus">
+                        <h2 id="valor_bonus_titulo">$$ BONUS $$</h2>
+                        <h2 id="valor_bonus_contagem">XXXXX</h2>
                     </div>
-                    <div id="contagem_bonus_titulo">
-                        <h5>multiplicador</h5>
-                        <h5> * </h5>
-                        <h5>pedidos</h5>
-                        <h5> * </h5>
-                        <h5>valor bonus</h5>
+                    <div id="sla-bonus-container">
+                        <h2>SLA</h2>
+                        <div id="sla-progress-wrapper">
+                            <div id="sla-percentages">
+                                <span>95%</span>
+                                <span>97,5%</span>
+                                <span>100%</span>
+                            </div>
+                            <div id="sla-progress-container">
+                                <div id="sla-progress-bar"></div>
+                            </div>
+                            <div id="sla-multipliers">
+                                <span>50%</span>
+                                <span>100%</span>
+                                <span>150%</span>
+                            </div>
+                            <span>Multiplicador</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -291,11 +298,10 @@
             document.getElementById('envios_hoje').textContent = data.envios_dia;
             document.getElementById('pedidos_pendentes').textContent = data.pedidos_pendentes;
             document.getElementById('envios_mes').textContent = data.envios_mes;
-            document.getElementById('pedidos_bonus_contagem').textContent = data.envios_mes;
-            document.getElementById('multiplicador_bonus_contagem').textContent = data.multiplicador_bonus;
             document.getElementById('valor_bonus_contagem').textContent = 'R$ ' + data.valor_bonus.toFixed(2); 
             document.getElementById('phd_mini_high').textContent = data.phd_mini_high + ' -';
             document.getElementById('phd_mini_low').textContent = data.phd_mini_low + ' -';
+            document.getElementById('valor_bonus_contagem').textContent = 'R$ ' + data.valor_bonus_contagem.toFixed(2);
             })
         }
 
@@ -311,12 +317,25 @@
                 })
                 .catch(error => console.error('Error fetching JSON:', error));
         }
-                        
-                        // Initial function calls
+
+        function updateSLAProgressBar() {
+            fetch('json/phd_per_day.json?v=' + Math.random())
+                .then(response => response.json())
+                .then(data => {
+                    const progressBar = document.getElementById('sla-progress-bar');
+                    progressBar.style.width = data.porcentagem_da_barra_sla + '%';
+                })
+                .catch(error => console.error('Error fetching JSON:', error));
+        }
+                                                      
+                            
+    // Initial function calls
+    updateSLAProgressBar();
     updateProgressBar();
     atualizarConteudo();
     atualizarChart();
     atualizarMedia();
+    setInterval(updateSLAProgressBar, 60000); // Update every minute
 
 </script>
 </body>
