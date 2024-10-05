@@ -266,14 +266,6 @@ def compute_phd():
     phd_var = phd_full_start - 1
     phd_bonus_dict = {}
 
-    for i in range(11):
-        phd_var += 1
-        valor_bonus_var = (phd_var - 90) * 0.01
-        valor_barra_var = valor_bonus_var * envios_mes
-        valor_barra_var = round(valor_barra_var, 2)
-        phd_bonus_dict[str(phd_var)] = valor_barra_var
-        # print(f"PHD: {phd_var} --> Valor Barra: {valor_barra_var}")  # Commented out print statement
-
     # Add the phd_bonus_dict to the sorted_phd_per_day dictionary
     if sla_embu_full < 95 or phd_full < 90:
         bonus_valido = False
@@ -293,8 +285,28 @@ def compute_phd():
     elif sla_embu_full >= 99 and sla_embu_full < 100:
         multiplicador_bonus_sla = 1.5
     
+
+    for i in range(11):
+        phd_var += 1
+        valor_bonus_var = (phd_var - 90) * 0.01
+        valor_barra_var = valor_bonus_var * envios_mes * multiplicador_bonus_sla
+        valor_barra_var = round(valor_barra_var, 2)
+        phd_bonus_dict[str(phd_var)] = valor_barra_var
+        # print(f"PHD: {phd_var} --> Valor Barra: {valor_barra_var}")  # Commented out print statement
+
     # Calculate SLA bonus percentage
-  # Linear interpolation between 95% and 100%
+    porcentagem_da_barra_sla = (sla_embu_full - 95) * 20  # 20 is the factor to scale 0-5 to 0-100
+    valor_bonus_contagem = envios_mes * multiplicador_bonus_sla * valor_bonus
+    valor_bonus_contagem = round(valor_bonus_contagem, 2)
+    # Add additional variables to the JSON
+    #colocar aqui as questões de bonificação para serem adicionadas ao json
+
+    sorted_phd_per_day['phd_full'] = phd_full   
+    sorted_phd_per_day['sla_embu_full'] = sla_embu_full
+    sorted_phd_per_day['bonus_valido'] = bonus_valido
+    sorted_phd_per_day['valor_bonus_contagem'] = valor_bonus_contagem
+    sorted_phd_per_day['phd_bonus_values'] = phd_bonus_dict
+    sorted_phd_per_day['phd_mini_low'] = phd_mini_low
     porcentagem_da_barra_sla = (sla_embu_full - 95) * 20  # 20 is the factor to scale 0-5 to 0-100
     valor_bonus_contagem = envios_mes * multiplicador_bonus_sla * valor_bonus
     valor_bonus_contagem = round(valor_bonus_contagem, 2)

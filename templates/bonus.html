@@ -98,17 +98,7 @@
                             <div id="progress-bar_full"></div>
                         </div>
                         <ul id="lista_phd_full">
-                            <li id="phd_full_10">- 100 R$282,30</li>
-                            <li id="phd_full_9">- 99 R$254,07</li>
-                            <li id="phd_full_8">- 98 R$225,84</li>
-                            <li id="phd_full_7">- 97 R$197,61</li>
-                            <li id="phd_full_6">- 96 R$169,38</li>
-                            <li id="phd_full_5">- 95 R$141,15</li>
-                            <li id="phd_full_4">- 94 R$112,92</li>
-                            <li id="phd_full_3">- 93 R$84,69</li>
-                            <li id="phd_full_2">- 92 R$56,46</li>
-                            <li id="phd_full_1">- 91 R$28,23</li>    
-                            <li id="phd_full_0">- 90 R$0</li>
+                            <!-- This list will be populated dynamically -->
                         </ul>
                     </div>
                 </div>
@@ -256,7 +246,7 @@
                         },
                         options: {
                             responsive: true,
-                            maintainAspectRatio: false, // Allow custom aspect ratio
+                            maintainAspectRatio: false,
                             plugins: {
                                 datalabels: {
                                     anchor: 'end',
@@ -277,18 +267,23 @@
                             scales: {
                                 x: {
                                     beginAtZero: true,
-
-                            },
+                                },
                                 y: {
-                                    beginAtZero: true
-                                    
+                                    beginAtZero: true,
+                                    // Add this to ensure there's space above the highest bar
+                                    suggestedMax: Math.max(...values) * 1.1
+                                }
+                            },
+                            // Add this to ensure labels are not cut off
+                            layout: {
+                                padding: {
+                                    top: 20
                                 }
                             }
                         },
                         plugins: [ChartDataLabels]
                     });
                 }
-
                 
             })
             .catch(error => console.error('Error fetching JSON:', error));
@@ -299,13 +294,17 @@
             .then(data => {
                 console.log('JSON data:', data);
 
-            var valorBonusElement = data.bonus_valido;
-            if (valorBonusElement == true) {
-                document.getElementById('valor_bonus_contagem').style.color = 'rgb(50, 225, 65)';
+            var valorBonusElement = document.getElementById('valor_bonus_contagem');
+            var valorBonusValido = data.bonus_valido;
+            
+            if (valorBonusValido == true) {
+                valorBonusElement.style.color = 'rgb(50, 225, 65)';
+                valorBonusElement.style.backgroundColor = 'rgba(50, 225, 65, 0.2)';
             } else {
-                document.getElementById('valor_bonus_contagem').style.color = 'red';
+                valorBonusElement.style.color = 'red';
+                valorBonusElement.style.backgroundColor = 'rgba(255, 0, 0, 0.2)';
             }
-                
+            
             document.getElementById('media_phd').textContent = data.media;
             document.getElementById('envios_hoje').textContent = data.envios_dia;
             document.getElementById('pedidos_pendentes').textContent = data.pedidos_pendentes;
@@ -323,8 +322,8 @@
                 .then(data => {
                     const progressBarMini = document.getElementById('progress-bar');
                     const progressBarFull = document.getElementById('progress-bar_full');
-                    progressBarMini.style.height = data.porcentagem_da_barra_pdh_mini + '%';
-                    progressBarFull.style.height = data.porcentagem_da_barra_pdh_full + '%';
+                    updateBarColor(progressBarMini, data.porcentagem_da_barra_pdh_mini);
+                    updateBarColor(progressBarFull, data.porcentagem_da_barra_pdh_full);
                 })
                 .catch(error => console.error('Error fetching JSON:', error));
         }
@@ -334,12 +333,57 @@
                 .then(response => response.json())
                 .then(data => {
                     const progressBar = document.getElementById('sla-progress-bar');
-                    progressBar.style.width = data.porcentagem_da_barra_sla + '%';
+                    updateBarColor(progressBar, data.porcentagem_da_barra_sla);
                 })
                 .catch(error => console.error('Error fetching JSON:', error));
         }
-                                                      
-                            
+
+        function updateBarColor(bar, percentage) {
+            // Convert percentage to a value between 0 and 1
+            const value = percentage / 100;
+            
+            // Calculate RGB values
+            // Start with light green (200, 255, 200) and end with neon green (57, 255, 20)
+            const r = Math.round(200 - (143 * value));
+            const g = 255;
+            const b = Math.round(200 - (180 * value));
+            
+            // Set the new background color
+            bar.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+            
+            // Update the height or width based on the bar type
+            if (bar.id === 'sla-progress-bar') {
+                bar.style.width = `${percentage}%`;
+            } else {
+                bar.style.height = `${percentage}%`;
+            }
+        }
+
+        function updatePHDList() {
+        fetch('json/phd_per_day.json?v=' + Math.random())
+        .then(response => response.json())
+        .then(data => {
+                const phdBonusValues = data.phd_bonus_values;
+                const listaPhdFull = document.getElementById('lista_phd_full');
+                
+                // Clear existing list items
+                listaPhdFull.innerHTML = '';
+                
+                // Sort the keys in descending order
+                const sortedKeys = Object.keys(phdBonusValues).sort((a, b) => b - a);
+                
+                // Create and append new list items
+                sortedKeys.forEach((key, index) => {
+                    const li = document.createElement('li');
+                    li.id = `phd_full_${sortedKeys.length - 1 - index}`;
+                    li.textContent = `- ${key} --> R$${phdBonusValues[key].toFixed(2)}`;
+                    listaPhdFull.appendChild(li);
+                });
+            })
+            .catch(error => console.error('Error fetching JSON:', error));
+        }
+        
+    // Add this function call to your initial function calls
     // Initial function calls
     updateSLAProgressBar();
     updateProgressBar();
@@ -347,7 +391,30 @@
     atualizarChart();
     atualizarMedia();
     setInterval(updateSLAProgressBar, 60000); // Update every minute
+    setInterval(updatePHDList, 60000);
+    updatePHDList();
+
+    // You might want to call this function periodically, e.g., every minute
 
 </script>
+<style>
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+        }
+    }
+
+    #valor_bonus_contagem {
+        padding: 10px;
+        border-radius: 5px;
+        animation: pulse 2s infinite;
+    }
+</style>
 </body>
 </html>
