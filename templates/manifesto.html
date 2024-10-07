@@ -61,11 +61,40 @@
             color: red;
             margin-top: 10px;
         }
+        .loading-bar {
+            display: none;
+            width: 100%;
+            height: 4px;
+            background-color: #f3f3f3;
+            margin-top: 20px;
+        }
+        .loading-bar-progress {
+            width: 0;
+            height: 100%;
+            background-color: #0741dd;
+            animation: loading 15s linear forwards;
+        }
+        @keyframes loading {
+            0% { width: 0; }
+            100% { width: 100%; }
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e6f3ff;
+            border-radius: 4px;
+            color: black; /* Change text color to black */
+        }
+
+        li {
+            color: black;
+        }
+        
     </style>
 </head>
 <body>
     <div class="container">
-        <form action="{{ url_for('manifesto_route') }}" method="post">
+        <form id="manifestoForm" action="{{ url_for('manifesto_route') }}" method="post">
             <select name="manifesto_option" id="manifesto_option" required>
                 <option value="">Selecione uma opção</option>
                 <option value="LOGGI">Loggi</option>
@@ -76,6 +105,10 @@
             <button type="submit">Enviar</button>
         </form>
         
+        <div id="loadingBar" class="loading-bar">
+            <div class="loading-bar-progress"></div>
+        </div>
+
         {% if not_dispatched_count is not none %}
         <div class="result">
             <p>{{ not_dispatched_count | safe }}</p>
@@ -94,6 +127,12 @@
         </div>
         {% endif %}
     </div>
+
+    <script>
+        document.getElementById('manifestoForm').addEventListener('submit', function(e) {
+            document.getElementById('loadingBar').style.display = 'block';
+        });
+    </script>
 </body>
 </html>
 
