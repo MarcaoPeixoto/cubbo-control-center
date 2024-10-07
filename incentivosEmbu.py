@@ -214,9 +214,9 @@ def adjust_shipping_date(shipping_date, carrier):
     cut_off_hours = {
         'CUBBO': (16, 30),
         'UELLO': (16, 0),
-        'CORREIOS': (13, 0),
-        'LOGGI': (16, 0),
-        'Mercado Envíos': (13, 0),
+        'CORREIOS': (14, 0),
+        'LOGGI': (17, 0),
+        'Mercado Envíos': (14, 0),
         'JT Express': (16, 0)
     }
 
@@ -337,9 +337,9 @@ def ajuste_pendentes():
             if carrier == 'CORREIOS':
                 shipping_time_limit = 15             
             elif carrier == 'Mercado Envíos':
-                shipping_time_limit = 14  # Orders must be shipped by 14:30
+                shipping_time_limit = 15  # Orders must be shipped by 14:30
             elif carrier == 'Armazém' or carrier == 'Externo' or carrier == 'LOGGI':
-                shipping_time_limit = 17  # Orders must be shipped by 18:00
+                shipping_time_limit = 18  # Orders must be shipped by 18:00
             else:
                 shipping_time_limit = 18  # Default for all other cases, orders must be shipped by 19:30 
                 # Check if the order meets the shipping time limit
