@@ -154,6 +154,11 @@ def controle_sp():
 def controle_mg():
     return render_template('controleExtrema.html')
 
+@app.route('/remocoes')
+@login_required
+def remocoes():
+    return render_template('remocoes.html')
+
 @app.route('/json/<path:filename>')
 @login_required
 def serve_json(filename):
