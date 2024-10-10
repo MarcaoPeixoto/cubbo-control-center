@@ -105,6 +105,31 @@
             text-decoration: none;
             cursor: pointer;
         }
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .file-input-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+        }
+        .file-input-wrapper .btn-file-input {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -189,7 +214,10 @@
                         <input type="number" class="volumes-input" value="${remocao.volumes || 1}" min="1" data-id="${remocao.id}">
                     </td>
                     <td>
-                        <input type="file" accept="image/*" multiple class="image-upload" data-id="${remocao.id}">
+                        <div class="file-input-wrapper">
+                            <button class="btn-file-input">Choose File</button>
+                            <input type="file" accept="image/*" multiple class="image-upload" data-id="${remocao.id}">
+                        </div>
                         <button class="upload-btn" data-id="${remocao.id}">Upload</button>
                     </td>
                 `;
@@ -215,6 +243,13 @@
                     if (this.querySelector('.removido-cell').textContent === '✓' && !event.target.classList.contains('volumes-input')) {
                         showImage(this.children[1].textContent, this.children[2].textContent);
                     }
+                });
+            });
+
+            document.querySelectorAll('.image-upload').forEach(input => {
+                input.addEventListener('change', function() {
+                    const fileName = this.files.length > 0 ? this.files[0].name : 'No file chosen';
+                    this.previousElementSibling.textContent = fileName;
                 });
             });
         }
