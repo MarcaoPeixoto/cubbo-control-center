@@ -526,10 +526,9 @@ def upload_images():
     uploaded_files = []
     for index, file in enumerate(request.files.getlist('images')):
         # Generate a unique filename for each image
-        current_date = datetime.now().strftime('%d-%m-%Y')
-        base_filename = f"{remocao['numero_pedido']}_{remocao['cliente']}_{volumes}_volumes_{current_date}"
+        base_filename = f"{remocao['numero_pedido']}_{remocao['cliente']}_{volumes}_volumes_{datetime.now().strftime('%Y%m%d%H%M%S')}"
         file_extension = os.path.splitext(file.filename)[1]
-        filename = f"{base_filename}{file_extension}"
+        filename = f"{base_filename}_{index + 1}{file_extension}"
         
         file_path = os.path.join('/tmp', filename)
         file.save(file_path)
