@@ -6,6 +6,7 @@ import redis
 from dotenv import dotenv_values
 import os
 import calendar
+from redis_connection import get_redis_connection
 
 date_format = "%d-%m-%Y, %H:%M:%S"
 date_format2 = "%d-%m-%Y, %H:%M:%S.%f"
@@ -22,8 +23,8 @@ else:
     redis_port = os.environ["REDIS_PORT"]
     redis_password = os.environ["REDIS_PASSWORD"]
 
-redis_client = redis.StrictRedis(host=redis_end, port=redis_port, password=redis_password, db=0, decode_responses=True)
-
+# Replace the existing redis_client creation with:
+redis_client = get_redis_connection()
 
 def create_metabase_token():
 

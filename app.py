@@ -5,8 +5,7 @@ import os
 from apscheduler.schedulers.background import BackgroundScheduler
 import subprocess
 from functools import wraps
-import redis
-from dotenv import load_dotenv
+from dotenv import load_dotenv, dotenv_values
 import threading
 from manifesto import save_to_google_docs, link_docs, nao_despachados, get_manifesto
 from datetime import datetime, timedelta
@@ -18,6 +17,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import io
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from redis_connection import get_redis_connection
+import redis
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
@@ -32,18 +33,9 @@ load_dotenv()
 # Get environment variables
 CORRECT_PASSWORD = os.getenv('LOGIN_PASSWORD')
 REMOCOES_FOLDER_ID = os.getenv('REMOCOES_FOLDER_ID')
-REDIS_END = os.getenv('REDIS_END')
-REDIS_PORT = os.getenv('REDIS_PORT')
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
 
-# Set up Redis client
-redis_client = redis.StrictRedis(
-    host=REDIS_END,
-    port=REDIS_PORT,
-    password=REDIS_PASSWORD,
-    db=0,
-    decode_responses=True
-)
+# Replace the existing redis_client creation with:
+redis_client = get_redis_connection()
 
 def login_required(f):
     @wraps(f)

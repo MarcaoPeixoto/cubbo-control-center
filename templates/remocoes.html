@@ -59,12 +59,12 @@
             background-color: #008CBA;
             border: none;
             color: white;
-            padding: 8px 12px;
+            padding: 6px 10px;
             text-align: center;
             text-decoration: none;
             display: inline-block;
-            font-size: 14px;
-            margin: 4px 2px;
+            font-size: 12px;
+            margin: 2px;
             cursor: pointer;
             border-radius: 4px;
             font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
@@ -106,29 +106,37 @@
             cursor: pointer;
         }
         .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
             display: inline-block;
         }
+
         .file-input-wrapper input[type=file] {
-            font-size: 100px;
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
+            display: none;
         }
-        .file-input-wrapper .btn-file-input {
+
+        .file-input-label {
             background-color: #4CAF50;
             border: none;
             color: white;
-            padding: 8px 12px;
+            padding: 6px 10px;
             text-align: center;
             text-decoration: none;
             display: inline-block;
-            font-size: 14px;
-            margin: 4px 2px;
+            font-size: 12px;
+            margin: 2px;
             cursor: pointer;
             border-radius: 4px;
+        }
+
+        .volumes-input {
+            width: 50px;
+            text-align: center;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .volumes-cell {
+            width: 80px;
+            text-align: center;
         }
     </style>
 </head>
@@ -146,7 +154,7 @@
                 <th>Pendente</th>
                 <th>Processado</th>
                 <th>Removido</th>
-                <th>Volumes</th>
+                <th class="volumes-cell">Volumes</th>
                 <th>Ações</th>
             </tr>
         </thead>
@@ -210,13 +218,13 @@
                     <td>${remocao.pendente || '-'}</td>
                     <td>${remocao.processado || '-'}</td>
                     <td class="removido-cell" style="text-align: center;">${remocao.removido ? '✓' : ''}</td>
-                    <td>
+                    <td class="volumes-cell">
                         <input type="number" class="volumes-input" value="${remocao.volumes || 1}" min="1" data-id="${remocao.id}">
                     </td>
                     <td>
                         <div class="file-input-wrapper">
-                            <button class="btn-file-input">Choose File</button>
-                            <input type="file" accept="image/*" multiple class="image-upload" data-id="${remocao.id}">
+                            <input type="file" id="file-${remocao.id}" accept="image/*" multiple class="image-upload" data-id="${remocao.id}">
+                            <label for="file-${remocao.id}" class="file-input-label">Selecionar foto</label>
                         </div>
                         <button class="upload-btn" data-id="${remocao.id}">Upload</button>
                     </td>
@@ -248,8 +256,10 @@
 
             document.querySelectorAll('.image-upload').forEach(input => {
                 input.addEventListener('change', function() {
-                    const fileName = this.files.length > 0 ? this.files[0].name : 'No file chosen';
-                    this.previousElementSibling.textContent = fileName;
+                    const fileName = this.files.length > 0 ? 
+                        (this.files.length > 1 ? `${this.files.length} files selected` : this.files[0].name) : 
+                        'Selecionar foto';
+                    this.nextElementSibling.textContent = fileName;
                 });
             });
         }

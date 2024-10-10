@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 import numpy as np
 import os
 from dotenv import dotenv_values
-import redis
+from redis_connection import get_redis_connection
 
 
 #import pandas as pd
@@ -34,7 +34,7 @@ else:
     redis_port=os.environ["REDIS_PORT"]
     redis_password=os.environ["REDIS_PASSWORD"]
 
-redis_client = redis.StrictRedis(host=redis_end, port=redis_port, password=redis_password, db=0, decode_responses=True)
+redis_client = get_redis_connection()
 
 def create_metabase_token():
 

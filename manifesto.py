@@ -1,29 +1,19 @@
 from datetime import datetime, timedelta
 import os
 import json
-import requests
 from dotenv import dotenv_values
+from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-import redis
+from redis_connection import get_redis_connection
+import requests
 
 
-env_config = dotenv_values(".env")
-
-redis_end = env_config.get('REDIS_END')
-
-if redis_end is not None:
-    redis_port = env_config.get('REDIS_PORT')
-    redis_password = env_config.get('REDIS_PASSWORD')
-else:
-    redis_end=os.environ["REDIS_END"]
-    redis_port=os.environ["REDIS_PORT"]
-    redis_password=os.environ["REDIS_PASSWORD"]
-
-redis_client = redis.StrictRedis(host=redis_end, port=redis_port, password=redis_password, db=0, decode_responses=True)
+# Replace the existing redis_client creation with:
+redis_client = get_redis_connection()
 
 # Replace the existing authentication code with this:
 def authenticate_google_docs():
@@ -63,6 +53,8 @@ docs_service = authenticate_google_docs()
 
 # Existing functions
 def create_metabase_token():
+
+    env_config = dotenv_values(".env")
 
     metabase_user = env_config.get('METABASE_USER')
     
@@ -416,6 +408,8 @@ def save_to_google_docs(document_title, data, folder_id=None):
         return None
 
 def link_docs(transportadora):
+    
+    env_config = dotenv_values(".env")
     # Load folder IDs from environment variables
     loggi_folder = env_config.get('LOGGI_FOLDER_ID') or os.environ["LOGGI_FOLDER_ID"]
     meli_folder = env_config.get('MELI_FOLDER_ID') or os.environ["MELI_FOLDER_ID"]
@@ -448,3 +442,7 @@ def link_docs(transportadora):
         print("Failed to create document")
         return None
     
+
+def get_difal_order_ids():
+    pedidos_difal = get_dataset('613')
+    return [d['Orders → ID'] for d in pedidos_difal if 'Orders → ID' in d]
