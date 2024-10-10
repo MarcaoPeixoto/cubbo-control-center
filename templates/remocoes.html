@@ -146,7 +146,6 @@
             .then(data => {
                 remocoes = data; // Store all data
                 renderTable(remocoes); // Initial render
-                checkRemovidoStatus(); // Check removido status
             })
             .catch(error => console.error('Error fetching data:', error));
 
@@ -166,6 +165,9 @@
                     <td>${remocao.processado || '-'}</td>
                     <td class="removido-cell" style="text-align: center;">${remocao.removido ? '✓' : ''}</td>
                     <td>
+                        <input type="number" class="volumes-input" value="${remocao.volumes || 1}" min="1" data-id="${remocao.id}">
+                    </td>
+                    <td>
                         <div class="file-upload-container">
                             <label for="file-upload-${remocao.id}" class="file-upload-label">Escolher arquivo</label>
                             <input id="file-upload-${remocao.id}" type="file" accept="image/*" multiple class="image-upload" data-id="${remocao.id}">
@@ -176,10 +178,19 @@
                 tableBody.appendChild(row);
 
                 // Add click event listener to the row
-                row.addEventListener('click', function() {
-                    if (this.querySelector('.removido-cell').textContent === '✓') {
+                row.addEventListener('click', function(event) {
+                    if (remocao.removido && !event.target.classList.contains('volumes-input')) {
                         showImage(remocao.numero_pedido, remocao.cliente);
                     }
+                });
+            });
+
+            // Add event listeners for volume inputs
+            document.querySelectorAll('.volumes-input').forEach(input => {
+                input.addEventListener('change', function() {
+                    const id = this.dataset.id;
+                    const volumes = parseInt(this.value);
+                    updateVolumes(id, volumes);
                 });
             });
 
@@ -189,10 +200,27 @@
             });
         }
 
+        function updateVolumes(id, volumes) {
+            fetch('/update-volumes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id, volumes }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Volumes updated:', data);
+            })
+            .catch(error => console.error('Error updating volumes:', error));
+        }
+
         async function handleImageUpload(event) {
             const id = event.target.dataset.id;
             const fileInput = document.querySelector(`.image-upload[data-id="${id}"]`);
             const files = fileInput.files;
+            const volumesInput = document.querySelector(`.volumes-input[data-id="${id}"]`);
+            const volumes = volumesInput.value;
 
             if (files.length === 0) {
                 alert('Please select at least one file to upload.');
@@ -204,11 +232,12 @@
 
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
-                const fileName = `${remocao.numero_pedido}_${remocao.cliente}_${new Date().toISOString().split('T')[0]}${i > 0 ? i + 1 : ''}.${file.name.split('.').pop()}`;
+                const fileName = `${remocao.numero_pedido}_${remocao.cliente}_${volumes}_volumes_${new Date().toISOString().split('T')[0]}${i > 0 ? i + 1 : ''}.${file.name.split('.').pop()}`;
                 formData.append('images', file, fileName);
             }
 
             formData.append('id', id);
+            formData.append('volumes', volumes);
 
             try {
                 const response = await fetch('/upload-images', {
@@ -233,31 +262,6 @@
                 console.error('Error uploading images:', error);
                 alert('An error occurred while uploading images');
             }
-        }
-
-        function checkRemovidoStatus() {
-            remocoes.forEach(remocao => {
-                fetch(`/check-removido`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        numero_pedido: remocao.numero_pedido,
-                        cliente: remocao.cliente
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.removido) {
-                        const removidoCell = document.querySelector(`tr[data-id="${remocao.id}"] .removido-cell`);
-                        if (removidoCell) {
-                            removidoCell.textContent = '✓';
-                        }
-                    }
-                })
-                .catch(error => console.error('Error checking removido status:', error));
-            });
         }
 
         document.getElementById('search-bar').addEventListener('input', function(e) {

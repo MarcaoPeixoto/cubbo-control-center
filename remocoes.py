@@ -146,18 +146,55 @@ def get_remocoes():
             'pendente': remocao['pendente'].strftime(date_format) if remocao['pendente'] else None,
             'processado': remocao['processado'].strftime(date_format) if remocao['processado'] else None,
             'numero_pedido': remocao['numero_pedido'],
-            'cliente': remocao['cliente']
+            'cliente': remocao['cliente'],
+            'removido': False  # Initialize as False
         }
 
         processed_remocoes.append(data)
+
     # Sort processed_remocoes by numero_pedido
     processed_remocoes.sort(key=lambda x: (x['cliente'], x['numero_pedido']))
+
+    # Check removido status for each remocao
+    for remocao in processed_remocoes:
+        remocao['removido'] = check_removido_status(remocao['numero_pedido'], remocao['cliente'])
 
     # Store all removals under a single Redis key
     redis_key = "remocoes"
     redis_client.set(redis_key, json.dumps(processed_remocoes))
 
-    return remocoes
+    return processed_remocoes
 
+def check_removido_status(numero_pedido, cliente):
+    SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
+    
+    creds = None
+    token_json = redis_client.get('token_json')
+
+    if token_json:
+        creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
+    
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            return False
+
+        # Update token in Redis
+        redis_client.set('token_json', creds.to_json())
+
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    folder_id = os.environ.get('REMOCOES_FOLDER_ID')
+    query = f"'{folder_id}' in parents and (name contains '{numero_pedido}' and name contains '{cliente}')"
+
+    try:
+        results = drive_service.files().list(q=query, fields="files(id, name)").execute()
+        files = results.get('files', [])
+
+        return len(files) > 0
+    except Exception as e:
+        print(f"Error checking removido status: {e}")
+        return False
 
 get_remocoes()

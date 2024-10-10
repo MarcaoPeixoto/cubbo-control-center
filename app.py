@@ -383,10 +383,33 @@ def api_remocoes():
         remocoes = get_remocoes()
         return jsonify(remocoes)
 
-@app.route('/upload-images', methods=['POST'])
-def upload_images():
+@app.route('/update-volumes', methods=['POST'])
+@login_required
+def update_volumes():
+    data = request.json
+    id = data.get('id')
+    volumes = data.get('volumes')
 
-    
+    if not id or not volumes:
+        return jsonify({'error': 'Missing id or volumes'}), 400
+
+    # Update the volumes in Redis
+    redis_key = "remocoes"
+    remocoes_json = redis_client.get(redis_key)
+    if remocoes_json:
+        remocoes = json.loads(remocoes_json)
+        for remocao in remocoes:
+            if remocao['id'] == id:
+                remocao['volumes'] = volumes
+                break
+        redis_client.set(redis_key, json.dumps(remocoes))
+        return jsonify({'success': True})
+    else:
+        return jsonify({'error': 'Remocoes not found in Redis'}), 404
+
+@app.route('/upload-images', methods=['POST'])
+@login_required
+def upload_images():
     SCOPES = ['https://www.googleapis.com/auth/documents.readonly', 
               'https://www.googleapis.com/auth/drive.file',
               'https://www.googleapis.com/auth/drive']
@@ -395,8 +418,20 @@ def upload_images():
         return jsonify({'success': False, 'error': 'No images in the request'}), 400
 
     id = request.form.get('id')
-    if not id:
-        return jsonify({'success': False, 'error': 'No ID provided'}), 400
+    volumes = request.form.get('volumes')
+    if not id or not volumes:
+        return jsonify({'success': False, 'error': 'No ID or volumes provided'}), 400
+
+    # Get remocao details from Redis
+    redis_key = "remocoes"
+    remocoes_json = redis_client.get(redis_key)
+    if remocoes_json:
+        remocoes = json.loads(remocoes_json)
+        remocao = next((r for r in remocoes if r['id'] == id), None)
+        if not remocao:
+            return jsonify({'success': False, 'error': 'Remocao not found'}), 404
+    else:
+        return jsonify({'success': False, 'error': 'Remocoes not found in Redis'}), 404
 
     # Set up Google Drive API client
     creds = None
@@ -429,7 +464,7 @@ def upload_images():
 
     uploaded_files = []
     for file in request.files.getlist('images'):
-        filename = file.filename
+        filename = f"{remocao['numero_pedido']}_{remocao['cliente']}_{volumes}_volumes_{file.filename}"
         file_path = os.path.join('/tmp', filename)
         file.save(file_path)
 
@@ -443,55 +478,11 @@ def upload_images():
 
         os.remove(file_path)  # Clean up the temporary file
 
-    # Update the 'removido' status in your database for this ID
-    update_removido_status(id)
+    # Update the 'removido' status in Redis
+    remocao['removido'] = True
+    redis_client.set(redis_key, json.dumps(remocoes))
 
     return jsonify({'success': True, 'uploaded_files': uploaded_files})
-
-def update_removido_status(id):
-    # Implement this function to update the 'removido' status in your database
-    pass
-
-@app.route('/check-removido', methods=['POST'])
-@login_required
-def check_removido():
-    data = request.json
-    numero_pedido = data.get('numero_pedido')
-    cliente = data.get('cliente')
-
-    if not numero_pedido or not cliente:
-        return jsonify({'error': 'Missing numero_pedido or cliente'}), 400
-
-    SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
-    
-    creds = None
-    token_json = redis_client.get('token_json')
-
-    if token_json:
-        creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
-    
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            return jsonify({'error': 'Invalid credentials'}), 401
-
-        # Update token in Redis
-        redis_client.set('token_json', creds.to_json())
-
-    drive_service = build('drive', 'v3', credentials=creds)
-
-    folder_id = REMOCOES_FOLDER_ID
-    query = f"'{folder_id}' in parents and (name contains '{numero_pedido}' and name contains '{cliente}')"
-
-    try:
-        results = drive_service.files().list(q=query, fields="files(id, name)").execute()
-        files = results.get('files', [])
-
-        removido = len(files) > 0
-        return jsonify({'removido': removido})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 @app.route('/get-image/<numero_pedido>/<cliente>')
 @login_required
