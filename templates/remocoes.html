@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remoções</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 80%;
+            margin: auto;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        #search-bar {
+            width: 40%;
+            margin: 20px auto;
+            padding: 10px;
+            font-size: 16px;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+            display: block;
+            position: relative;
+            left: 0%;
+            margin-top: 3%;
+        }
+    </style>
+</head>
+<body>
+    <h2 style="text-align: center;font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;">Lista de Remoções</h2>
+    
+    <!-- Add search bar -->
+    <input type="text" id="search-bar" placeholder="Pesquisar por numero do pedido ou marca">
+
+    <table id="remocoes-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Número do Pedido</th>
+                <th>Cliente</th>
+                <th>Pendente</th>
+                <th>Processado</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data will be inserted here by JavaScript -->
+        </tbody>
+    </table>
+
+    <script>
+        let remocoes = []; // Store all remocoes data
+
+        fetch('/api/remocoes')
+            .then(response => response.json())
+            .then(data => {
+                remocoes = data; // Store all data
+                renderTable(remocoes); // Initial render
+            })
+            .catch(error => console.error('Error fetching data:', error));
+
+        function renderTable(data) {
+            const tableBody = document.querySelector('#remocoes-table tbody');
+            tableBody.innerHTML = ''; // Clear existing rows
+            data.forEach(remocao => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${remocao.id}</td>
+                    <td>${remocao.numero_pedido}</td>
+                    <td>${remocao.cliente}</td>
+                    <td>${remocao.pendente || '-'}</td>
+                    <td>${remocao.processado || '-'}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        document.getElementById('search-bar').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredRemocoes = remocoes.filter(remocao => 
+                remocao.id.toString().includes(searchTerm) ||
+                remocao.numero_pedido.toLowerCase().includes(searchTerm) ||
+                remocao.cliente.toLowerCase().includes(searchTerm) ||
+                (remocao.pendente && remocao.pendente.toLowerCase().includes(searchTerm)) ||
+                (remocao.processado && remocao.processado.toLowerCase().includes(searchTerm))
+            );
+            renderTable(filteredRemocoes);
+        });
+    </script>
+</body>
+</html>

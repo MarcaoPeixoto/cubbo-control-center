@@ -150,6 +150,8 @@ def get_remocoes():
         }
 
         processed_remocoes.append(data)
+    # Sort processed_remocoes by numero_pedido
+    processed_remocoes.sort(key=lambda x: (x['cliente'], x['numero_pedido']))
 
     # Store all removals under a single Redis key
     redis_key = "remocoes"
