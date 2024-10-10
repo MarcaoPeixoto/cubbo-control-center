@@ -17,7 +17,8 @@
             font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
         }
         th {
-            background-color: #f2f2f2;
+            background-color: #0741dd;
+            color: white;
         }
         #search-bar {
             width: 40%;
@@ -29,6 +30,48 @@
             position: relative;
             left: 0%;
             margin-top: 3%;
+        }
+
+        .file-upload-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .file-upload-label {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+        }
+
+        .file-upload-label:hover {
+            background-color: #45a049;
+        }
+
+        .image-upload {
+            display: none;
+        }
+
+        .upload-btn {
+            background-color: #008CBA;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+        }
+
+        .upload-btn:hover {
+            background-color: #007B9E;
         }
     </style>
 </head>
@@ -46,6 +89,8 @@
                 <th>Cliente</th>
                 <th>Pendente</th>
                 <th>Processado</th>
+                <th>Removido</th>
+                <th>Prova Remoção</th>
             </tr>
         </thead>
         <tbody>
@@ -75,9 +120,68 @@
                     <td>${remocao.cliente}</td>
                     <td>${remocao.pendente || '-'}</td>
                     <td>${remocao.processado || '-'}</td>
+                    <td class="removido-cell">${remocao.removido ? '✓' : ''}</td>
+                    <td>
+                        <div class="file-upload-container">
+                            <label for="file-upload-${remocao.id}" class="file-upload-label">Escolher arquivo</label>
+                            <input id="file-upload-${remocao.id}" type="file" accept="image/*" multiple class="image-upload" data-id="${remocao.id}">
+                            <button class="upload-btn" data-id="${remocao.id}">Upload</button>
+                        </div>
+                    </td>
                 `;
                 tableBody.appendChild(row);
             });
+
+            // Add event listeners for file uploads
+            document.querySelectorAll('.upload-btn').forEach(btn => {
+                btn.addEventListener('click', handleImageUpload);
+            });
+        }
+
+        async function handleImageUpload(event) {
+            const id = event.target.dataset.id;
+            const fileInput = document.querySelector(`.image-upload[data-id="${id}"]`);
+            const files = fileInput.files;
+
+            if (files.length === 0) {
+                alert('Please select at least one file to upload.');
+                return;
+            }
+
+            const remocao = remocoes.find(r => r.id.toString() === id);
+            const formData = new FormData();
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const fileName = `${remocao.numero_pedido}_${remocao.cliente}_${new Date().toISOString().split('T')[0]}${i > 0 ? i + 1 : ''}.${file.name.split('.').pop()}`;
+                formData.append('images', file, fileName);
+            }
+
+            formData.append('id', id);
+
+            try {
+                const response = await fetch('/upload-images', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('Images uploaded successfully');
+                        remocao.removido = true;
+                        const removidoCell = event.target.closest('tr').querySelector('.removido-cell');
+                        removidoCell.textContent = '✓';
+                    } else {
+                        alert('Failed to upload images');
+                    }
+                } else {
+                    alert('Failed to upload images');
+                }
+            } catch (error) {
+                console.error('Error uploading images:', error);
+                alert('An error occurred while uploading images');
+            }
         }
 
         document.getElementById('search-bar').addEventListener('input', function(e) {

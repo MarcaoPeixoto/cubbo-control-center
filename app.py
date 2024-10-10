@@ -11,6 +11,11 @@ import threading
 from manifesto import save_to_google_docs, link_docs, nao_despachados, get_manifesto
 from datetime import datetime, timedelta
 from remocoes import get_remocoes  # Import the get_remocoes function
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
@@ -21,6 +26,7 @@ app.secret_key = os.urandom(24)
 
 # Get password from environment variable
 CORRECT_PASSWORD = os.environ.get('LOGIN_PASSWORD')
+REMOCOES_FOLDER_ID = os.environ.get('REMOCOES_FOLDER_ID')
 
 env_config = dotenv_values(".env")
 
@@ -376,9 +382,79 @@ def api_remocoes():
         remocoes = get_remocoes()
         return jsonify(remocoes)
 
+@app.route('/upload-images', methods=['POST'])
+def upload_images():
+
+    
+    SCOPES = ['https://www.googleapis.com/auth/documents.readonly', 
+              'https://www.googleapis.com/auth/drive.file',
+              'https://www.googleapis.com/auth/drive']
+    
+    if 'images' not in request.files:
+        return jsonify({'success': False, 'error': 'No images in the request'}), 400
+
+    id = request.form.get('id')
+    if not id:
+        return jsonify({'success': False, 'error': 'No ID provided'}), 400
+
+    # Set up Google Drive API client
+    creds = None
+    token_json = redis_client.get('token_json')
+
+    if token_json:
+        creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
+    
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            try:
+                creds.refresh(Request())
+            except Exception as e:
+                print(f"Error refreshing credentials: {e}")
+                creds = None
+        
+        if not creds:
+            credentials_json = redis_client.get('credentials_json')
+            if not credentials_json:
+                raise Exception("credentials.json not found in Redis")
+            flow = InstalledAppFlow.from_client_config(
+                json.loads(credentials_json), SCOPES)
+            creds = flow.run_local_server(port=0)
+        
+        # Update token in Redis
+        redis_client.set('token_json', creds.to_json())
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    folder_id = REMOCOES_FOLDER_ID
+
+    uploaded_files = []
+    for file in request.files.getlist('images'):
+        filename = file.filename
+        file_path = os.path.join('/tmp', filename)
+        file.save(file_path)
+
+        file_metadata = {
+            'name': filename,
+            'parents': [folder_id]
+        }
+        media = MediaFileUpload(file_path, resumable=True)
+        file = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+        uploaded_files.append(file.get('id'))
+
+        os.remove(file_path)  # Clean up the temporary file
+
+    # Update the 'removido' status in your database for this ID
+    update_removido_status(id)
+
+    return jsonify({'success': True, 'uploaded_files': uploaded_files})
+
+def update_removido_status(id):
+    # Implement this function to update the 'removido' status in your database
+    pass
+
 if __name__ == '__main__':
     # Run both scripts initially
     check_redis_connectivity()
     update_jsons()
     scheduler.start()
     app.run(host='0.0.0.0', debug=True)
+    
