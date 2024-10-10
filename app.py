@@ -18,6 +18,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import io
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import traceback
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
@@ -171,25 +172,29 @@ def remocoes():
 @app.route('/api/check-removido-status')
 @login_required
 def api_check_removido_status():
-    redis_key = "remocoes"
-    remocoes_json = redis_client.get(redis_key)
-    if remocoes_json:
-        remocoes = json.loads(remocoes_json)
-        
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            future_to_remocao = {executor.submit(check_removido_status, remocao['numero_pedido'], remocao['cliente']): remocao for remocao in remocoes}
-            for future in as_completed(future_to_remocao):
-                remocao = future_to_remocao[future]
-                try:
-                    remocao['removido'] = future.result()
-                except Exception as e:
-                    print(f"Error checking removido status for {remocao['numero_pedido']}, {remocao['cliente']}: {e}")
-                    remocao['removido'] = False
+    try:
+        redis_key = "remocoes"
+        remocoes_json = redis_client.get(redis_key)
+        if remocoes_json:
+            remocoes = json.loads(remocoes_json)
+            
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                future_to_remocao = {executor.submit(check_removido_status, remocao['numero_pedido'], remocao['cliente']): remocao for remocao in remocoes}
+                for future in as_completed(future_to_remocao):
+                    remocao = future_to_remocao[future]
+                    try:
+                        remocao['removido'] = future.result()
+                    except Exception as e:
+                        app.logger.error(f"Error checking removido status for {remocao['numero_pedido']}, {remocao['cliente']}: {e}")
+                        remocao['removido'] = False
 
-        redis_client.set(redis_key, json.dumps(remocoes))
-        return jsonify({'success': True})
-    else:
-        return jsonify({'error': 'Remocoes not found in Redis'}), 404
+            redis_client.set(redis_key, json.dumps(remocoes))
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'Remocoes not found in Redis'}), 404
+    except Exception as e:
+        app.logger.error(f"Error in api_check_removido_status: {traceback.format_exc()}")
+        return jsonify(error=str(e)), 500
 
 @app.route('/json/<path:filename>')
 @login_required
@@ -397,42 +402,47 @@ def check_redis_connectivity():
 @app.route('/api/remocoes')
 @login_required
 def api_remocoes():
-    redis_key = "remocoes"
-    remocoes_json = redis_client.get(redis_key)
-    search_query = request.args.get('search', '').lower()
+    try:
+        redis_key = "remocoes"
+        remocoes_json = redis_client.get(redis_key)
+        search_query = request.args.get('search', '').lower()
 
-    if remocoes_json:
-        remocoes = json.loads(remocoes_json)
-    else:
-        remocoes = get_remocoes()
+        if remocoes_json:
+            remocoes = json.loads(remocoes_json)
+        else:
+            remocoes = get_remocoes()
+            redis_client.set(redis_key, json.dumps(remocoes))
+
+        # Check removido status for all remocoes
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_remocao = {executor.submit(check_removido_status, remocao['numero_pedido'], remocao['cliente']): remocao for remocao in remocoes}
+            for future in as_completed(future_to_remocao):
+                remocao = future_to_remocao[future]
+                try:
+                    remocao['removido'] = future.result()
+                except Exception as e:
+                    app.logger.error(f"Error checking removido status for {remocao['numero_pedido']}, {remocao['cliente']}: {e}")
+                    remocao['removido'] = False
+
+        # Update Redis with the latest removido status
         redis_client.set(redis_key, json.dumps(remocoes))
 
-    # Check removido status for all remocoes
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        future_to_remocao = {executor.submit(check_removido_status, remocao['numero_pedido'], remocao['cliente']): remocao for remocao in remocoes}
-        for future in as_completed(future_to_remocao):
-            remocao = future_to_remocao[future]
-            try:
-                remocao['removido'] = future.result()
-            except Exception as e:
-                print(f"Error checking removido status for {remocao['numero_pedido']}, {remocao['cliente']}: {e}")
-                remocao['removido'] = False
+        # Filter remocoes based on search query
+        if search_query:
+            filtered_remocoes = [
+                r for r in remocoes 
+                if search_query in r['numero_pedido'].lower() or 
+                   search_query in r['cliente'].lower()
+            ]
+        else:
+            # If no search query, filter out removido=True items
+            filtered_remocoes = [r for r in remocoes if not r.get('removido', False)]
 
-    # Update Redis with the latest removido status
-    redis_client.set(redis_key, json.dumps(remocoes))
-
-    # Filter remocoes based on search query
-    if search_query:
-        filtered_remocoes = [
-            r for r in remocoes 
-            if search_query in r['numero_pedido'].lower() or 
-               search_query in r['cliente'].lower()
-        ]
-    else:
-        # If no search query, filter out removido=True items
-        filtered_remocoes = [r for r in remocoes if not r.get('removido', False)]
-
-    return jsonify(filtered_remocoes)
+        app.logger.info(f'Sending remocoes data: {filtered_remocoes}')
+        return jsonify(filtered_remocoes)
+    except Exception as e:
+        app.logger.error(f"Error in api_remocoes: {traceback.format_exc()}")
+        return jsonify(error=str(e)), 500
 
 @app.route('/update-volumes', methods=['POST'])
 @login_required
