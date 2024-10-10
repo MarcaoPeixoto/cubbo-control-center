@@ -17,6 +17,7 @@ from googleapiclient.http import MediaFileUpload
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import io
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
@@ -166,6 +167,29 @@ def controle_mg():
 @login_required
 def remocoes():
     return render_template('remocoes.html')
+
+@app.route('/api/check-removido-status')
+@login_required
+def api_check_removido_status():
+    redis_key = "remocoes"
+    remocoes_json = redis_client.get(redis_key)
+    if remocoes_json:
+        remocoes = json.loads(remocoes_json)
+        
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_remocao = {executor.submit(check_removido_status, remocao['numero_pedido'], remocao['cliente']): remocao for remocao in remocoes}
+            for future in as_completed(future_to_remocao):
+                remocao = future_to_remocao[future]
+                try:
+                    remocao['removido'] = future.result()
+                except Exception as e:
+                    print(f"Error checking removido status for {remocao['numero_pedido']}, {remocao['cliente']}: {e}")
+                    remocao['removido'] = False
+
+        redis_client.set(redis_key, json.dumps(remocoes))
+        return jsonify({'success': True})
+    else:
+        return jsonify({'error': 'Remocoes not found in Redis'}), 404
 
 @app.route('/json/<path:filename>')
 @login_required
@@ -531,6 +555,10 @@ def get_image(numero_pedido, cliente):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+def check_removido_status(numero_pedido, cliente): 
+    # Implement the logic to check the status
+    # Return the result
+    return False
 if __name__ == '__main__':
     # Run both scripts initially
     check_redis_connectivity()

@@ -159,17 +159,6 @@ def get_remocoes():
     # Sort processed_remocoes by numero_pedido
     processed_remocoes.sort(key=lambda x: (x['cliente'], x['numero_pedido']))
 
-    # Check removido status for each remocao using ThreadPoolExecutor
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        future_to_remocao = {executor.submit(check_removido_status, remocao['numero_pedido'], remocao['cliente']): remocao for remocao in processed_remocoes}
-        for future in as_completed(future_to_remocao):
-            remocao = future_to_remocao[future]
-            try:
-                remocao['removido'] = future.result()
-            except Exception as e:
-                print(f"Error checking removido status for {remocao['numero_pedido']}, {remocao['cliente']}: {e}")
-                remocao['removido'] = False
-
     # Store all removals under a single Redis key
     redis_key = "remocoes"
     redis_client.set(redis_key, json.dumps(processed_remocoes))

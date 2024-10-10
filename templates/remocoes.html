@@ -141,13 +141,36 @@
     <script>
         let remocoes = []; // Store all remocoes data
 
-        fetch('/api/remocoes')
-            .then(response => response.json())
-            .then(data => {
-                remocoes = data; // Store all data
-                renderTable(remocoes); // Initial render
-            })
-            .catch(error => console.error('Error fetching data:', error));
+        // Function to fetch remocoes data
+        function fetchRemocoes() {
+            fetch('/api/remocoes')
+                .then(response => response.json())
+                .then(data => {
+                    remocoes = data; // Store all data
+                    renderTable(remocoes); // Initial render
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        // Function to check removido status
+        function checkRemovidoStatus() {
+            fetch('/api/check-removido-status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        fetchRemocoes(); // Refresh the table after updating removido status
+                    } else {
+                        console.error('Error checking removido status:', data.error);
+                    }
+                })
+                .catch(error => console.error('Error checking removido status:', error));
+        }
+
+        // Fetch remocoes data when the page loads
+        fetchRemocoes();
+
+        // Check removido status after fetching remocoes data
+        setTimeout(checkRemovidoStatus, 1000); // Delay by 1 second to ensure remocoes data is loaded first
 
         function renderTable(data) {
             const tableBody = document.querySelector('#remocoes-table tbody');
