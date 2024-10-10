@@ -159,16 +159,5 @@ def get_remocoes():
 
     return remocoes
 
-def get_img_rem(id):
-    pass
-
-def post_img_rem(id):
-    pass
-
-
-def rem_link():
-    folder_id = env_config.get('REMOCOES_FOLDER_ID')
-
-    print(f"Using folder ID: {folder_id}")
 
 get_remocoes()

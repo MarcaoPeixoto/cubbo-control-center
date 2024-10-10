@@ -1,4 +1,4 @@
-from flask import Flask, render_template, send_from_directory, request, jsonify, session, redirect
+from flask import Flask, render_template, send_from_directory, request, jsonify, session, redirect, send_file
 from flask_cors import CORS
 import json
 import os
@@ -16,6 +16,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+import io
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
@@ -450,6 +451,94 @@ def upload_images():
 def update_removido_status(id):
     # Implement this function to update the 'removido' status in your database
     pass
+
+@app.route('/check-removido', methods=['POST'])
+@login_required
+def check_removido():
+    data = request.json
+    numero_pedido = data.get('numero_pedido')
+    cliente = data.get('cliente')
+
+    if not numero_pedido or not cliente:
+        return jsonify({'error': 'Missing numero_pedido or cliente'}), 400
+
+    SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
+    
+    creds = None
+    token_json = redis_client.get('token_json')
+
+    if token_json:
+        creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
+    
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            return jsonify({'error': 'Invalid credentials'}), 401
+
+        # Update token in Redis
+        redis_client.set('token_json', creds.to_json())
+
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    folder_id = REMOCOES_FOLDER_ID
+    query = f"'{folder_id}' in parents and (name contains '{numero_pedido}' and name contains '{cliente}')"
+
+    try:
+        results = drive_service.files().list(q=query, fields="files(id, name)").execute()
+        files = results.get('files', [])
+
+        removido = len(files) > 0
+        return jsonify({'removido': removido})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get-image/<numero_pedido>/<cliente>')
+@login_required
+def get_image(numero_pedido, cliente):
+    SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
+    
+    creds = None
+    token_json = redis_client.get('token_json')
+
+    if token_json:
+        creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
+    
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            return jsonify({'error': 'Invalid credentials'}), 401
+
+        # Update token in Redis
+        redis_client.set('token_json', creds.to_json())
+
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    folder_id = REMOCOES_FOLDER_ID
+    query = f"'{folder_id}' in parents and (name contains '{numero_pedido}' and name contains '{cliente}')"
+
+    try:
+        results = drive_service.files().list(q=query, fields="files(id, name)").execute()
+        files = results.get('files', [])
+
+        if files:
+            file = files[0]  # Get the first file
+            file_id = file['id']
+            request = drive_service.files().get_media(fileId=file_id)
+            file_content = io.BytesIO(request.execute())
+            
+            # Create a data URL for the image
+            file_content.seek(0)
+            import base64
+            image_base64 = base64.b64encode(file_content.read()).decode('utf-8')
+            image_url = f"data:image/jpeg;base64,{image_base64}"
+            
+            return jsonify({'image_url': image_url})
+        else:
+            return jsonify({'error': 'No image found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Run both scripts initially
