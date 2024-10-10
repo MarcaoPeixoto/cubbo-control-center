@@ -170,10 +170,10 @@
         fetchRemocoes();
 
         // Check removido status after fetching remocoes data
-        setTimeout(checkRemovidoStatus, 1000); // Delay by 1 second to ensure remocoes data is loaded first
+        setTimeout(checkRemovidoStatus, 5000); // Delay by 5 seconds to ensure remocoes data is loaded first
 
-        // Check removido status every 5 minutes
-        setInterval(checkRemovidoStatus, 300000);
+        // Check removido status every 2 minutes
+        setInterval(checkRemovidoStatus, 120000);
 
         // Check removido status when the page becomes visible
         document.addEventListener("visibilitychange", function() {
@@ -344,4 +344,4 @@
         }
     </script>
 </body>
-</html> 
+</html>

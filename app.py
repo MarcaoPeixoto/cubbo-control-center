@@ -403,26 +403,36 @@ def api_remocoes():
 
     if remocoes_json:
         remocoes = json.loads(remocoes_json)
-        
-        # Filter remocoes based on search query
-        if search_query:
-            filtered_remocoes = [
-                r for r in remocoes 
-                if search_query in r['numero_pedido'].lower() or 
-                   search_query in r['cliente'].lower()
-            ]
-        else:
-            # If no search query, filter out removido=True items
-            filtered_remocoes = [r for r in remocoes if not r.get('removido', False)]
-        
-        return jsonify(filtered_remocoes)
     else:
-        # If data is not in Redis, fetch it and store it
         remocoes = get_remocoes()
-        # Filter out removido=True items if no search query
-        if not search_query:
-            remocoes = [r for r in remocoes if not r.get('removido', False)]
-        return jsonify(remocoes)
+        redis_client.set(redis_key, json.dumps(remocoes))
+
+    # Check removido status for all remocoes
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_remocao = {executor.submit(check_removido_status, remocao['numero_pedido'], remocao['cliente']): remocao for remocao in remocoes}
+        for future in as_completed(future_to_remocao):
+            remocao = future_to_remocao[future]
+            try:
+                remocao['removido'] = future.result()
+            except Exception as e:
+                print(f"Error checking removido status for {remocao['numero_pedido']}, {remocao['cliente']}: {e}")
+                remocao['removido'] = False
+
+    # Update Redis with the latest removido status
+    redis_client.set(redis_key, json.dumps(remocoes))
+
+    # Filter remocoes based on search query
+    if search_query:
+        filtered_remocoes = [
+            r for r in remocoes 
+            if search_query in r['numero_pedido'].lower() or 
+               search_query in r['cliente'].lower()
+        ]
+    else:
+        # If no search query, filter out removido=True items
+        filtered_remocoes = [r for r in remocoes if not r.get('removido', False)]
+
+    return jsonify(filtered_remocoes)
 
 @app.route('/update-volumes', methods=['POST'])
 @login_required
