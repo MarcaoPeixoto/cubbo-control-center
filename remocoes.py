@@ -164,7 +164,7 @@ def get_remocoes():
     redis_client.set(redis_key, json.dumps(processed_remocoes))
 
     return processed_remocoes
-
+ 
 def check_removido_status(numero_pedido, cliente, max_retries=3, delay=1):
     SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
     

@@ -633,7 +633,7 @@ def check_removido_status(numero_pedido, cliente):
         print(f"Error checking removido status: {e}")
         return False
     
-    
+     
 if __name__ == '__main__':
     # Run both scripts initially
     check_redis_connectivity()
