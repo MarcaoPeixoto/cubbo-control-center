@@ -399,13 +399,39 @@ def check_redis_connectivity():
 def api_remocoes():
     redis_key = "remocoes"
     remocoes_json = redis_client.get(redis_key)
+    search_query = request.args.get('search', '').lower()
+
     if remocoes_json:
         remocoes = json.loads(remocoes_json)
-        return jsonify(remocoes)
+        
+        # Filter remocoes based on search query
+        if search_query:
+            filtered_remocoes = [
+                r for r in remocoes 
+                if search_query in r['numero_pedido'].lower() or 
+                   search_query in r['cliente'].lower()
+            ]
+        else:
+            # If no search query, filter out removido=True items
+            filtered_remocoes = [r for r in remocoes if not r.get('removido', False)]
+        
+        return jsonify(filtered_remocoes)
     else:
         # If data is not in Redis, fetch it and store it
         remocoes = get_remocoes()
-        return jsonify(remocoes)
+        redis_client.set(redis_key, json.dumps(remocoes))
+        
+        # Apply filtering
+        if search_query:
+            filtered_remocoes = [
+                r for r in remocoes 
+                if search_query in r['numero_pedido'].lower() or 
+                   search_query in r['cliente'].lower()
+            ]
+        else:
+            filtered_remocoes = [r for r in remocoes if not r.get('removido', False)]
+        
+        return jsonify(filtered_remocoes)
 
 @app.route('/update-volumes', methods=['POST'])
 @login_required
