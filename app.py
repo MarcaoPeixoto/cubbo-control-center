@@ -6,11 +6,11 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import subprocess
 from functools import wraps
 import redis
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 import threading
 from manifesto import save_to_google_docs, link_docs, nao_despachados, get_manifesto
 from datetime import datetime, timedelta
-from remocoes import get_remocoes  # Import the get_remocoes function
+from remocoes import get_remocoes, check_removido_status
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
@@ -26,24 +26,24 @@ scheduler = BackgroundScheduler()
 # Set a secret key for sessions
 app.secret_key = os.urandom(24)
 
-# Get password from environment variable
-CORRECT_PASSWORD = os.environ.get('LOGIN_PASSWORD')
-REMOCOES_FOLDER_ID = os.environ.get('REMOCOES_FOLDER_ID')
+# Load environment variables
+load_dotenv()
 
-env_config = dotenv_values(".env")
+# Get environment variables
+CORRECT_PASSWORD = os.getenv('LOGIN_PASSWORD')
+REMOCOES_FOLDER_ID = os.getenv('REMOCOES_FOLDER_ID')
+REDIS_END = os.getenv('REDIS_END')
+REDIS_PORT = os.getenv('REDIS_PORT')
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
 
-redis_end = env_config.get('REDIS_END')
-
-if redis_end is not None:
-    redis_port = env_config.get('REDIS_PORT')
-    redis_password = env_config.get('REDIS_PASSWORD')
-else:
-    redis_end=os.environ["REDIS_END"]
-    redis_port=os.environ["REDIS_PORT"]
-    redis_password=os.environ["REDIS_PASSWORD"]
-
-redis_client = redis.StrictRedis(host=redis_end, port=redis_port, password=redis_password, db=0, decode_responses=True)
-
+# Set up Redis client
+redis_client = redis.StrictRedis(
+    host=REDIS_END,
+    port=REDIS_PORT,
+    password=REDIS_PASSWORD,
+    db=0,
+    decode_responses=True
+)
 
 def login_required(f):
     @wraps(f)
@@ -441,10 +441,6 @@ def update_volumes():
 @app.route('/upload-images', methods=['POST'])
 @login_required
 def upload_images():
-    SCOPES = ['https://www.googleapis.com/auth/documents.readonly', 
-              'https://www.googleapis.com/auth/drive.file',
-              'https://www.googleapis.com/auth/drive']
-    
     if 'images' not in request.files:
         return jsonify({'success': False, 'error': 'No images in the request'}), 400
 
@@ -465,6 +461,32 @@ def upload_images():
         return jsonify({'success': False, 'error': 'Remocoes not found in Redis'}), 404
 
     # Set up Google Drive API client
+    creds = get_google_credentials()
+    if not creds:
+        return jsonify({'success': False, 'error': 'Failed to get Google credentials'}), 500
+
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    uploaded_files = []
+    for index, file in enumerate(request.files.getlist('images')):
+        filename = generate_filename(remocao, volumes, index, file)
+        file_path = save_temp_file(file, filename)
+        file_id = upload_to_drive(drive_service, filename, file_path, REMOCOES_FOLDER_ID)
+        if file_id:
+            uploaded_files.append(file_id)
+        os.remove(file_path)  # Clean up the temporary file
+
+    # Update the 'removido' status in Redis
+    remocao['removido'] = True
+    redis_client.set(redis_key, json.dumps(remocoes))
+
+    return jsonify({'success': True, 'uploaded_files': uploaded_files})
+
+def get_google_credentials():
+    SCOPES = ['https://www.googleapis.com/auth/documents.readonly', 
+              'https://www.googleapis.com/auth/drive.file',
+              'https://www.googleapis.com/auth/drive']
+    
     creds = None
     token_json = redis_client.get('token_json')
 
@@ -489,35 +511,27 @@ def upload_images():
         
         # Update token in Redis
         redis_client.set('token_json', creds.to_json())
-    drive_service = build('drive', 'v3', credentials=creds)
+    
+    return creds
 
-    folder_id = REMOCOES_FOLDER_ID
+def generate_filename(remocao, volumes, index, file):
+    base_filename = f"{remocao['numero_pedido']}_{remocao['cliente']}_{volumes}_volumes_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    file_extension = os.path.splitext(file.filename)[1]
+    return f"{base_filename}_{index + 1}{file_extension}"
 
-    uploaded_files = []
-    for index, file in enumerate(request.files.getlist('images')):
-        # Generate a unique filename for each image
-        base_filename = f"{remocao['numero_pedido']}_{remocao['cliente']}_{volumes}_volumes_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        file_extension = os.path.splitext(file.filename)[1]
-        filename = f"{base_filename}_{index + 1}{file_extension}"
-        
-        file_path = os.path.join('/tmp', filename)
-        file.save(file_path)
+def save_temp_file(file, filename):
+    file_path = os.path.join('/tmp', filename)
+    file.save(file_path)
+    return file_path
 
-        file_metadata = {
-            'name': filename,
-            'parents': [folder_id]
-        }
-        media = MediaFileUpload(file_path, resumable=True)
-        file = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-        uploaded_files.append(file.get('id'))
-
-        os.remove(file_path)  # Clean up the temporary file
-
-    # Update the 'removido' status in Redis
-    remocao['removido'] = True
-    redis_client.set(redis_key, json.dumps(remocoes))
-
-    return jsonify({'success': True, 'uploaded_files': uploaded_files})
+def upload_to_drive(drive_service, filename, file_path, folder_id):
+    file_metadata = {
+        'name': filename,
+        'parents': [folder_id]
+    }
+    media = MediaFileUpload(file_path, resumable=True)
+    file = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+    return file.get('id')
 
 @app.route('/get-image/<numero_pedido>/<cliente>')
 @login_required
@@ -566,44 +580,9 @@ def get_image(numero_pedido, cliente):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def check_removido_status(numero_pedido, cliente):
-    SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-    
-    creds = None
-    token_json = redis_client.get('token_json')
-
-    if token_json:
-        creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
-    
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            print("Invalid credentials")
-            return False
-
-        # Update token in Redis
-        redis_client.set('token_json', creds.to_json())
-
-    drive_service = build('drive', 'v3', credentials=creds)
-
-    folder_id = REMOCOES_FOLDER_ID
-    query = f"'{folder_id}' in parents and (name contains '{numero_pedido}' and name contains '{cliente}')"
-
-    try:
-        results = drive_service.files().list(q=query, fields="files(id, name)").execute()
-        files = results.get('files', [])
-
-        return len(files) > 0  # If files exist, it's considered "removido"
-    except Exception as e:
-        print(f"Error checking removido status: {e}")
-        return False
-    
-    
 if __name__ == '__main__':
     # Run both scripts initially
     check_redis_connectivity()
     update_jsons()
     scheduler.start()
     app.run(host='0.0.0.0', debug=True)
-    

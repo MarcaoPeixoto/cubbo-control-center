@@ -110,7 +110,6 @@
 <body>
     <h2 style="text-align: center;font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;">Lista de Remoções</h2>
     
-    <!-- Add search bar -->
     <input type="text" id="search-bar" placeholder="Pesquisar por numero do pedido ou marca">
 
     <table id="remocoes-table">
@@ -123,6 +122,7 @@
                 <th>Processado</th>
                 <th>Removido</th>
                 <th>Volumes</th>
+                <th>Ações</th>
             </tr>
         </thead>
         <tbody>
@@ -130,7 +130,6 @@
         </tbody>
     </table>
 
-    <!-- Add this modal div at the end of the body -->
     <div id="imageModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
@@ -139,26 +138,24 @@
     </div>
 
     <script>
-        let remocoes = []; // Store all remocoes data
+        let remocoes = [];
 
-        // Function to fetch remocoes data
         function fetchRemocoes() {
             fetch('/api/remocoes')
                 .then(response => response.json())
                 .then(data => {
-                    remocoes = data; // Store all data
-                    renderTable(remocoes); // Initial render
+                    remocoes = data;
+                    renderTable(remocoes);
                 })
                 .catch(error => console.error('Error fetching data:', error));
         }
 
-        // Function to check removido status
         function checkRemovidoStatus() {
             fetch('/api/check-removido-status')
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        fetchRemocoes(); // Refresh the table after updating removido status
+                        fetchRemocoes();
                     } else {
                         console.error('Error checking removido status:', data.error);
                     }
@@ -166,16 +163,10 @@
                 .catch(error => console.error('Error checking removido status:', error));
         }
 
-        // Fetch remocoes data when the page loads
         fetchRemocoes();
-
-        // Check removido status after fetching remocoes data
-        setTimeout(checkRemovidoStatus, 1000); // Delay by 1 second to ensure remocoes data is loaded first
-
-        // Check removido status every 5 minutes
+        setTimeout(checkRemovidoStatus, 1000);
         setInterval(checkRemovidoStatus, 300000);
 
-        // Check removido status when the page becomes visible
         document.addEventListener("visibilitychange", function() {
             if (!document.hidden) {
                 checkRemovidoStatus();
@@ -184,12 +175,9 @@
 
         function renderTable(data) {
             const tableBody = document.querySelector('#remocoes-table tbody');
-            tableBody.innerHTML = ''; // Clear existing rows
+            tableBody.innerHTML = '';
             data.forEach(remocao => {
                 const row = document.createElement('tr');
-                row.dataset.id = remocao.id;
-                row.dataset.numeroPedido = remocao.numero_pedido;
-                row.dataset.cliente = remocao.cliente;
                 row.innerHTML = `
                     <td>${remocao.id}</td>
                     <td>${remocao.numero_pedido}</td>
@@ -201,50 +189,44 @@
                         <input type="number" class="volumes-input" value="${remocao.volumes || 1}" min="1" data-id="${remocao.id}">
                     </td>
                     <td>
-                        <div class="file-upload-container">
-                            <label for="file-upload-${remocao.id}" class="file-upload-label">Escolher arquivo</label>
-                            <input id="file-upload-${remocao.id}" type="file" accept="image/*" multiple class="image-upload" data-id="${remocao.id}">
-                            <button class="upload-btn" data-id="${remocao.id}">Upload</button>
-                        </div>
+                        <input type="file" accept="image/*" multiple class="image-upload" data-id="${remocao.id}">
+                        <button class="upload-btn" data-id="${remocao.id}">Upload</button>
                     </td>
                 `;
                 tableBody.appendChild(row);
-
-                // Add click event listener to the row
-                row.addEventListener('click', function(event) {
-                    if (remocao.removido && !event.target.classList.contains('volumes-input')) {
-                        showImage(remocao.numero_pedido, remocao.cliente);
-                    }
-                });
             });
 
-            // Add event listeners for volume inputs
+            addEventListeners();
+        }
+
+        function addEventListeners() {
             document.querySelectorAll('.volumes-input').forEach(input => {
                 input.addEventListener('change', function() {
-                    const id = this.dataset.id;
-                    const volumes = parseInt(this.value);
-                    updateVolumes(id, volumes);
+                    updateVolumes(this.dataset.id, parseInt(this.value));
                 });
             });
 
-            // Add event listeners for file uploads
             document.querySelectorAll('.upload-btn').forEach(btn => {
                 btn.addEventListener('click', handleImageUpload);
+            });
+
+            document.querySelectorAll('tr').forEach(row => {
+                row.addEventListener('click', function(event) {
+                    if (this.querySelector('.removido-cell').textContent === '✓' && !event.target.classList.contains('volumes-input')) {
+                        showImage(this.children[1].textContent, this.children[2].textContent);
+                    }
+                });
             });
         }
 
         function updateVolumes(id, volumes) {
             fetch('/update-volumes', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id, volumes }),
             })
             .then(response => response.json())
-            .then(data => {
-                console.log('Volumes updated:', data);
-            })
+            .then(data => console.log('Volumes updated:', data))
             .catch(error => console.error('Error updating volumes:', error));
         }
 
@@ -325,18 +307,10 @@
                 .catch(error => console.error('Error fetching image:', error));
         }
 
-        // Get the modal
+        // Modal event listeners
         var modal = document.getElementById('imageModal');
-
-        // Get the <span> element that closes the modal
         var span = document.getElementsByClassName("close")[0];
-
-        // When the user clicks on <span> (x), close the modal
-        span.onclick = function() {
-            modal.style.display = "none";
-        }
-
-        // When the user clicks anywhere outside of the modal, close it
+        span.onclick = function() { modal.style.display = "none"; }
         window.onclick = function(event) {
             if (event.target == modal) {
                 modal.style.display = "none";
@@ -344,4 +318,4 @@
         }
     </script>
 </body>
-</html> 
+</html>
