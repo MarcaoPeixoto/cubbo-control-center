@@ -9,6 +9,9 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 import redis
+from google.auth.exceptions import RefreshError
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 date_format = "%d-%m-%Y, %H:%M:%S"
@@ -147,7 +150,8 @@ def get_remocoes():
             'processado': remocao['processado'].strftime(date_format) if remocao['processado'] else None,
             'numero_pedido': remocao['numero_pedido'],
             'cliente': remocao['cliente'],
-            'removido': False  # Initialize as False
+            'removido': False,  # Initialize as False
+            'volumes': remocao.get('volumes', 1)  # Default to 1 if not present
         }
 
         processed_remocoes.append(data)
@@ -155,9 +159,16 @@ def get_remocoes():
     # Sort processed_remocoes by numero_pedido
     processed_remocoes.sort(key=lambda x: (x['cliente'], x['numero_pedido']))
 
-    # Check removido status for each remocao
-    for remocao in processed_remocoes:
-        remocao['removido'] = check_removido_status(remocao['numero_pedido'], remocao['cliente'])
+    # Check removido status for each remocao using ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_remocao = {executor.submit(check_removido_status, remocao['numero_pedido'], remocao['cliente']): remocao for remocao in processed_remocoes}
+        for future in as_completed(future_to_remocao):
+            remocao = future_to_remocao[future]
+            try:
+                remocao['removido'] = future.result()
+            except Exception as e:
+                print(f"Error checking removido status for {remocao['numero_pedido']}, {remocao['cliente']}: {e}")
+                remocao['removido'] = False
 
     # Store all removals under a single Redis key
     redis_key = "remocoes"
@@ -165,36 +176,58 @@ def get_remocoes():
 
     return processed_remocoes
 
-def check_removido_status(numero_pedido, cliente):
+def check_removido_status(numero_pedido, cliente, max_retries=3, delay=1):
     SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
     
-    creds = None
-    token_json = redis_client.get('token_json')
+    for attempt in range(max_retries):
+        try:
+            creds = None
+            token_json = redis_client.get('token_json')
 
-    if token_json:
-        creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
-    
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            if token_json:
+                creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
+            
+            if not creds or not creds.valid:
+                if creds and creds.expired and creds.refresh_token:
+                    try:
+                        creds.refresh(Request())
+                    except RefreshError:
+                        # If refresh fails, force re-authentication
+                        creds = None
+                
+                if not creds:
+                    credentials_json = redis_client.get('credentials_json')
+                    if not credentials_json:
+                        raise Exception("credentials.json not found in Redis")
+                    flow = InstalledAppFlow.from_client_config(
+                        json.loads(credentials_json), SCOPES)
+                    creds = flow.run_local_server(port=0)
+                
+                # Update token in Redis
+                redis_client.set('token_json', creds.to_json())
+
+            drive_service = build('drive', 'v3', credentials=creds)
+
+            folder_id = os.environ.get('REMOCOES_FOLDER_ID')
+            query = f"'{folder_id}' in parents and (name contains '{numero_pedido}' and name contains '{cliente}')"
+
+            results = drive_service.files().list(q=query, fields="files(id, name)", pageSize=1).execute()
+            files = results.get('files', [])
+
+            return len(files) > 0
+
+        except HttpError as e:
+            if e.resp.status in [403, 429]:  # Rate limit error
+                if attempt < max_retries - 1:
+                    time.sleep(delay * (2 ** attempt))  # Exponential backoff
+                    continue
+            print(f"HTTP error occurred: {e}")
+            return False
+        except Exception as e:
+            print(f"Error checking removido status: {e}")
             return False
 
-        # Update token in Redis
-        redis_client.set('token_json', creds.to_json())
-
-    drive_service = build('drive', 'v3', credentials=creds)
-
-    folder_id = os.environ.get('REMOCOES_FOLDER_ID')
-    query = f"'{folder_id}' in parents and (name contains '{numero_pedido}' and name contains '{cliente}')"
-
-    try:
-        results = drive_service.files().list(q=query, fields="files(id, name)").execute()
-        files = results.get('files', [])
-
-        return len(files) > 0
-    except Exception as e:
-        print(f"Error checking removido status: {e}")
-        return False
+    print(f"Max retries reached for checking removido status: {numero_pedido}, {cliente}")
+    return False
 
 get_remocoes()
