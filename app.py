@@ -10,6 +10,7 @@ from dotenv import dotenv_values
 import threading
 from manifesto import save_to_google_docs, link_docs, nao_despachados, get_manifesto
 from datetime import datetime, timedelta
+from remocoes import get_remocoes  # Import the get_remocoes function
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
@@ -362,6 +363,18 @@ def check_redis_connectivity():
         print(f"Failed to connect to Redis: {e}")
         return False
 
+@app.route('/api/remocoes')
+@login_required
+def api_remocoes():
+    redis_key = "remocoes"
+    remocoes_json = redis_client.get(redis_key)
+    if remocoes_json:
+        remocoes = json.loads(remocoes_json)
+        return jsonify(remocoes)
+    else:
+        # If data is not in Redis, fetch it and store it
+        remocoes = get_remocoes()
+        return jsonify(remocoes)
 
 if __name__ == '__main__':
     # Run both scripts initially

@@ -155,9 +155,14 @@ def get_remocoes():
     redis_key = "remocoes"
     redis_client.set(redis_key, json.dumps(processed_remocoes))
 
-
-
     return remocoes
+
+def get_img_rem(id):
+    pass
+
+def post_img_rem(id):
+    pass
+
 
 def rem_link():
     folder_id = env_config.get('REMOCOES_FOLDER_ID')
