@@ -404,6 +404,20 @@ def api_remocoes():
     if remocoes_json:
         remocoes = json.loads(remocoes_json)
         
+        # Check removido status for all remocoes
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_remocao = {executor.submit(check_removido_status, remocao['numero_pedido'], remocao['cliente']): remocao for remocao in remocoes}
+            for future in as_completed(future_to_remocao):
+                remocao = future_to_remocao[future]
+                try:
+                    remocao['removido'] = future.result()
+                except Exception as e:
+                    print(f"Error checking removido status for {remocao['numero_pedido']}, {remocao['cliente']}: {e}")
+                    remocao['removido'] = False
+
+        # Update Redis with the latest removido status
+        redis_client.set(redis_key, json.dumps(remocoes))
+        
         # Filter remocoes based on search query
         if search_query:
             filtered_remocoes = [
@@ -586,10 +600,40 @@ def get_image(numero_pedido, cliente):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def check_removido_status(numero_pedido, cliente): 
-    # Implement the logic to check the status
-    # Return the result
-    return False
+def check_removido_status(numero_pedido, cliente):
+    SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
+    
+    creds = None
+    token_json = redis_client.get('token_json')
+
+    if token_json:
+        creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
+    
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            print("Invalid credentials")
+            return False
+
+        # Update token in Redis
+        redis_client.set('token_json', creds.to_json())
+
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    folder_id = REMOCOES_FOLDER_ID
+    query = f"'{folder_id}' in parents and (name contains '{numero_pedido}' and name contains '{cliente}')"
+
+    try:
+        results = drive_service.files().list(q=query, fields="files(id, name)").execute()
+        files = results.get('files', [])
+
+        return len(files) > 0  # If files exist, it's considered "removido"
+    except Exception as e:
+        print(f"Error checking removido status: {e}")
+        return False
+    
+    
 if __name__ == '__main__':
     # Run both scripts initially
     check_redis_connectivity()
