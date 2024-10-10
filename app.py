@@ -487,8 +487,12 @@ def upload_images():
     folder_id = REMOCOES_FOLDER_ID
 
     uploaded_files = []
-    for file in request.files.getlist('images'):
-        filename = f"{remocao['numero_pedido']}_{remocao['cliente']}_{volumes}_volumes_{file.filename}"
+    for index, file in enumerate(request.files.getlist('images')):
+        # Generate a unique filename for each image
+        base_filename = f"{remocao['numero_pedido']}_{remocao['cliente']}_{volumes}_volumes_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        file_extension = os.path.splitext(file.filename)[1]
+        filename = f"{base_filename}_{index + 1}{file_extension}"
+        
         file_path = os.path.join('/tmp', filename)
         file.save(file_path)
 
