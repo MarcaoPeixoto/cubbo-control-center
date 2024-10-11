@@ -172,20 +172,18 @@
 
     <script>
         let remocoes = [];
-        let showAllRows = false;
 
-        function fetchRemocoes() {
-            fetch('/api/remocoes')
+        function fetchRemocoes(searchTerm = '') {
+            fetch(`/api/remocoes?search=${encodeURIComponent(searchTerm)}`)
                 .then(response => response.json())
                 .then(data => {
                     remocoes = data;
-                    filterAndRenderTable();
+                    renderTable(remocoes);
                 })
                 .catch(error => console.error('Error fetching data:', error));
         }
 
         fetchRemocoes();
-        // Remove the setTimeout and setInterval calls for checkRemovidoStatus
 
         document.addEventListener("visibilitychange", function() {
             if (!document.hidden) {
@@ -309,22 +307,13 @@
             }
         }
 
-        function filterAndRenderTable(searchTerm = '') {
-            searchTerm = searchTerm.toLowerCase();
-            const filteredRemocoes = remocoes.filter(remocao => 
-                !remocao.removido || 
-                remocao.id.toString().toLowerCase().includes(searchTerm) ||
-                remocao.numero_pedido.toLowerCase().includes(searchTerm) ||
-                remocao.cliente.toLowerCase().includes(searchTerm) ||
-                (remocao.pendente && remocao.pendente.toLowerCase().includes(searchTerm)) ||
-                (remocao.processado && remocao.processado.toLowerCase().includes(searchTerm))
-            );
-            renderTable(filteredRemocoes);
-        }
-
+        let searchTimeout;
         document.getElementById('search-bar').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
-            filterAndRenderTable(searchTerm);
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                fetchRemocoes(searchTerm);
+            }, 300); // Debounce for 300ms
         });
 
         function showImage(numeroPedido, cliente) {

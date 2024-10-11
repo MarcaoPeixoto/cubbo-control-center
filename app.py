@@ -399,9 +399,17 @@ def api_remocoes():
     else:
         # If data is not in Redis, fetch it and store it
         remocoes = get_remocoes()
-        
-    # Filter out removido=True items if no search query
-    if not search_query:
+    
+    # Filter remocoes based on search query
+    if search_query:
+        remocoes = [r for r in remocoes if
+                    search_query in str(r['id']).lower() or
+                    search_query in r['numero_pedido'].lower() or
+                    search_query in r['cliente'].lower() or
+                    (r['pendente'] and search_query in r['pendente'].lower()) or
+                    (r['processado'] and search_query in r['processado'].lower())]
+    else:
+        # If no search query, filter out removido=True items
         remocoes = [r for r in remocoes if not r.get('removido', False)]
     
     return jsonify(remocoes)
