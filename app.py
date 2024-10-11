@@ -172,7 +172,7 @@ def check_removido_status():
         
         # Update the 'removido' status based on the removed_orders set
         for remocao in remocoes:
-            remocao['removido'] = remocao['numero_pedido'] in removed_orders
+            remocao['removido'] = remocao['id'] in removed_orders
 
         redis_client.set(redis_key, json.dumps(remocoes))
         return True
@@ -509,7 +509,7 @@ def upload_images():
 
     if uploaded_files:
         # Save the order ID to a new Redis set
-        redis_client.sadd("removed_orders", remocao['numero_pedido'])
+        redis_client.sadd("removed_orders", remocao['id'])
         
         # Call check_removido_status to update the status
         check_removido_status()
