@@ -160,28 +160,25 @@ def controle_mg():
 def remocoes():
     return render_template('remocoes.html')
 
-@app.route('/api/check-removido-status')
-@login_required
-def api_check_removido_status():
+# Remove the @app.route decorator
+def check_removido_status():
     redis_key = "remocoes"
     remocoes_json = redis_client.get(redis_key)
     if remocoes_json:
         remocoes = json.loads(remocoes_json)
         
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            future_to_remocao = {executor.submit(check_removido_status, remocao['numero_pedido'], remocao['cliente']): remocao for remocao in remocoes}
-            for future in as_completed(future_to_remocao):
-                remocao = future_to_remocao[future]
-                try:
-                    remocao['removido'] = future.result()
-                except Exception as e:
-                    print(f"Error checking removido status for {remocao['numero_pedido']}, {remocao['cliente']}: {e}")
-                    remocao['removido'] = False
+        # Get the set of removed order IDs
+        removed_orders = redis_client.smembers("removed_orders")
+        
+        # Update the 'removido' status based on the removed_orders set
+        for remocao in remocoes:
+            remocao['removido'] = remocao['numero_pedido'] in removed_orders
 
         redis_client.set(redis_key, json.dumps(remocoes))
-        return jsonify({'success': True})
+        return True
     else:
-        return jsonify({'error': 'Remocoes not found in Redis'}), 404
+        print("Remocoes not found in Redis")
+        return False
 
 @app.route('/json/<path:filename>')
 @login_required
@@ -390,6 +387,10 @@ def check_redis_connectivity():
 @login_required
 def api_remocoes():
     redis_key = "remocoes"
+    
+    # Call check_removido_status to ensure up-to-date information
+    check_removido_status()
+    
     remocoes_json = redis_client.get(redis_key)
     search_query = request.args.get('search', '').lower()
     
@@ -506,9 +507,12 @@ def upload_images():
 
         os.remove(file_path)  # Clean up the temporary file
 
-    # Update the 'removido' status in Redis
-    remocao['removido'] = True
-    redis_client.set(redis_key, json.dumps(remocoes))
+    if uploaded_files:
+        # Save the order ID to a new Redis set
+        redis_client.sadd("removed_orders", remocao['numero_pedido'])
+        
+        # Call check_removido_status to update the status
+        check_removido_status()
 
     return jsonify({'success': True, 'uploaded_files': uploaded_files})
 

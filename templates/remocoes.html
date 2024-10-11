@@ -183,26 +183,12 @@
                 .catch(error => console.error('Error fetching data:', error));
         }
 
-        function checkRemovidoStatus() {
-            fetch('/api/check-removido-status')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        fetchRemocoes();
-                    } else {
-                        console.error('Error checking removido status:', data.error);
-                    }
-                })
-                .catch(error => console.error('Error checking removido status:', error));
-        }
-
         fetchRemocoes();
-        setTimeout(checkRemovidoStatus, 1000);
-        setInterval(checkRemovidoStatus, 300000);
+        // Remove the setTimeout and setInterval calls for checkRemovidoStatus
 
         document.addEventListener("visibilitychange", function() {
             if (!document.hidden) {
-                checkRemovidoStatus();
+                fetchRemocoes(); // Just fetch remocoes when the page becomes visible
             }
         });
 
@@ -309,9 +295,7 @@
                     const result = await response.json();
                     if (result.success) {
                         alert('Images uploaded successfully');
-                        remocao.removido = true;
-                        const removidoCell = event.target.closest('tr').querySelector('.removido-cell');
-                        removidoCell.textContent = '✓';
+                        fetchRemocoes(); // Fetch updated remocoes after successful upload
                     } else {
                         alert('Failed to upload images');
                     }
