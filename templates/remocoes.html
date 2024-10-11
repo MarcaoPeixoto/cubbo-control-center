@@ -172,6 +172,7 @@
 
     <script>
         let remocoes = [];
+        let showAllRows = false;
 
         function fetchRemocoes() {
             fetch('/api/remocoes')
@@ -215,7 +216,9 @@
                         <button class="upload-btn" data-id="${remocao.id}">Upload</button>
                     </td>
                 `;
-                tableBody.appendChild(row);
+                if (!remocao.removido || showAllRows) {
+                    tableBody.appendChild(row);
+                }
             });
 
             addEventListeners();
@@ -308,8 +311,8 @@
             }
         }
 
-        document.getElementById('search-bar').addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
+        function filterAndRenderTable(searchTerm = '') {
+            showAllRows = searchTerm.length > 0;
             const filteredRemocoes = remocoes.filter(remocao => 
                 remocao.id.toString().includes(searchTerm) ||
                 remocao.numero_pedido.toLowerCase().includes(searchTerm) ||
@@ -318,6 +321,11 @@
                 (remocao.processado && remocao.processado.toLowerCase().includes(searchTerm))
             );
             renderTable(filteredRemocoes);
+        }
+
+        document.getElementById('search-bar').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            filterAndRenderTable(searchTerm);
         });
 
         function showImage(numeroPedido, cliente) {
