@@ -433,6 +433,10 @@ def update_volumes():
 @app.route('/upload-images', methods=['POST'])
 @login_required
 def upload_images():
+    SCOPES = ['https://www.googleapis.com/auth/documents.readonly', 
+              'https://www.googleapis.com/auth/drive.file',
+              'https://www.googleapis.com/auth/drive']
+
     if 'images' not in request.files:
         return jsonify({'success': False, 'error': 'No images in the request'}), 400
 
@@ -453,19 +457,53 @@ def upload_images():
         return jsonify({'success': False, 'error': 'Remocoes not found in Redis'}), 404
 
     # Set up Google Drive API client
-    creds = get_google_credentials()
-    if not creds:
-        return jsonify({'success': False, 'error': 'Failed to get Google credentials'}), 500
+    creds = None
+    token_json = redis_client.get('token_json')
 
+    if token_json:
+        creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
+
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            try:
+                creds.refresh(Request())
+            except Exception as e:
+                print(f"Error refreshing credentials: {e}")
+                creds = None
+
+        if not creds:
+            credentials_json = redis_client.get('credentials_json')
+            if not credentials_json:
+                raise Exception("credentials.json not found in Redis")
+            flow = InstalledAppFlow.from_client_config(
+                json.loads(credentials_json), SCOPES)
+            creds = flow.run_local_server(port=0)
+
+    # Update token in Redis
+    redis_client.set('token_json', creds.to_json())
     drive_service = build('drive', 'v3', credentials=creds)
+
+    folder_id = REMOCOES_FOLDER_ID
 
     uploaded_files = []
     for index, file in enumerate(request.files.getlist('images')):
-        filename = generate_filename(remocao, volumes, index, file)
-        file_path = save_temp_file(file, filename)
-        file_id = upload_to_drive(drive_service, filename, file_path, REMOCOES_FOLDER_ID)
-        if file_id:
-            uploaded_files.append(file_id)
+        # Generate a unique filename for each image
+        current_date = datetime.now().strftime('%d-%m-%Y')
+        base_filename = f"{remocao['numero_pedido']}_{remocao['cliente']}_{volumes}_volumes_{current_date}"
+        file_extension = os.path.splitext(file.filename)[1]
+        filename = f"{base_filename}{file_extension}"
+
+        file_path = os.path.join('/tmp', filename)
+        file.save(file_path)
+
+        file_metadata = {
+            'name': filename,
+            'parents': [folder_id]
+        }
+        media = MediaFileUpload(file_path, resumable=True)
+        file = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+        uploaded_files.append(file.get('id'))
+
         os.remove(file_path)  # Clean up the temporary file
 
     # Update the 'removido' status in Redis

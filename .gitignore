@@ -123,3 +123,5 @@ Desktop.ini
 #google API credentials
 token.json
 credentials.json
+#temp files
+backupXXX.py
