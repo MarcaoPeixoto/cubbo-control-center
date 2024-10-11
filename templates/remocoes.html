@@ -179,7 +179,7 @@
                 .then(response => response.json())
                 .then(data => {
                     remocoes = data;
-                    renderTable(remocoes);
+                    filterAndRenderTable();
                 })
                 .catch(error => console.error('Error fetching data:', error));
         }
@@ -193,30 +193,30 @@
             }
         });
 
-        function renderTable(data) {
+        function renderTable(data, searchTerm = '') {
             const tableBody = document.querySelector('#remocoes-table tbody');
             tableBody.innerHTML = '';
             data.forEach(remocao => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${remocao.id}</td>
-                    <td>${remocao.numero_pedido}</td>
-                    <td>${remocao.cliente}</td>
-                    <td>${remocao.pendente || '-'}</td>
-                    <td>${remocao.processado || '-'}</td>
-                    <td class="removido-cell" style="text-align: center;">${remocao.removido ? '✓' : ''}</td>
-                    <td class="volumes-cell">
-                        <input type="number" class="volumes-input" value="${remocao.volumes || 1}" min="1" data-id="${remocao.id}">
-                    </td>
-                    <td>
-                        <div class="file-input-wrapper">
-                            <input type="file" id="file-${remocao.id}" accept="image/*" multiple class="image-upload" data-id="${remocao.id}">
-                            <label for="file-${remocao.id}" class="file-input-label">Selecionar foto</label>
-                        </div>
-                        <button class="upload-btn" data-id="${remocao.id}">Upload</button>
-                    </td>
-                `;
-                if (!remocao.removido || showAllRows) {
+                if (!remocao.removido || searchTerm) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${remocao.id}</td>
+                        <td>${remocao.numero_pedido}</td>
+                        <td>${remocao.cliente}</td>
+                        <td>${remocao.pendente || '-'}</td>
+                        <td>${remocao.processado || '-'}</td>
+                        <td class="removido-cell" style="text-align: center;">${remocao.removido ? '✓' : ''}</td>
+                        <td class="volumes-cell">
+                            <input type="number" class="volumes-input" value="${remocao.volumes || 1}" min="1" data-id="${remocao.id}">
+                        </td>
+                        <td>
+                            <div class="file-input-wrapper">
+                                <input type="file" id="file-${remocao.id}" accept="image/*" multiple class="image-upload" data-id="${remocao.id}">
+                                <label for="file-${remocao.id}" class="file-input-label">Selecionar foto</label>
+                            </div>
+                            <button class="upload-btn" data-id="${remocao.id}">Upload</button>
+                        </td>
+                    `;
                     tableBody.appendChild(row);
                 }
             });
@@ -312,15 +312,16 @@
         }
 
         function filterAndRenderTable(searchTerm = '') {
-            showAllRows = searchTerm.length > 0;
+            searchTerm = searchTerm.toLowerCase();
             const filteredRemocoes = remocoes.filter(remocao => 
+                !remocao.removido || 
                 remocao.id.toString().includes(searchTerm) ||
                 remocao.numero_pedido.toLowerCase().includes(searchTerm) ||
                 remocao.cliente.toLowerCase().includes(searchTerm) ||
                 (remocao.pendente && remocao.pendente.toLowerCase().includes(searchTerm)) ||
                 (remocao.processado && remocao.processado.toLowerCase().includes(searchTerm))
             );
-            renderTable(filteredRemocoes);
+            renderTable(filteredRemocoes, searchTerm);
         }
 
         document.getElementById('search-bar').addEventListener('input', function(e) {
