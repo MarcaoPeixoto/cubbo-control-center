@@ -400,7 +400,7 @@ def api_remocoes():
         # If data is not in Redis, fetch it and store it
         remocoes = get_remocoes()
     
-    # Filter remocoes based on search query
+    # Filter remocoes based on search query 
     if search_query:
         remocoes = [r for r in remocoes if
                     search_query in str(r['id']).lower() or
