@@ -158,6 +158,7 @@ def nao_despachados(data, transportadora):
     quantidade_nao_despachados = data['not_dispatched_count']
 
     warning_text = f"Transportadora: {transportadora}\n"
+    warning_text += f"Pedidos já processados e bipados: {data['dispatched_count']}\n\n"
 
     if data['carrier'] in ["Mercado Envíos", "CORREIOS"]:
         if quantidade_nao_despachados > 0:
