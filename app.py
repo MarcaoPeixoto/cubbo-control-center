@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from redis_connection import get_redis_connection
 import redis
 from atrasos import update_redis_data  # Import the function
+import logging
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
@@ -37,6 +38,10 @@ REMOCOES_FOLDER_ID = os.getenv('REMOCOES_FOLDER_ID')
 
 # Replace the existing redis_client creation with:
 redis_client = get_redis_connection()
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def login_required(f):
     @wraps(f)
@@ -687,8 +692,10 @@ def update_data():
         return jsonify({"success": False, "message": str(e)}), 500
 
 if __name__ == '__main__':
-    # Run both scripts initially
-    check_redis_connectivity()
-    update_jsons()
-    scheduler.start()
-    app.run(host='0.0.0.0', debug=True)
+    try:
+        check_redis_connectivity()
+        update_jsons()
+        scheduler.start()
+        app.run(host='0.0.0.0', debug=False)
+    except Exception as e:
+        logger.error(f"Failed to start the application: {e}")

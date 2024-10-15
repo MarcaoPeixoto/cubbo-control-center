@@ -127,7 +127,10 @@ def process_data(inputs):
 
     return {'parameters': json.dumps(params)}
 
-def get_atrasos(transportadora = None, data_inicial = None, data_final = None, cliente = None, status = None):
+hoje = datetime.now().strftime("%d-%m-%Y")
+
+
+def get_atrasos(transportadora = None, data_inicial = hoje, data_final = hoje, cliente = None, status = None):
 
     params = process_data({
         'transportadora': transportadora,
@@ -139,7 +142,7 @@ def get_atrasos(transportadora = None, data_inicial = None, data_final = None, c
 
     dataset = get_dataset(3477, params)
 
-    hoje = datetime.now().date()
+
     atrasos = []
 
     for order in dataset:
