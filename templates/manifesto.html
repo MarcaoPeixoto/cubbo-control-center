@@ -90,42 +90,63 @@
             color: black;
         }
         
+        .back-button {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            position: absolute;
+            top: 5%;
+            left: 5%;
+        }
+        .back-button:hover {
+            background-color: #5a6268;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <form id="manifestoForm" action="{{ url_for('manifesto_route') }}" method="post">
-            <select name="manifesto_option" id="manifesto_option" required>
-                <option value="">Selecione uma opção</option>
-                <option value="LOGGI">Loggi</option>
-                <option value="MELI">Mercado Envios</option>
-                <option value="CORREIOS">Correios</option>
-                <!-- <option value="JT">JT Express</option> -->
+        <form method="POST" action="{{ url_for('manifesto_route') }}">
+            <select name="manifesto_option" required>
+                <option value="">Select an option</option>
+                <option value="LOGGI">LOGGI</option>
+                <option value="MELI">MELI</option>
+                <option value="CORREIOS">CORREIOS</option>
             </select>
-            <button type="submit">Enviar</button>
+            <button type="submit" name="action" value="generate">Criar Manifesto</button>
+            <button type="submit" name="action" value="consulta">Consulta</button>
         </form>
         
         <div id="loadingBar" class="loading-bar">
             <div class="loading-bar-progress"></div>
         </div>
 
-        {% if not_dispatched_count is not none %}
-        <div class="result">
-            <p>{{ not_dispatched_count | safe }}</p>
-        </div>
+        {% if not_dispatched_count %}
+            <div>
+                <h2>Not Dispatched Orders:</h2>
+                {{ not_dispatched_count|safe }}
+            </div>
         {% endif %}
 
         {% if document_url %}
-        <div class="document-link">
-            <p>Documento criado: <a href="{{ document_url }}" target="_blank">Abrir documento</a></p>
-        </div>
+            <div>
+                <h2>Generated Document:</h2>
+                <a href="{{ document_url }}" target="_blank">View Document</a>
+            </div>
         {% endif %}
 
         {% if error %}
-        <div class="error">
-            <p>{{ error }}</p>
-        </div>
+            <div class="error">
+                {{ error }}
+            </div>
         {% endif %}
+
+        <!-- Add the "Voltar" button here -->
+        <button class="back-button" onclick="window.location.href='/ops'">Voltar</button>
     </div>
 
     <script>
@@ -135,4 +156,3 @@
     </script>
 </body>
 </html>
-

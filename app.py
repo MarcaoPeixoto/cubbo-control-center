@@ -108,16 +108,25 @@ def home():
 def manifesto_route():
     if request.method == 'POST':
         transportadora = request.form.get('manifesto_option')
+        action = request.form.get('action')
         print(f"Selected transportadora: {transportadora}")
         if transportadora:
             try:
-                document_url = link_docs(transportadora)
-                if document_url:
-                    data = get_manifesto(transportadora)
-                    not_dispatched_count = nao_despachados(data)
-                    return render_template('manifesto.html', not_dispatched_count=not_dispatched_count, document_url=document_url)
+                data = get_manifesto(transportadora)
+                not_dispatched_count = nao_despachados(data, transportadora)
+                
+                if action == 'consulta':
+                    # Only return the not_dispatched_count without creating a Google Doc
+                    return render_template('manifesto.html', not_dispatched_count=not_dispatched_count)
+                elif action == 'generate':
+                    # Generate Google Doc as before
+                    document_url = link_docs(transportadora)
+                    if document_url:
+                        return render_template('manifesto.html', not_dispatched_count=not_dispatched_count, document_url=document_url)
+                    else:
+                        return render_template('manifesto.html', error="Failed to create the document.")
                 else:
-                    return render_template('manifesto.html', error="Failed to create the document.")
+                    return render_template('manifesto.html', error="Invalid action.")
             except Exception as e:
                 return render_template('manifesto.html', error=f"An error occurred: {str(e)}")
         else:

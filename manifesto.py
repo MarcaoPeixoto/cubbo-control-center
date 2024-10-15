@@ -154,39 +154,41 @@ def get_manifesto(carrier):
 
 transportadora = "LOGGI"
 
-def nao_despachados(data):
+def nao_despachados(data, transportadora):
     quantidade_nao_despachados = data['not_dispatched_count']
+
+    warning_text = f"Transportadora: {transportadora}\n"
 
     if data['carrier'] in ["Mercado Envíos", "CORREIOS"]:
         if quantidade_nao_despachados > 0:
-            warning_text = f"<p><strong>ATENÇÃO! {quantidade_nao_despachados} pedidos processados e não despachados:</strong></p>"
+            warning_text += f"<p><strong>ATENÇÃO! {quantidade_nao_despachados} pedidos processados e não despachados:</strong></p>"
             warning_text += "<p>Não foram despachados os seguintes pedidos:</p>"
             warning_text += "<ul>"
             warning_text += "".join([f"<li>{str(item) if item else 'ERRO'}</li>" for item in data['not_dispatched_trackings']])
             warning_text += "</ul>"
         elif quantidade_nao_despachados == 1:
-            warning_text = f"<p><strong>ATENÇÃO! {quantidade_nao_despachados} pedido processado e não despachado:</strong></p>"
+            warning_text += f"<p><strong>ATENÇÃO! {quantidade_nao_despachados} pedido processado e não despachado:</strong></p>"
             warning_text += "<p>Não foi despachado o seguinte pedido:</p>"
             warning_text += "<ul>"
             warning_text += "".join([f"<li>{str(item) if item else 'ERRO'}</li>" for item in data['not_dispatched_trackings']])
             warning_text += "</ul>"
         else:
-            warning_text = "<p>Todos os pedidos foram despachados!</p>"
+            warning_text += "<p>Todos os pedidos foram despachados!</p>"
     else:
         if quantidade_nao_despachados > 0:
-            warning_text = f"<p><strong>ATENÇÃO! {quantidade_nao_despachados} pedidos processados e não despachados:</strong></p>"
+            warning_text += f"<p><strong>ATENÇÃO! {quantidade_nao_despachados} pedidos processados e não despachados:</strong></p>"
             warning_text += "<p>Não foram despachados os seguintes pedidos:</p>"
             warning_text += "<ul>"
             warning_text += "".join([f"<li>{str(item) if item else 'ERRO'}</li>" for item in data['not_dispatched_trackings']])
             warning_text += "</ul>"
         elif quantidade_nao_despachados == 1:
-            warning_text = f"<p><strong>ATENÇÃO! {quantidade_nao_despachados} pedido processado e não despachado:</strong></p>"
+            warning_text += f"<p><strong>ATENÇÃO! {quantidade_nao_despachados} pedido processado e não despachado:</strong></p>"
             warning_text += "<p>Não foi despachado o seguinte pedido:</p>"
             warning_text += "<ul>"
             warning_text += "".join([f"<li>{str(item) if item else 'ERRO'}</li>" for item in data['not_dispatched_trackings']])
             warning_text += "</ul>"
         else:
-            warning_text = "<p>Todos os pedidos foram despachados!</p>"
+            warning_text += "<p>Todos os pedidos foram despachados!</p>"
 
     return warning_text
 
@@ -340,19 +342,9 @@ def save_to_google_docs(document_title, data, folder_id=None):
 
         # Add warning about not dispatched orders if any
         if transportadora == "MELI" or transportadora == "CORREIOS":
-            if data['not_dispatched_count'] > 0:
-                warning_text = ""
-                warning_text += "\t\t".join([str(item) if item else 'ERRO' for item in data['not_dispatched_trackings']])
-                warning_text += "\t\t"
-                content += warning_text
             content += "\t\t".join(data['dispatched_trackings'])
             content += "\n\n\nAssinatura Transportadora:\n\nAssinatura Cubbo:"
         else:
-            if data['not_dispatched_count'] > 0:
-                warning_text = ""
-                warning_text += "\t".join([str(item) if item else 'ERRO' for item in data['not_dispatched_trackings']])
-                warning_text += "\t"
-                content += warning_text
             content += "\t".join(data['dispatched_trackings'])
             content += "\n\n\nAssinatura Transportadora:\n\nAssinatura Cubbo:"
 
