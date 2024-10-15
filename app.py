@@ -19,6 +19,7 @@ import io
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from redis_connection import get_redis_connection
 import redis
+from atrasos import update_redis_data  # Import the function
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
@@ -143,6 +144,11 @@ def bonus():
 @login_required
 def ops():
     return render_template('ops.html')
+
+@app.route('/atrasos')
+@login_required
+def atrasos():
+    return render_template('atrasos.html')
 
 @app.route('/embu')
 @login_required
@@ -369,6 +375,7 @@ def save_sla_extrema(sla_extrema):
     with open("json/sla_extrema.json", "w") as file:
         json.dump(sla_extrema, file)
         
+
 
 def update_jsons():
     excluded_recibos = load_excluded_recibos()
@@ -648,6 +655,36 @@ def refresh_remocoes():
     except Exception as e:
         app.logger.error(f"Error refreshing remocoes: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/get_atrasos')
+def get_atrasos_data():
+    # Load data from Redis
+    order_counts = json.loads(redis_client.get('order_counts') or '{}')
+    uf_order_counts = json.loads(redis_client.get('uf_order_counts') or '{}')
+    transportadora_stats = json.loads(redis_client.get('transportadora_stats') or '{}')
+    total_atrasos = int(redis_client.get('total_atrasos') or 0)
+
+    # Convert string dates back to datetime objects for sorting
+    order_counts = {datetime.strptime(date, '%Y-%m-%d').date(): counts 
+                    for date, counts in order_counts.items()}
+
+    # Sort the data by date
+    sorted_order_counts = dict(sorted(order_counts.items()))
+
+    return jsonify({
+        'date_data': sorted_order_counts,
+        'uf_data': uf_order_counts,
+        'transportadora_data': transportadora_stats,
+        'total_atrasos': total_atrasos
+    })
+
+@app.route('/update_data', methods=['POST'])
+def update_data():
+    try:
+        update_redis_data()  # Call the function to update Redis data
+        return jsonify({"success": True, "message": "Data updated successfully"})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
 
 if __name__ == '__main__':
     # Run both scripts initially

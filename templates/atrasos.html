@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Atrasos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .dashboard {
+            display: flex;
+            justify-content: space-between;
+        }
+        .filters {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .filter-dropdown, .filter-date {
+            background-color: #0052cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        .filter-date {
+            padding: 8px 20px;
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .legend-item {
+            margin: 0 10px;
+        }
+        .chart-container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .bar-chart {
+            width: 40%;
+        }
+        .pie-chart {
+            width: 40%;
+        }
+        .bar {
+            height: 20px;
+            margin: 5px 0;
+        }
+        .loggi { background-color: blue; }
+        .correios { background-color: red; }
+        .cubbo { background-color: yellow; }
+        .chart {
+            width: 30%;
+        }
+        #totalAtrasos {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="filters">
+        <select id="marca" class="filter-dropdown">
+            <option value="">MARCA</option>
+            <!-- Add options dynamically -->
+        </select>
+        <select id="transportadora" class="filter-dropdown">
+            <option value="">TRANSPORTADORA</option>
+            <!-- Add options dynamically -->
+        </select>
+        <input type="date" id="dataInicio" class="filter-date">
+        <input type="date" id="dataFim" class="filter-date">
+        <select id="status" class="filter-dropdown">
+            <option value="">STATUS</option>
+            <!-- Add options dynamically -->
+        </select>
+        <button id="updateDataBtn" class="filter-button">Atualizar Dados</button>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><span style="color: blue;">■</span> Loggi</div>
+        <div class="legend-item"><span style="color: red;">■</span> Correios</div>
+        <div class="legend-item"><span style="color: yellow;">■</span> Cubbo</div>
+    </div>
+
+    <div class="dashboard">
+        <div id="ufChart" class="chart">
+            <h3>Atrasos por UF</h3>
+            <canvas id="ufBarChart"></canvas>
+        </div>
+
+        <div id="pieChartContainer" class="chart">
+            <div id="totalAtrasos">ATRASOS TOTAL: <span id="totalAtrasosValue">XXX</span></div>
+            <canvas id="transportadoraPieChart"></canvas>
+        </div>
+
+        <div id="dateChart" class="chart">
+            <h3>Atrasos por Data</h3>
+            <canvas id="dateBarChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Function to update charts based on filter values
+        function updateCharts() {
+            // For now, we're not using filters, so we'll just fetch all data
+            fetch('/get_atrasos')
+                .then(response => response.json())
+                .then(data => {
+                    updateUFChart(data.uf_data);
+                    updatePieChart(data.transportadora_data);
+                    updateDateChart(data.date_data);
+                    document.getElementById('totalAtrasosValue').textContent = data.total_atrasos;
+                });
+        }
+
+        // Functions to create/update charts using Chart.js
+        function updateUFChart(data) {
+            // Implementation for UF bar chart
+            console.log("UF data:", data);
+            // You'll need to implement the actual chart creation/update here
+        }
+
+        function updatePieChart(data) {
+            // Implementation for transportadora pie chart
+            console.log("Transportadora data:", data);
+            // You'll need to implement the actual chart creation/update here
+        }
+
+        function updateDateChart(data) {
+            // Implementation for date bar chart
+            console.log("Date data:", data);
+            // You'll need to implement the actual chart creation/update here
+        }
+
+        // Add this function to handle the data update
+        function updateData() {
+            document.getElementById('updateDataBtn').disabled = true;
+            document.getElementById('updateDataBtn').textContent = 'Atualizando...';
+
+            fetch('/update_data', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Dados atualizados com sucesso!');
+                        updateCharts();  // Refresh the charts with new data
+                    } else {
+                        alert('Erro ao atualizar dados: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Erro ao atualizar dados: ' + error);
+                })
+                .finally(() => {
+                    document.getElementById('updateDataBtn').disabled = false;
+                    document.getElementById('updateDataBtn').textContent = 'Atualizar Dados';
+                });
+        }
+
+        // Add event listener to the update button
+        document.getElementById('updateDataBtn').addEventListener('click', updateData);
+
+        // Initial chart load
+        updateCharts();
+    </script>
+</body>
+</html>
