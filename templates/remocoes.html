@@ -138,11 +138,31 @@
             width: 80px;
             text-align: center;
         }
+
+        .back-button {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            position: absolute;
+            top: 5%;
+            left: 5%;
+        }
+        .back-button:hover {
+            background-color: #5a6268;
+        }
     </style>
 </head>
 <body>
     <h2 style="text-align: center;font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;">Lista de Remoções</h2>
     
+    <!-- Add the "Voltar" button here -->
+    <button class="back-button" onclick="window.location.href='/ops'">Voltar</button>
+
     <input type="text" id="search-bar" placeholder="Pesquisar por numero do pedido ou marca">
 
     <table id="remocoes-table">
