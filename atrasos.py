@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import os
 import json
 from dotenv import dotenv_values
@@ -11,10 +11,14 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from redis_connection import get_redis_connection
 import requests
 from parseUF import parse_UF
+from collections import defaultdict
+from datetime import date
+from collections import Counter
+import re
 
 
-date_format = "%d-%m-%Y, %H:%M:%S"
-date_format2 = "%d-%m-%Y, %H:%M:%S.%f"
+date_format = "%d-%m-%Y"
+date_format2 = "%d-%m-%Y, %H:%M"
 
 # Replace the existing redis_client creation with:
 redis_client = get_redis_connection()
@@ -85,7 +89,10 @@ def get_dataset(question, params={}):
     METABASE_ENDPOINT = "https://cubbo.metabaseapp.com"
     METABASE_TOKEN = create_metabase_token()
 
-    res = requests.post(METABASE_ENDPOINT + '/api/card/'+question+'/query/json',
+    # Convert question to string
+    question_str = str(question)
+
+    res = requests.post(METABASE_ENDPOINT + '/api/card/' + question_str + '/query/json',
                         headers={"Content-Type": "application/json",
                                  'X-Metabase-Session': METABASE_TOKEN},
                         params=params,
@@ -132,36 +139,52 @@ def get_atrasos(transportadora = None, data_inicial = None, data_final = None, c
 
     dataset = get_dataset(3477, params)
 
+    hoje = datetime.now().date()
     atrasos = []
 
     for order in dataset:
-        order['shipping_zip_code'] = parse_UF(order['UF'])
-        try:
-            order['first_delivery_attempt_at'] = datetime.strptime(order['first_delivery_attempt_at'], date_format2)
-        except ValueError:
-            order['first_delivery_attempt_at'] = datetime.strptime(order['first_delivery_attempt_at'], date_format)        
-        try:
-            order['delivered_at'] = datetime.strptime(order['delivered_at'], date_format2)
-        except ValueError:
-            order['delivered_at'] = datetime.strptime(order['delivered_at'], date_format)
-        
-        try:
-            order['estimated_time_arrival'] = datetime.strptime(order['estimated_time_arrival'], date_format2)
-        except ValueError:
-            order['estimated_time_arrival'] = datetime.strptime(order['estimated_time_arrival'], date_format)
-        
-        try:
-            order['processado'] = datetime.strptime(order['processado'], date_format2)
-        except ValueError:
-            order['processado'] = datetime.strptime(order['processado'], date_format)
+        uf = parse_UF(order.get('shipping_zip_code', ''))
+        if not uf:
+            continue
 
-        if order['estimated_time_arrival'].day > order['delivered_at'].day and order['estimated_time_arrival'].month == order['delivered_at'].month:
-            atraso = order['delivered_at'] - order['estimated_time_arrival']
-            order['SLA'] = "MISS"
+        order['UF'] = uf
+        if order['delivered_at'] is not None and order['delivered_at'] != "":     
+            try:
+                order['delivered_at'] = datetime.strptime(order['delivered_at'], date_format)
+            except ValueError:
+                order['delivered_at'] = datetime.strptime(order['delivered_at'], date_format2)
         else:
+            order['delivered_at'] = datetime.combine(hoje, datetime.min.time())
+            order['SLA'] = "MISS"
+
+        if order['estimated_time_arrival'] is not None and order['estimated_time_arrival'] != "":         
+            try:
+                order['estimated_time_arrival'] = datetime.strptime(order['estimated_time_arrival'], date_format)
+            except ValueError:
+                order['estimated_time_arrival'] = datetime.strptime(order['estimated_time_arrival'], date_format2)
+            if order['estimated_time_arrival'].date() < order['delivered_at'].date():
+                atraso = order['delivered_at'] - order['estimated_time_arrival']
+                order['SLA'] = "MISS"
+            else:
+                order['SLA'] = "HIT"
+                atraso = timedelta(0)
+        else:
+            order['estimated_time_arrival'] = order['delivered_at']
             order['SLA'] = "HIT"
-            atraso = 0
-        if order['first_delivery_attempt_at'] is not None or order['first_delivery_attempt_at'] != "":
+            atraso = timedelta(0)
+
+        if order['processado'] is not None and order['processado'] != "":       
+            try:
+                order['processado'] = datetime.strptime(order['processado'], date_format)
+            except ValueError:
+                order['processado'] = datetime.strptime(order['processado'], date_format2)
+
+        if order['first_delivery_attempt_at'] is not None and order['first_delivery_attempt_at'] != "":
+            try:
+                order['first_delivery_attempt_at'] = datetime.strptime(order['first_delivery_attempt_at'], date_format)
+            except ValueError:
+                order['first_delivery_attempt_at'] = datetime.strptime(order['first_delivery_attempt_at'], date_format2)   
+                
             if order['first_delivery_attempt_at'].day < order['delivered_at'].day and order['first_delivery_attempt_at'].month == order['delivered_at'].month:
                 order['first_delivery'] = "MISS"
             else:
@@ -170,24 +193,86 @@ def get_atrasos(transportadora = None, data_inicial = None, data_final = None, c
             order['first_delivery_attempt_at'] = order['delivered_at']
             order['first_delivery'] = "HIT"
 
-
-        atrasos.append({
-            'store_name': order['store_name'],
-            'order_number': order['order_number'],
-            'rastreio': order['rastreio'],
-            'transportadora': order['carrier_name'],
-            'UF': order['UF'],
-            'processado': order['processado'],
-            'first_delivery_attempt_at': order['first_delivery_attempt_at'],
-            'shipping_status': order['shipping_status'],
-            'delivered_at': order['delivered_at'],
-            'estimated_time_arrival': order['estimated_time_arrival'],
-            'SLA': order['SLA'],
-            'first_delivery': order['first_delivery'],
-            'atraso': atraso
-        })
+        if order['SLA'] == "MISS":
+            atrasos.append({
+                'store_name': order.get('store_name', ''),
+                'order_number': order.get('order_number', ''),
+                'rastreio': order.get('rastreio', ''),
+                'transportadora': order.get('carrier_name', ''),
+                'UF': uf,
+                'processado': order['processado'],
+                'first_delivery_attempt_at': order['first_delivery_attempt_at'],
+                'shipping_status': order.get('shipping_status', ''),
+                'delivered_at': order['delivered_at'],
+                'estimated_time_arrival': order['estimated_time_arrival'],
+                'SLA': order['SLA'],
+                'first_delivery': order['first_delivery'],
+                'atraso': atraso
+            })
 
     return atrasos
 
+def count_atrasos_by_date_and_transportadora(atrasos):
+    
+    order_counts = defaultdict(lambda: defaultdict(int))
 
+    for atraso in atrasos:
+        transportadora = atraso['transportadora']
+        processado_date = atraso['processado'].date()
+        order_counts[processado_date][transportadora] += 1
 
+    # Convert defaultdict to regular dict and sort dates
+    return {
+        date_key: dict(carriers)
+        for date_key, carriers in sorted(order_counts.items())
+    }
+
+def count_atrasos_by_uf_and_transportadora(atrasos):
+    order_counts = defaultdict(lambda: defaultdict(int))
+
+    for atraso in atrasos:
+        uf = atraso['UF']
+        transportadora = atraso['transportadora']
+        order_counts[uf][transportadora] += 1
+
+    # Convert defaultdict to regular dict and sort UFs alphabetically
+    return {
+        uf: dict(carriers)
+        for uf, carriers in sorted(order_counts.items())
+    }
+
+def count_atrasos_by_transportadora_with_percentage(atrasos):
+    # Count orders by transportadora
+    transportadora_counts = Counter(atraso['transportadora'] for atraso in atrasos)
+    
+    # Calculate total number of orders
+    total_orders = sum(transportadora_counts.values())
+    
+    # Calculate percentages and create the result dictionary
+    result = {}
+    for transportadora, count in transportadora_counts.items():
+        percentage = (count / total_orders) * 100
+        result[transportadora] = {
+            'count': count,
+            'percentage': round(percentage, 2)  # Round to 2 decimal places
+        }
+    
+    # Sort the result by count in descending order
+    sorted_result = dict(sorted(result.items(), key=lambda x: x[1]['count'], reverse=True))
+    
+    return sorted_result
+
+# Example usage:
+# atrasos = get_atrasos(...)
+# order_counts = count_atrasos_by_date_and_transportadora(atrasos)
+# uf_order_counts = count_atrasos_by_uf_and_transportadora(atrasos)
+# transportadora_stats = count_atrasos_by_transportadora_with_percentage(atrasos)
+
+atrasos = get_atrasos()
+order_counts = count_atrasos_by_date_and_transportadora(atrasos)
+uf_order_counts = count_atrasos_by_uf_and_transportadora(atrasos)
+transportadora_stats = count_atrasos_by_transportadora_with_percentage(atrasos)
+
+print(order_counts)
+print(uf_order_counts)
+print(transportadora_stats)

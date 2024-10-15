@@ -1,6 +1,6 @@
 import re
 
-def parse_UF(self, zipcode: str) -> str:
+def parse_UF(zipcode: str) -> str:
     zipcode = str(zipcode)
     zipcode = re.sub("[^0-9]", "", zipcode)
 
