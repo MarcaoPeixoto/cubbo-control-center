@@ -155,6 +155,23 @@
         .back-button:hover {
             background-color: #5a6268;
         }
+
+        .refresh-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            position: absolute;
+            top: 5%;
+            right: 5%;
+        }
+        .refresh-button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -162,6 +179,9 @@
     
     <!-- Add the "Voltar" button here -->
     <button class="back-button" onclick="window.location.href='/ops'">Voltar</button>
+
+    <!-- Add the refresh button -->
+    <button id="refresh-button" class="refresh-button">Atualizar Lista</button>
 
     <input type="text" id="search-bar" placeholder="Pesquisar por numero do pedido ou marca">
 
@@ -202,6 +222,27 @@
                 })
                 .catch(error => console.error('Error fetching data:', error));
         }
+
+        // Add this new function to refresh remocoes
+        function refreshRemocoes() {
+            fetch('/refresh-remocoes', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        fetchRemocoes(); // Fetch the updated remocoes
+                        alert('Lista de remoções atualizada com sucesso!');
+                    } else {
+                        alert('Falha ao atualizar a lista de remoções.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error refreshing remocoes:', error);
+                    alert('Erro ao atualizar a lista de remoções.');
+                });
+        }
+
+        // Add event listener for the refresh button
+        document.getElementById('refresh-button').addEventListener('click', refreshRemocoes);
 
         fetchRemocoes();
 

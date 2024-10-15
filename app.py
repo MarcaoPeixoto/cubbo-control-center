@@ -631,6 +631,24 @@ def get_image(numero_pedido, cliente):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/refresh-remocoes', methods=['POST'])
+@login_required
+def refresh_remocoes():
+    try:
+        # Call the get_remocoes function to fetch fresh data
+        new_remocoes = get_remocoes()
+        
+        # Update the Redis cache with the new data
+        redis_client.set("remocoes", json.dumps(new_remocoes))
+        
+        # Call check_removido_status to update the status
+        check_removido_status()
+        
+        return jsonify({"success": True})
+    except Exception as e:
+        app.logger.error(f"Error refreshing remocoes: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
 if __name__ == '__main__':
     # Run both scripts initially
     check_redis_connectivity()
