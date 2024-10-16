@@ -676,8 +676,6 @@ def get_atrasos_data():
         data_final = request.args.get('data_final') or datetime.now().strftime("%Y-%m-%d")
         status = request.args.get('status')
 
-        app.logger.info(f"Received filter parameters: marca={marca}, transportadora={transportadora}, data_inicial={data_inicial}, data_final={data_final}, status={status}")
-
         # Call get_atrasos with filter parameters
         atrasos = get_atrasos(
             transportadora=transportadora if transportadora else None,
@@ -687,27 +685,21 @@ def get_atrasos_data():
             status=status if status else None
         )
 
-        app.logger.info(f"Retrieved {len(atrasos)} atrasos")
-
         # Process the filtered data
-        order_counts = count_atrasos_by_date_and_transportadora(atrasos)
-        uf_order_counts = count_atrasos_by_uf_and_transportadora(atrasos)
-        transportadora_stats = count_atrasos_by_transportadora_with_percentage(atrasos)
+        date_data = count_atrasos_by_date_and_transportadora(atrasos)
+        uf_data = count_atrasos_by_uf_and_transportadora(atrasos)
+        transportadora_data = count_atrasos_by_transportadora_with_percentage(atrasos)
         total_atrasos = len(atrasos)
 
-        app.logger.info(f"Processed data: {len(order_counts)} dates, {len(uf_order_counts)} UFs, {len(transportadora_stats)} transportadoras")
-
-        # Convert date objects to strings in order_counts
-        order_counts_serializable = {str(date): counts for date, counts in order_counts.items()}
+        # Convert date objects to strings in date_data
+        date_data_serializable = {str(date): counts for date, counts in date_data.items()}
 
         response_data = {
-            'date_data': order_counts_serializable,
-            'uf_data': uf_order_counts,
-            'transportadora_data': transportadora_stats,
+            'date_data': date_data_serializable,
+            'uf_data': uf_data,
+            'transportadora_data': transportadora_data,
             'total_atrasos': total_atrasos
         }
-
-        app.logger.info(f"Returning response with {total_atrasos} total atrasos")
 
         return jsonify(response_data)
 

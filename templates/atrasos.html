@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Atrasos</title>
+    <title>Atrasos</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -53,8 +54,8 @@
             margin: 5px 0;
         }
         .loggi { background-color: blue; }
-        .correios { background-color: red; }
-        .cubbo { background-color: yellow; }
+        .correios { background-color: yellow; }
+        .cubbo { background-color: red; }
         .chart {
             width: 30%;
         }
@@ -248,8 +249,8 @@
 
     <div class="legend">
         <div class="legend-item"><span style="color: blue;">■</span> Loggi</div>
-        <div class="legend-item"><span style="color: red;">■</span> Correios</div>
-        <div class="legend-item"><span style="color: yellow;">■</span> Cubbo</div>
+        <div class="legend-item"><span style="color: yellow;">■</span> Correios</div>
+        <div class="legend-item"><span style="color: red;">■</span> Cubbo</div>
     </div>
 
     <div class="dashboard">
@@ -299,23 +300,103 @@
                 });
         }
 
-        // Functions to create/update charts using Chart.js
+        // Function to update UF bar chart
         function updateUFChart(data) {
-            // Implementation for UF bar chart
-            console.log("UF data:", data);
-            // You'll need to implement the actual chart creation/update here
+            const ctx = document.getElementById('ufBarChart').getContext('2d');
+            const labels = Object.keys(data);
+            const datasets = [
+                {
+                    label: 'Loggi',
+                    data: labels.map(uf => data[uf]['LOGGI'] || 0),
+                    backgroundColor: 'blue'
+                },
+                {
+                    label: 'Correios',
+                    data: labels.map(uf => data[uf]['CORREIOS'] || 0),
+                    backgroundColor: 'yellow'
+                },
+                {
+                    label: 'Cubbo',
+                    data: labels.map(uf => data[uf]['CUBBO'] || 0),
+                    backgroundColor: 'red'
+                }
+            ];
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets },
+                options: {
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true }
+                    }
+                }
+            });
         }
 
+        // Function to update transportadora pie chart
         function updatePieChart(data) {
-            // Implementation for transportadora pie chart
-            console.log("Transportadora data:", data);
-            // You'll need to implement the actual chart creation/update here
+            const ctx = document.getElementById('transportadoraPieChart').getContext('2d');
+            const labels = Object.keys(data);
+            const values = labels.map(label => data[label].count);
+            const colors = ['blue', 'yellow', 'red'];
+
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Atrasos por Transportadora'
+                        }
+                    }
+                }
+            });
         }
 
+        // Function to update date bar chart
         function updateDateChart(data) {
-            // Implementation for date bar chart
-            console.log("Date data:", data);
-            // You'll need to implement the actual chart creation/update here
+            const ctx = document.getElementById('dateBarChart').getContext('2d');
+            const labels = Object.keys(data).sort();
+            const datasets = [
+                {
+                    label: 'Loggi',
+                    data: labels.map(date => data[date]['LOGGI'] || 0),
+                    backgroundColor: 'blue'
+                },
+                {
+                    label: 'Correios',
+                    data: labels.map(date => data[date]['CORREIOS'] || 0),
+                    backgroundColor: 'yellow'
+                },
+                {
+                    label: 'Cubbo',
+                    data: labels.map(date => data[date]['CUBBO'] || 0),
+                    backgroundColor: 'red'
+                }
+            ];
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets },
+                options: {
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true }
+                    }
+                }
+            });
         }
 
         // Add this function to handle the data update
