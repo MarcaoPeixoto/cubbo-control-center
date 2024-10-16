@@ -268,8 +268,24 @@
     <script>
         // Function to update charts based on filter values
         function updateCharts() {
-            // For now, we're not using filters, so we'll just fetch all data
-            fetch('/get_atrasos')
+            // Get filter values
+            const marca = document.getElementById('marca').value;
+            const transportadora = document.getElementById('transportadora').value;
+            const dataInicio = document.getElementById('dataInicio').value;
+            const dataFim = document.getElementById('dataFim').value;
+            const status = document.getElementById('status').value;
+
+            // Prepare the query parameters
+            const params = new URLSearchParams({
+                marca: marca !== 'None' ? marca : '',
+                transportadora: transportadora !== 'None' ? transportadora : '',
+                data_inicial: dataInicio,
+                data_final: dataFim,
+                status: status !== 'None' ? status : ''
+            });
+
+            // Fetch data with filter parameters
+            fetch(`/get_atrasos?${params.toString()}`)
                 .then(response => response.json())
                 .then(data => {
                     updateUFChart(data.uf_data);
@@ -324,6 +340,13 @@
 
         // Add event listener to the update button
         document.getElementById('updateDataBtn').addEventListener('click', updateData);
+
+        // Add event listeners to filter inputs
+        document.getElementById('marca').addEventListener('change', updateCharts);
+        document.getElementById('transportadora').addEventListener('change', updateCharts);
+        document.getElementById('dataInicio').addEventListener('change', updateCharts);
+        document.getElementById('dataFim').addEventListener('change', updateCharts);
+        document.getElementById('status').addEventListener('change', updateCharts);
 
         // Initial chart load
         updateCharts();

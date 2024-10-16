@@ -127,7 +127,7 @@ def process_data(inputs):
 hoje = datetime.now().strftime("%Y-%m-%d")
 
 
-def get_atrasos(transportadora = None, data_inicial = hoje, data_final = hoje, cliente = None, status = None):
+def get_atrasos(transportadora=None, data_inicial=hoje, data_final=hoje, cliente=None, status=None):
     params = process_data({
         'transportadora': transportadora,
         'data_inicial': data_inicial,
@@ -137,6 +137,8 @@ def get_atrasos(transportadora = None, data_inicial = hoje, data_final = hoje, c
     })
 
     dataset = get_dataset(3477, params)
+    
+    print(f"Retrieved {len(dataset)} orders from the dataset")
 
     atrasos = []
 
@@ -219,6 +221,8 @@ def get_atrasos(transportadora = None, data_inicial = hoje, data_final = hoje, c
                 'first_delivery': order['first_delivery'],
                 'atraso': atraso
             })
+
+    print(f"Processed {len(atrasos)} atrasos")
 
     return atrasos
 

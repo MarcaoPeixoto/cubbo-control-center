@@ -19,7 +19,7 @@ import io
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from redis_connection import get_redis_connection
 import redis
-from atrasos import update_redis_data  # Import the function
+from atrasos import update_redis_data, get_atrasos, count_atrasos_by_date_and_transportadora, count_atrasos_by_uf_and_transportadora, count_atrasos_by_transportadora_with_percentage
 import logging
 
 app = Flask(__name__)
@@ -668,25 +668,52 @@ def refresh_remocoes():
 
 @app.route('/get_atrasos')
 def get_atrasos_data():
-    # Load data from Redis
-    order_counts = json.loads(redis_client.get('order_counts') or '{}')
-    uf_order_counts = json.loads(redis_client.get('uf_order_counts') or '{}')
-    transportadora_stats = json.loads(redis_client.get('transportadora_stats') or '{}')
-    total_atrasos = int(redis_client.get('total_atrasos') or 0)
+    try:
+        # Get filter parameters from the request
+        marca = request.args.get('marca')
+        transportadora = request.args.get('transportadora')
+        data_inicial = request.args.get('data_inicial') or datetime.now().strftime("%Y-%m-%d")
+        data_final = request.args.get('data_final') or datetime.now().strftime("%Y-%m-%d")
+        status = request.args.get('status')
 
-    # Convert string dates back to datetime objects for sorting
-    order_counts = {datetime.strptime(date, '%Y-%m-%d').date(): counts 
-                    for date, counts in order_counts.items()}
+        app.logger.info(f"Received filter parameters: marca={marca}, transportadora={transportadora}, data_inicial={data_inicial}, data_final={data_final}, status={status}")
 
-    # Sort the data by date
-    sorted_order_counts = dict(sorted(order_counts.items()))
+        # Call get_atrasos with filter parameters
+        atrasos = get_atrasos(
+            transportadora=transportadora if transportadora else None,
+            data_inicial=data_inicial,
+            data_final=data_final,
+            cliente=marca if marca else None,
+            status=status if status else None
+        )
 
-    return jsonify({
-        'date_data': sorted_order_counts,
-        'uf_data': uf_order_counts,
-        'transportadora_data': transportadora_stats,
-        'total_atrasos': total_atrasos
-    })
+        app.logger.info(f"Retrieved {len(atrasos)} atrasos")
+
+        # Process the filtered data
+        order_counts = count_atrasos_by_date_and_transportadora(atrasos)
+        uf_order_counts = count_atrasos_by_uf_and_transportadora(atrasos)
+        transportadora_stats = count_atrasos_by_transportadora_with_percentage(atrasos)
+        total_atrasos = len(atrasos)
+
+        app.logger.info(f"Processed data: {len(order_counts)} dates, {len(uf_order_counts)} UFs, {len(transportadora_stats)} transportadoras")
+
+        # Convert date objects to strings in order_counts
+        order_counts_serializable = {str(date): counts for date, counts in order_counts.items()}
+
+        response_data = {
+            'date_data': order_counts_serializable,
+            'uf_data': uf_order_counts,
+            'transportadora_data': transportadora_stats,
+            'total_atrasos': total_atrasos
+        }
+
+        app.logger.info(f"Returning response with {total_atrasos} total atrasos")
+
+        return jsonify(response_data)
+
+    except Exception as e:
+        app.logger.error(f"Error in get_atrasos_data: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/update_data', methods=['POST'])
 def update_data():
