@@ -124,8 +124,8 @@ def process_data(inputs):
 
     return {'parameters': json.dumps(params)}
 
-hoje = datetime.now().strftime("%Y-%m-%d")
 
+hoje = datetime.now().strftime("%Y-%m-%d")
 
 def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente=None, status=None):
 

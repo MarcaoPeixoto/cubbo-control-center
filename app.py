@@ -701,6 +701,13 @@ def get_atrasos_data():
             'total_atrasos': total_atrasos
         }
 
+        order_counts_serializable = {str(date): counts for date, counts in date_data.items()}
+    # Save data to Redis
+        redis_client.set('order_counts', json.dumps(order_counts_serializable))
+        redis_client.set('uf_order_counts', json.dumps(uf_data))
+        redis_client.set('transportadora_stats', json.dumps(transportadora_data))
+        redis_client.set('total_atrasos', len(atrasos))
+
         return jsonify(response_data)
 
     except Exception as e:
@@ -710,10 +717,28 @@ def get_atrasos_data():
 @app.route('/update_data', methods=['POST'])
 def update_data():
     try:
-        update_redis_data()  # Call the function to update Redis data
-        return jsonify({"success": True, "message": "Data updated successfully"})
+        # Call your data update function here
+        update_redis_data()
+        
+        # Fetch the updated data
+        uf_data = json.loads(redis_client.get('uf_order_counts'))
+        transportadora_data = json.loads(redis_client.get('transportadora_stats'))
+        date_data = json.loads(redis_client.get('order_counts'))
+        total_atrasos = redis_client.get('total_atrasos')
+
+        return jsonify({
+            'success': True,
+            'message': 'Dados atualizados com sucesso!',
+            'uf_data': uf_data,
+            'transportadora_data': transportadora_data,
+            'date_data': date_data,
+            'total_atrasos': total_atrasos
+        })
     except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        })
 
 if __name__ == '__main__':
     try:

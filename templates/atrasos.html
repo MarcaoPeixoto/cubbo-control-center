@@ -247,12 +247,6 @@
         <button id="updateDataBtn" class="filter-button">Atualizar Dados</button>
     </div>
 
-    <div class="legend">
-        <div class="legend-item"><span style="color: blue;">■</span> Loggi</div>
-        <div class="legend-item"><span style="color: yellow;">■</span> Correios</div>
-        <div class="legend-item"><span style="color: red;">■</span> Cubbo</div>
-    </div>
-
     <div class="dashboard">
         <div id="ufChart" class="chart">
             <h3>Atrasos por UF</h3>
@@ -271,6 +265,125 @@
     </div>
 
     <script>
+        let ufChart, pieChart, dateChart;
+
+        // Function to update UF bar chart
+        function updateUFChart(data) {
+            const ctx = document.getElementById('ufBarChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (ufChart) {
+                ufChart.destroy();
+            }
+
+            const labels = Object.keys(data);
+            const datasets = [
+                {
+                    label: 'Loggi',
+                    data: labels.map(uf => data[uf]['LOGGI'] || 0),
+                    backgroundColor: 'blue'
+                },
+                {
+                    label: 'Correios',
+                    data: labels.map(uf => data[uf]['CORREIOS'] || 0),
+                    backgroundColor: 'yellow'
+                },
+                {
+                    label: 'Cubbo',
+                    data: labels.map(uf => data[uf]['CUBBO'] || 0),
+                    backgroundColor: 'red'
+                }
+            ];
+
+            ufChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets },
+                options: {
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true }
+                    }
+                }
+            });
+        }
+
+        // Function to update transportadora pie chart
+        function updatePieChart(data) {
+            const ctx = document.getElementById('transportadoraPieChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (pieChart) {
+                pieChart.destroy();
+            }
+
+            const labels = Object.keys(data);
+            const values = labels.map(label => data[label].count);
+            const colors = ['blue', 'yellow', 'red'];
+
+            pieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Atrasos por Transportadora'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Function to update date bar chart
+        function updateDateChart(data) {
+            const ctx = document.getElementById('dateBarChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (dateChart) {
+                dateChart.destroy();
+            }
+
+            const labels = Object.keys(data).sort();
+            const datasets = [
+                {
+                    label: 'Loggi',
+                    data: labels.map(date => data[date]['LOGGI'] || 0),
+                    backgroundColor: 'blue'
+                },
+                {
+                    label: 'Correios',
+                    data: labels.map(date => data[date]['CORREIOS'] || 0),
+                    backgroundColor: 'yellow'
+                },
+                {
+                    label: 'Cubbo',
+                    data: labels.map(date => data[date]['CUBBO'] || 0),
+                    backgroundColor: 'red'
+                }
+            ];
+
+            dateChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets },
+                options: {
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true }
+                    }
+                }
+            });
+        }
+
         // Function to update charts based on filter values
         function updateCharts() {
             // Get filter values
@@ -300,105 +413,6 @@
                 });
         }
 
-        // Function to update UF bar chart
-        function updateUFChart(data) {
-            const ctx = document.getElementById('ufBarChart').getContext('2d');
-            const labels = Object.keys(data);
-            const datasets = [
-                {
-                    label: 'Loggi',
-                    data: labels.map(uf => data[uf]['LOGGI'] || 0),
-                    backgroundColor: 'blue'
-                },
-                {
-                    label: 'Correios',
-                    data: labels.map(uf => data[uf]['CORREIOS'] || 0),
-                    backgroundColor: 'yellow'
-                },
-                {
-                    label: 'Cubbo',
-                    data: labels.map(uf => data[uf]['CUBBO'] || 0),
-                    backgroundColor: 'red'
-                }
-            ];
-
-            new Chart(ctx, {
-                type: 'bar',
-                data: { labels, datasets },
-                options: {
-                    scales: {
-                        x: { stacked: true },
-                        y: { stacked: true }
-                    }
-                }
-            });
-        }
-
-        // Function to update transportadora pie chart
-        function updatePieChart(data) {
-            const ctx = document.getElementById('transportadoraPieChart').getContext('2d');
-            const labels = Object.keys(data);
-            const values = labels.map(label => data[label].count);
-            const colors = ['blue', 'yellow', 'red'];
-
-            new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: values,
-                        backgroundColor: colors
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        title: {
-                            display: true,
-                            text: 'Atrasos por Transportadora'
-                        }
-                    }
-                }
-            });
-        }
-
-        // Function to update date bar chart
-        function updateDateChart(data) {
-            const ctx = document.getElementById('dateBarChart').getContext('2d');
-            const labels = Object.keys(data).sort();
-            const datasets = [
-                {
-                    label: 'Loggi',
-                    data: labels.map(date => data[date]['LOGGI'] || 0),
-                    backgroundColor: 'blue'
-                },
-                {
-                    label: 'Correios',
-                    data: labels.map(date => data[date]['CORREIOS'] || 0),
-                    backgroundColor: 'yellow'
-                },
-                {
-                    label: 'Cubbo',
-                    data: labels.map(date => data[date]['CUBBO'] || 0),
-                    backgroundColor: 'red'
-                }
-            ];
-
-            new Chart(ctx, {
-                type: 'bar',
-                data: { labels, datasets },
-                options: {
-                    scales: {
-                        x: { stacked: true },
-                        y: { stacked: true }
-                    }
-                }
-            });
-        }
-
         // Add this function to handle the data update
         function updateData() {
             document.getElementById('updateDataBtn').disabled = true;
@@ -408,8 +422,11 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
+                        updateUFChart(data.uf_data);
+                        updatePieChart(data.transportadora_data);
+                        updateDateChart(data.date_data);
+                        document.getElementById('totalAtrasosValue').textContent = data.total_atrasos;
                         alert('Dados atualizados com sucesso!');
-                        updateCharts();  // Refresh the charts with new data
                     } else {
                         alert('Erro ao atualizar dados: ' + data.message);
                     }
@@ -433,8 +450,9 @@
         document.getElementById('dataFim').addEventListener('change', updateCharts);
         document.getElementById('status').addEventListener('change', updateCharts);
 
-        // Initial chart load
-        updateCharts();
+        // Remove the initial updateCharts() call
+        // updateCharts();
+
     </script>
 </body>
 </html>
