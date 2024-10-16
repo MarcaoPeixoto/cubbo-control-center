@@ -127,9 +127,6 @@ def process_data(inputs):
 hoje = datetime.now().strftime("%Y-%m-%d")
 
 
-data_inicial = datetime.strptime("2024-09-01", "%Y-%m-%d")
-data_final = datetime.strptime("2024-09-30", "%Y-%m-%d")
-
 def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente=None, status=None):
 
     if data_inicial is None:
@@ -291,14 +288,14 @@ def count_atrasos_by_transportadora_with_percentage(atrasos):
 # uf_order_counts = count_atrasos_by_uf_and_transportadora(atrasos)
 # transportadora_stats = count_atrasos_by_transportadora_with_percentage(atrasos)
 
-atrasos = get_atrasos(data_inicial=data_inicial, data_final=data_final)
+""" atrasos = get_atrasos()
 order_counts = count_atrasos_by_date_and_transportadora(atrasos)
 uf_order_counts = count_atrasos_by_uf_and_transportadora(atrasos)
-transportadora_stats = count_atrasos_by_transportadora_with_percentage(atrasos)
+transportadora_stats = count_atrasos_by_transportadora_with_percentage(atrasos) """
 
 # Modify the end of the file to save data to Redis
 def update_redis_data():
-    atrasos = get_atrasos(data_inicial=data_inicial, data_final=data_final)
+    atrasos = get_atrasos()
     order_counts = count_atrasos_by_date_and_transportadora(atrasos)
     uf_order_counts = count_atrasos_by_uf_and_transportadora(atrasos)
     transportadora_stats = count_atrasos_by_transportadora_with_percentage(atrasos)
@@ -316,6 +313,6 @@ def update_redis_data():
 update_redis_data()
 
 # Optionally, you can keep the print statements for debugging
-print(order_counts)
+""" print(order_counts)
 print(uf_order_counts)
-print(transportadora_stats)
+print(transportadora_stats) """
