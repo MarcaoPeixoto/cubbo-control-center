@@ -109,6 +109,11 @@ def logout():
 def home():
     return render_template('home.html')
 
+@app.route('/ct')
+@login_required
+def ct():
+    return render_template('ct.html')
+
 @app.route('/manifesto', methods=['GET', 'POST'])
 @login_required
 def manifesto_route():
@@ -696,6 +701,6 @@ if __name__ == '__main__':
         check_redis_connectivity()
         update_jsons()
         scheduler.start()
-        app.run(host='0.0.0.0', debug=False)
+        app.run(host='0.0.0.0', debug=True)
     except Exception as e:
         logger.error(f"Failed to start the application: {e}")

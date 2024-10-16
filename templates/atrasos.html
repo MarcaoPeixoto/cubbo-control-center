@@ -7,6 +7,8 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            margin-left: 5%;
+            margin-right: 5%;
         }
         .dashboard {
             display: flex;
@@ -15,17 +17,18 @@
         .filters {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 20px;
+            margin-top: 5%;
+            margin-bottom: 3%;
+            width: 100%;
+            max-width: 100%;
         }
-        .filter-dropdown, .filter-date {
+        .filter-dropdown, .filter-date, .filter-button {
             background-color: #0052cc;
             color: white;
             border: none;
-            padding: 10px 20px;
             cursor: pointer;
-        }
-        .filter-date {
-            padding: 8px 20px;
+            border-radius: 5px;  /* Added border-radius */
+            padding: 8px 12px;   /* Added padding for better appearance */
         }
         .legend {
             display: flex;
@@ -60,23 +63,180 @@
             font-size: 1.2em;
             margin-bottom: 10px;
         }
+        option {
+            color: white;
+            font-size: 1em;
+        }
+        #marca, #transportadora, #status, #dataInicio, #dataFim {
+            margin-left: 5px;
+            margin-right: 5px;
+        }
+        label {
+            color: black;
+            font-size: 0.7em;
+            margin-left: 5%;
+            background-color: white;
+        }
+        .date-input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            margin: 0 5px;
+        }
+        .date-input-container label {
+            background-color: white;
+            color: black;
+            padding: 5px 0;
+            font-size: 0.8em;
+            text-align: center;
+            margin-bottom: -1px;
+            border-radius: 5px 5px 0 0;  /* Rounded top corners */
+        }
+        .filter-date {
+            padding: 8px 12px;  /* Adjusted padding */
+            width: 100%;
+            border-radius: 0 0 5px 5px;  /* Rounded bottom corners */
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="filters">
         <select id="marca" class="filter-dropdown">
-            <option value="">MARCA</option>
+            <option value="None">Todas Marcas</option>
+            <option value="30PORCENTO">30PORCENTO</option>
+            <option value="ABOVE AVERAGE">ABOVE AVERAGE</option>
+            <option value="Abra Cadabra">Abra Cadabra</option>
+            <option value="Ádive Health">Ádive Health</option>
+            <option value="ALFAJORES ODARA">ALFAJORES ODARA</option>
+            <option value="Ana Martha">Ana Martha</option>
+            <option value="Anifree Comercial Importadora e Distribuidora Ltda">Anifree Comercial Importadora e Distribuidora Ltda</option>
+            <option value="Associação Quatro Cinco Um">Associação Quatro Cinco Um</option>
+            <option value="Autonomia Literária">Autonomia Literária</option>
+            <option value="Batidora Ediciones Brasil">Batidora Ediciones Brasil</option>
+            <option value="Beautycolor Company">Beautycolor Company</option>
+            <option value="Bhāva">Bhāva</option>
+            <option value="Biowash">Biowash</option>
+            <option value="Boitempo">Boitempo</option>
+            <option value="Bossa">Bossa</option>
+            <option value="CapyCat Games">CapyCat Games</option>
+            <option value="Caunutro Capacitação">Caunutro Capacitação</option>
+            <option value="Cerrado Bike Shop SP">Cerrado Bike Shop SP</option>
+            <option value="CHEETED">CHEETED</option>
+            <option value="Cleantella">Cleantella</option>
+            <option value="ClearMud Editora">ClearMud Editora</option>
+            <option value="Clube do Livro do Design">Clube do Livro do Design</option>
+            <option value="Cubbo Brasil - Loja Online">Cubbo Brasil - Loja Online</option>
+            <option value="D20 Culture">D20 Culture</option>
+            <option value="Dermastic">Dermastic</option>
+            <option value="Divina Saúde">Divina Saúde</option>
+            <option value="Dossier Brasil">Dossier Brasil</option>
+            <option value="Duccato Brasil">Duccato Brasil</option>
+            <option value="Editora Aleph">Editora Aleph</option>
+            <option value="Editora Antofagica">Editora Antofagica</option>
+            <option value="Editora Letramento">Editora Letramento</option>
+            <option value="EGHO STUDIOS">EGHO STUDIOS</option>
+            <option value="Elacura">Elacura</option>
+            <option value="Eleva Calçados">Eleva Calçados</option>
+            <option value="Fazzoletti">Fazzoletti</option>
+            <option value="Florence Intimates">Florence Intimates</option>
+            <option value="FOSFORO">FOSFORO</option>
+            <option value="FreshFemme">FreshFemme</option>
+            <option value="Gentle">Gentle</option>
+            <option value="Grão de Gente">Grão de Gente</option>
+            <option value="HARINA PAN BRASIL">HARINA PAN BRASIL</option>
+            <option value="Healthy Market">Healthy Market</option>
+            <option value="HOT SAT TELECOMUNICAÇÕES LTDA">HOT SAT TELECOMUNICAÇÕES LTDA</option>
+            <option value="Insekta">Insekta</option>
+            <option value="INSTITUTO HEALERS">INSTITUTO HEALERS</option>
+            <option value="INSTITUTO SUPERANDO SEUS LIMITES">INSTITUTO SUPERANDO SEUS LIMITES</option>
+            <option value="Intra Sports Nutrition">Intra Sports Nutrition</option>
+            <option value="Jakobsson Estudio">Jakobsson Estudio</option>
+            <option value="JE TECNOLOGIA E SEGURANCA DA INFORMACAO LTDA">JE TECNOLOGIA E SEGURANCA DA INFORMACAO LTDA</option>
+            <option value="Joelma Decorações">Joelma Decorações</option>
+            <option value="JustForYou">JustForYou</option>
+            <option value="Keep Running">Keep Running</option>
+            <option value="Lampadaria">Lampadaria</option>
+            <option value="Latika">Latika</option>
+            <option value="Leternel Ortomolecular - Creme TOE">Leternel Ortomolecular - Creme TOE</option>
+            <option value="LET IT BE INTIMATE">LET IT BE INTIMATE</option>
+            <option value="LG Holding">LG Holding</option>
+            <option value="Lilaccie">Lilaccie</option>
+            <option value="LM SOLUÇOES">LM SOLUÇOES</option>
+            <option value="Loja Corrida Perfeita">Loja Corrida Perfeita</option>
+            <option value="Ludopia Brinquedos Terapêuticos e Educativos">Ludopia Brinquedos Terapêuticos e Educativos</option>
+            <option value="Mahta">Mahta</option>
+            <option value="Mais Que um Café">Mais Que um Café</option>
+            <option value="MAMD">MAMD</option>
+            <option value="ManClub">ManClub</option>
+            <option value="ManClub MG">ManClub MG</option>
+            <option value="MapaLab">MapaLab</option>
+            <option value="Mapear Direito">Mapear Direito</option>
+            <option value="Mark Ryden Brasil">Mark Ryden Brasil</option>
+            <option value="Median">Median</option>
+            <option value="Mégalos Imports">Mégalos Imports</option>
+            <option value="Meller BR">Meller BR</option>
+            <option value="Monoï Original Precieux">Monoï Original Precieux</option>
+            <option value="MOOSE baby e kids">MOOSE baby e kids</option>
+            <option value="Mozambique">Mozambique</option>
+            <option value="Namu Matcha">Namu Matcha</option>
+            <option value="NOÀZIS">NOÀZIS</option>
+            <option value="Nowhey Suplementos">Nowhey Suplementos</option>
+            <option value="NutroSupp"></option>NutroSupp</option>
+            <option value="oiwhite">oiwhite</option>
+            <option value="Opera Beauty Brasil">Opera Beauty Brasil</option>
+            <option value="Ozonivita">Ozonivita</option>    
+            <option value="Pankz - Panquecas Americanas">Pankz - Panquecas Americanas</option>
+            <option value="Pano Urbano">Pano Urbano</option>
+            <option value="Parla">Parla</option>
+            <option value="Perruche">Perruche</option>
+            <option value="PRANA BEBIDAS LEVES">PRANA BEBIDAS LEVES</option>
+            <option value="Quetzalli">Quetzalli</option>
+            <option value="QuickPower®">QuickPower®</option>
+            <option value="RAUTER LTDA">RAUTER LTDA</option>
+            <option value="Sacia Mais">Sacia Mais</option>
+            <option value="Sallpe">Sallpe</option>
+            <option value="Shiguan">Shiguan</option>
+            <option value="Simbioze Amazônica">Simbioze Amazônica</option>
+            <option value="Smush Smart Mushrooms">Smush Smart Mushrooms</option>
+            <option value="Soul Live">Soul Live</option>
+            <option value="Stella Pietro Wine">Stella Pietro Wine</option>
+            <option value="Suplint">Suplint</option>
+            <option value="Tábua Cronológica da Bíblia">Tábua Cronológica da Bíblia</option>
+            <option value="TAG Livros">TAG Livros</option>
+            <option value="Takeya Brasil">Takeya Brasil</option>
+            <option value="TERRAL NATURAL">TERRAL NATURAL</option>
+            <option value="TerraNutri Pure">TerraNutri Pure</option>
+            <option value="The Skin Belle">The Skin Belle</option>
+            <option value="TucoMarket">TucoMarket</option>
+            <option value="Ufoslabs">Ufoslabs</option>
+            <option value="Urban Basics">Urban Basics</option>
+            <option value="Vinsel">Vinsel</option>
+            <option value="Violão Brasileiro">Violão Brasileiro</option>
+            <option value="WeCann Academy">WeCann Academy</option>
             <!-- Add options dynamically -->
         </select>
         <select id="transportadora" class="filter-dropdown">
-            <option value="">TRANSPORTADORA</option>
+            <option value="None">Todas Transportadoras</option>
+            <option value="JT Express">JT Express</option>
+            <option value="LOGGI">LOGGI</option>
+            <option value="CORREIOS">CORREIOS</option>
+            <option value="CUBBO">CUBBO</option>
             <!-- Add options dynamically -->
         </select>
-        <input type="date" id="dataInicio" class="filter-date">
-        <input type="date" id="dataFim" class="filter-date">
+        <div class="date-input-container">
+            <label for="dataInicio">Data Início</label>
+            <input type="date" id="dataInicio" class="filter-date" onchange="this.value = this.value || null">
+        </div>
+        <div class="date-input-container">
+            <label for="dataFim">Data Fim</label>
+            <input type="date" id="dataFim" class="filter-date" onchange="this.value = this.value || null">
+        </div>
         <select id="status" class="filter-dropdown">
-            <option value="">STATUS</option>
+            <option value="None">Todos Status</option>
+            <option value="shipped">shipped</option>
+            <option value="returned">returned</option>
+            <option value="returning">returning</option>
             <!-- Add options dynamically -->
         </select>
         <button id="updateDataBtn" class="filter-button">Atualizar Dados</button>

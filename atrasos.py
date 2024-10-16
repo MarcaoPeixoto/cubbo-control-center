@@ -63,7 +63,6 @@ docs_service = authenticate_google_docs()
 def create_metabase_token():
 
     env_config = dotenv_values(".env")
-
     metabase_user = env_config.get('METABASE_USER')
     
     if metabase_user is not None:
@@ -89,16 +88,14 @@ def get_dataset(question, params={}):
     METABASE_ENDPOINT = "https://cubbo.metabaseapp.com"
     METABASE_TOKEN = create_metabase_token()
 
-    # Convert question to string
-    question_str = str(question)
-
-    res = requests.post(METABASE_ENDPOINT + '/api/card/' + question_str + '/query/json',
+    res = requests.post(f"{METABASE_ENDPOINT}/api/card/{question}/query/json",
                         headers={"Content-Type": "application/json",
                                  'X-Metabase-Session': METABASE_TOKEN},
                         params=params,
                         )
     print(res)
     dataset = res.json()
+    #print(dataset)
 
     return dataset
 
@@ -109,7 +106,7 @@ def process_data(inputs):
         if type(param_value) == int:
             param['type'] = "number/="
             param['value'] = param_value
-        elif isinstance(param_value, datetime):
+        elif type(param_value) == datetime:
             param['type'] = "date/single"
             param['value'] = f"{param_value:%Y-%m-%d}"
         else:
@@ -127,11 +124,10 @@ def process_data(inputs):
 
     return {'parameters': json.dumps(params)}
 
-hoje = datetime.now().strftime("%d-%m-%Y")
+hoje = datetime.now().strftime("%Y-%m-%d")
 
 
 def get_atrasos(transportadora = None, data_inicial = hoje, data_final = hoje, cliente = None, status = None):
-
     params = process_data({
         'transportadora': transportadora,
         'data_inicial': data_inicial,
@@ -142,15 +138,26 @@ def get_atrasos(transportadora = None, data_inicial = hoje, data_final = hoje, c
 
     dataset = get_dataset(3477, params)
 
-
     atrasos = []
 
     for order in dataset:
-        uf = parse_UF(order.get('shipping_zip_code', ''))
-        if not uf:
+        # Check if order is a dictionary
+        if not isinstance(order, dict):
             continue
 
-        order['UF'] = uf
+        # Check if shipping_zip_code exists and is a string
+        shipping_zip_code = order.get('shipping_zip_code')
+        if isinstance(shipping_zip_code, str):
+            order['shipping_zip_code'] = parse_UF(shipping_zip_code)
+        else:
+            print(f"Invalid shipping_zip_code for order: {order}")
+            order['shipping_zip_code'] = None
+
+        if not order['shipping_zip_code']:
+            continue
+
+        order['UF'] = order['shipping_zip_code']
+
         if order['delivered_at'] is not None and order['delivered_at'] != "":     
             try:
                 order['delivered_at'] = datetime.strptime(order['delivered_at'], date_format)
@@ -202,7 +209,7 @@ def get_atrasos(transportadora = None, data_inicial = hoje, data_final = hoje, c
                 'order_number': order.get('order_number', ''),
                 'rastreio': order.get('rastreio', ''),
                 'transportadora': order.get('carrier_name', ''),
-                'UF': uf,
+                'UF': order['shipping_zip_code'],
                 'processado': order['processado'],
                 'first_delivery_attempt_at': order['first_delivery_attempt_at'],
                 'shipping_status': order.get('shipping_status', ''),
