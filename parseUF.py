@@ -78,5 +78,8 @@ def parse_UF(zipcode: str) -> str:
 
     if zipcode[0] == "9":
       return "RS"
+    
+    else:
+        return "ZZ"
 
     return None

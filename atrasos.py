@@ -88,7 +88,7 @@ def get_dataset(question, params={}):
     METABASE_ENDPOINT = "https://cubbo.metabaseapp.com"
     METABASE_TOKEN = create_metabase_token()
 
-    res = requests.post(f"{METABASE_ENDPOINT}/api/card/{question}/query/json",
+    res = requests.post(METABASE_ENDPOINT + '/api/card/'+question+'/query/json',
                         headers={"Content-Type": "application/json",
                                  'X-Metabase-Session': METABASE_TOKEN},
                         params=params,
@@ -127,7 +127,17 @@ def process_data(inputs):
 hoje = datetime.now().strftime("%Y-%m-%d")
 
 
-def get_atrasos(transportadora=None, data_inicial=hoje, data_final=hoje, cliente=None, status=None):
+data_inicial = datetime.strptime("2024-09-01", "%Y-%m-%d")
+data_final = datetime.strptime("2024-09-30", "%Y-%m-%d")
+
+def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente=None, status=None):
+
+    if data_inicial is None:
+        data_inicial = hoje
+    if data_final is None:
+        data_final = hoje
+
+    print(f"Getting atrasos for transportadora: {transportadora}, data_inicial: {data_inicial}, data_final: {data_final}, cliente: {cliente}, status: {status}")
     params = process_data({
         'transportadora': transportadora,
         'data_inicial': data_inicial,
@@ -136,52 +146,51 @@ def get_atrasos(transportadora=None, data_inicial=hoje, data_final=hoje, cliente
         'shipping_status': status
     })
 
-    dataset = get_dataset(3477, params)
+    dataset = get_dataset('3477', params)
     
     print(f"Retrieved {len(dataset)} orders from the dataset")
 
     atrasos = []
 
+    #print(dataset)
     for order in dataset:
         # Check if order is a dictionary
-        if not isinstance(order, dict):
-            continue
-
-        # Check if shipping_zip_code exists and is a string
-        shipping_zip_code = order.get('shipping_zip_code')
-        if isinstance(shipping_zip_code, str):
-            order['shipping_zip_code'] = parse_UF(shipping_zip_code)
-        else:
-            print(f"Invalid shipping_zip_code for order: {order}")
-            order['shipping_zip_code'] = None
-
-        if not order['shipping_zip_code']:
-            continue
+        order['shipping_zip_code'] = parse_UF(order['shipping_zip_code'])
 
         order['UF'] = order['shipping_zip_code']
 
+        # Ensure delivered_at is always a datetime object
         if order['delivered_at'] is not None and order['delivered_at'] != "":     
             try:
                 order['delivered_at'] = datetime.strptime(order['delivered_at'], date_format)
             except ValueError:
-                order['delivered_at'] = datetime.strptime(order['delivered_at'], date_format2)
+                try:
+                    order['delivered_at'] = datetime.strptime(order['delivered_at'], date_format2)
+                except ValueError:
+                    print(f"Warning: Unable to parse delivered_at date for order {order.get('order_number', 'Unknown')}")
+                    order['delivered_at'] = datetime.now()  # Fallback to current date
         else:
-            order['delivered_at'] = datetime.combine(hoje, datetime.min.time())
+            order['delivered_at'] = datetime.now()
             order['SLA'] = "MISS"
 
+        # Ensure estimated_time_arrival is always a datetime object
         if order['estimated_time_arrival'] is not None and order['estimated_time_arrival'] != "":         
             try:
                 order['estimated_time_arrival'] = datetime.strptime(order['estimated_time_arrival'], date_format)
             except ValueError:
-                order['estimated_time_arrival'] = datetime.strptime(order['estimated_time_arrival'], date_format2)
-            if order['estimated_time_arrival'].date() < order['delivered_at'].date():
-                atraso = order['delivered_at'] - order['estimated_time_arrival']
-                order['SLA'] = "MISS"
-            else:
-                order['SLA'] = "HIT"
-                atraso = timedelta(0)
+                try:
+                    order['estimated_time_arrival'] = datetime.strptime(order['estimated_time_arrival'], date_format2)
+                except ValueError:
+                    print(f"Warning: Unable to parse estimated_time_arrival date for order {order.get('order_number', 'Unknown')}")
+                    order['estimated_time_arrival'] = order['delivered_at']  # Fallback to delivered_at
         else:
             order['estimated_time_arrival'] = order['delivered_at']
+
+        # Now we can safely compare datetime objects
+        if order['estimated_time_arrival'] < order['delivered_at']:
+            atraso = order['delivered_at'] - order['estimated_time_arrival']
+            order['SLA'] = "MISS"
+        else:
             order['SLA'] = "HIT"
             atraso = timedelta(0)
 
@@ -282,14 +291,14 @@ def count_atrasos_by_transportadora_with_percentage(atrasos):
 # uf_order_counts = count_atrasos_by_uf_and_transportadora(atrasos)
 # transportadora_stats = count_atrasos_by_transportadora_with_percentage(atrasos)
 
-atrasos = get_atrasos()
+atrasos = get_atrasos(data_inicial=data_inicial, data_final=data_final)
 order_counts = count_atrasos_by_date_and_transportadora(atrasos)
 uf_order_counts = count_atrasos_by_uf_and_transportadora(atrasos)
 transportadora_stats = count_atrasos_by_transportadora_with_percentage(atrasos)
 
 # Modify the end of the file to save data to Redis
 def update_redis_data():
-    atrasos = get_atrasos()
+    atrasos = get_atrasos(data_inicial=data_inicial, data_final=data_final)
     order_counts = count_atrasos_by_date_and_transportadora(atrasos)
     uf_order_counts = count_atrasos_by_uf_and_transportadora(atrasos)
     transportadora_stats = count_atrasos_by_transportadora_with_percentage(atrasos)
@@ -307,6 +316,6 @@ def update_redis_data():
 update_redis_data()
 
 # Optionally, you can keep the print statements for debugging
-# print(order_counts)
-# print(uf_order_counts)
-# print(transportadora_stats)
+print(order_counts)
+print(uf_order_counts)
+print(transportadora_stats)
