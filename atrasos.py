@@ -294,8 +294,14 @@ uf_order_counts = count_atrasos_by_uf_and_transportadora(atrasos)
 transportadora_stats = count_atrasos_by_transportadora_with_percentage(atrasos) """
 
 # Modify the end of the file to save data to Redis
-def update_redis_data():
-    atrasos = get_atrasos()
+def update_redis_data(transportadora=None, data_inicial=None, data_final=None, cliente=None, status=None):
+    atrasos = get_atrasos(
+        transportadora=transportadora,
+        data_inicial=data_inicial,
+        data_final=data_final,
+        cliente=cliente,
+        status=status
+    )
     order_counts = count_atrasos_by_date_and_transportadora(atrasos)
     uf_order_counts = count_atrasos_by_uf_and_transportadora(atrasos)
     transportadora_stats = count_atrasos_by_transportadora_with_percentage(atrasos)
@@ -309,10 +315,18 @@ def update_redis_data():
     redis_client.set('transportadora_stats', json.dumps(transportadora_stats))
     redis_client.set('total_atrasos', len(atrasos))
 
+    return {
+        'date_data': order_counts_serializable,
+        'uf_data': uf_order_counts,
+        'transportadora_data': transportadora_stats,
+        'total_atrasos': len(atrasos)
+    }
+
 # Run this function to update Redis data
-update_redis_data()
+
 
 # Optionally, you can keep the print statements for debugging
 """ print(order_counts)
 print(uf_order_counts)
 print(transportadora_stats) """
+

@@ -676,8 +676,8 @@ def get_atrasos_data():
         data_final = request.args.get('data_final') or datetime.now().strftime("%Y-%m-%d")
         status = request.args.get('status')
 
-        # Call get_atrasos with filter parameters
-        atrasos = get_atrasos(
+        # Call update_redis_data with filter parameters
+        data = update_redis_data(
             transportadora=transportadora if transportadora else None,
             data_inicial=data_inicial,
             data_final=data_final,
@@ -685,31 +685,7 @@ def get_atrasos_data():
             status=status if status else None
         )
 
-        # Process the filtered data
-        date_data = count_atrasos_by_date_and_transportadora(atrasos)
-        uf_data = count_atrasos_by_uf_and_transportadora(atrasos)
-        transportadora_data = count_atrasos_by_transportadora_with_percentage(atrasos)
-        total_atrasos = len(atrasos)
-
-        # Convert date objects to strings in date_data
-        date_data_serializable = {str(date): counts for date, counts in date_data.items()}
-
-        response_data = {
-            'date_data': date_data_serializable,
-            'uf_data': uf_data,
-            'transportadora_data': transportadora_data,
-            'total_atrasos': total_atrasos
-        }
-
-        order_counts_serializable = {str(date): counts for date, counts in date_data.items()}
-    # Save data to Redis
-        redis_client.set('order_counts', json.dumps(order_counts_serializable))
-        redis_client.set('uf_order_counts', json.dumps(uf_data))
-        redis_client.set('transportadora_stats', json.dumps(transportadora_data))
-        redis_client.set('total_atrasos', len(atrasos))
-
-        return jsonify(response_data)
-
+        return jsonify(data)
     except Exception as e:
         app.logger.error(f"Error in get_atrasos_data: {str(e)}")
         return jsonify({"error": str(e)}), 500
@@ -717,8 +693,6 @@ def get_atrasos_data():
 @app.route('/update_data', methods=['POST'])
 def update_data():
     try:
-        # Call your data update function here
-        update_redis_data()
         
         # Fetch the updated data
         uf_data = json.loads(redis_client.get('uf_order_counts'))

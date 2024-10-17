@@ -53,9 +53,9 @@
             height: 20px;
             margin: 5px 0;
         }
-        .loggi { background-color: blue; }
-        .correios { background-color: yellow; }
-        .cubbo { background-color: red; }
+        .loggi { background-color: aqua; }
+        .correios { background-color: chartreuse; }
+        .cubbo { background-color: #ed1e79; }
         .chart {
             width: 30%;
         }
@@ -281,17 +281,17 @@
                 {
                     label: 'Loggi',
                     data: labels.map(uf => data[uf]['LOGGI'] || 0),
-                    backgroundColor: 'blue'
+                    backgroundColor: 'aqua'
                 },
                 {
                     label: 'Correios',
                     data: labels.map(uf => data[uf]['CORREIOS'] || 0),
-                    backgroundColor: 'yellow'
+                    backgroundColor: 'chartreuse'
                 },
                 {
                     label: 'Cubbo',
                     data: labels.map(uf => data[uf]['CUBBO'] || 0),
-                    backgroundColor: 'red'
+                    backgroundColor: '#ed1e79'
                 }
             ];
 
@@ -299,9 +299,10 @@
                 type: 'bar',
                 data: { labels, datasets },
                 options: {
+                    indexAxis: 'y',  // This makes the chart horizontal
                     scales: {
-                        x: { stacked: true },
-                        y: { stacked: true }
+                        x: { stacked: false },
+                        y: { stacked: false }
                     }
                 }
             });
@@ -318,7 +319,7 @@
 
             const labels = Object.keys(data);
             const values = labels.map(label => data[label].count);
-            const colors = ['blue', 'yellow', 'red'];
+            const colors = ['aqua', 'chartreuse', '#ed1e79'];
 
             pieChart = new Chart(ctx, {
                 type: 'pie',
@@ -358,17 +359,17 @@
                 {
                     label: 'Loggi',
                     data: labels.map(date => data[date]['LOGGI'] || 0),
-                    backgroundColor: 'blue'
+                    backgroundColor: 'aqua'
                 },
                 {
                     label: 'Correios',
                     data: labels.map(date => data[date]['CORREIOS'] || 0),
-                    backgroundColor: 'yellow'
+                    backgroundColor: 'chartreuse'
                 },
                 {
                     label: 'Cubbo',
                     data: labels.map(date => data[date]['CUBBO'] || 0),
-                    backgroundColor: 'red'
+                    backgroundColor: '#ed1e79'
                 }
             ];
 
@@ -376,9 +377,10 @@
                 type: 'bar',
                 data: { labels, datasets },
                 options: {
+                    indexAxis: 'y',
                     scales: {
-                        x: { stacked: true },
-                        y: { stacked: true }
+                        x: { stacked: false },
+                        y: { stacked: false }
                     }
                 }
             });
