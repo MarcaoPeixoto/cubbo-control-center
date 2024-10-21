@@ -231,10 +231,10 @@ def compute_phd():
 
     # Add the average to the sorted dictionary
     #testes
-    phd_full = env_config.get('PHD_FULL')
-    envios_mes = env_config.get('ENVIOS_MES')
-    phd_full = float(phd_full)
-    envios_mes = int(envios_mes)
+    #phd_full = env_config.get('PHD_FULL')
+    #envios_mes = env_config.get('ENVIOS_MES')
+    #phd_full = float(phd_full)
+    #envios_mes = int(envios_mes)
 
 
 
@@ -247,8 +247,8 @@ def compute_phd():
     sla_embu_full = float(sla_embu_full)
 
     #testes
-    sla_embu_full = env_config.get('SLA_EMBU_FULL')
-    sla_embu_full = float(sla_embu_full)
+    #sla_embu_full = env_config.get('SLA_EMBU_FULL')
+    #sla_embu_full = float(sla_embu_full)
 
     phd_int = int(phd_full)
     phd_decimal = (phd_full - phd_int)*100

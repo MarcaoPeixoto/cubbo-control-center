@@ -166,7 +166,9 @@ h5 {
 
 #valor_bonus_contagem {
     color: rgb(50, 225, 65);
-    font-size: 4.5em;
+    font-size: 3.5em;
+    left: 5%;
+    position: relative;
     margin: 0;
 }
 
