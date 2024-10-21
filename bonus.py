@@ -321,7 +321,7 @@ def compute_phd():
     #colocar aqui as questões de bonificação para serem adicionadas ao json
     if phd_full > 90:
         porcentagem_da_barra_pdh_mini = round(phd_decimal, 2)
-        porcentagem_da_barra_pdh_full = analyze_phd_bonus(phd_bonus_dict, phd_full)
+        porcentagem_da_barra_pdh_full = phd_combined*10
     else:
         porcentagem_da_barra_pdh_mini = 0
         porcentagem_da_barra_pdh_full = 0
@@ -351,14 +351,6 @@ def compute_phd():
     # Optionally, return the sorted_phd_per_day dictionary
     return sorted_phd_per_day
 
-
-
-def analyze_phd_bonus(phd_bonus_dict, phd_full):
-    phd_values = phd_bonus_dict.keys()
-    
-    for i in phd_values:
-
-            return phd_bonus_dict[i]
 
 
 if __name__ == "__main__":
