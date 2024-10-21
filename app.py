@@ -19,7 +19,7 @@ import io
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from redis_connection import get_redis_connection
 import redis
-from atrasos import update_redis_data, get_atrasos, count_atrasos_by_date_and_transportadora, count_atrasos_by_uf_and_transportadora, count_atrasos_by_transportadora_with_percentage
+from atrasos import update_transportadora_data, get_atrasos, count_atrasos_by_date_and_transportadora, count_atrasos_by_uf_and_transportadora, count_atrasos_by_transportadora_with_percentage
 import logging
 
 app = Flask(__name__)
@@ -666,18 +666,20 @@ def refresh_remocoes():
         app.logger.error(f"Error refreshing remocoes: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/get_atrasos')
-def get_atrasos_data():
+
+@app.route('/update_atrasos', methods=['POST'])
+def update_atrasos_data():
     try:
-        # Get filter parameters from the request
-        marca = request.args.get('marca')
-        transportadora = request.args.get('transportadora')
-        data_inicial = request.args.get('data_inicial') or datetime.now().strftime("%Y-%m-%d")
-        data_final = request.args.get('data_final') or datetime.now().strftime("%Y-%m-%d")
-        status = request.args.get('status')
+        # Get filter parameters from the request body
+        data = request.json
+        marca = data.get('marca')
+        transportadora = data.get('transportadora')
+        data_inicial = data.get('data_inicial') or datetime.now().strftime("%Y-%m-%d")
+        data_final = data.get('data_final') or datetime.now().strftime("%Y-%m-%d")
+        status = data.get('status')
 
         # Call update_redis_data with filter parameters
-        data = update_redis_data(
+        updated_data = update_transportadora_data(
             transportadora=transportadora if transportadora else None,
             data_inicial=data_inicial,
             data_final=data_final,
@@ -685,34 +687,10 @@ def get_atrasos_data():
             status=status if status else None
         )
 
-        return jsonify(data)
+        return jsonify({"success": True, **updated_data})
     except Exception as e:
-        app.logger.error(f"Error in get_atrasos_data: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/update_data', methods=['POST'])
-def update_data():
-    try:
-        
-        # Fetch the updated data
-        uf_data = json.loads(redis_client.get('uf_order_counts'))
-        transportadora_data = json.loads(redis_client.get('transportadora_stats'))
-        date_data = json.loads(redis_client.get('order_counts'))
-        total_atrasos = redis_client.get('total_atrasos')
-
-        return jsonify({
-            'success': True,
-            'message': 'Dados atualizados com sucesso!',
-            'uf_data': uf_data,
-            'transportadora_data': transportadora_data,
-            'date_data': date_data,
-            'total_atrasos': total_atrasos
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': str(e)
-        })
+        app.logger.error(f"Error in update_atrasos_data: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == '__main__':
     try:

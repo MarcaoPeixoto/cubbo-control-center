@@ -171,7 +171,9 @@ def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente
             order['SLA'] = "MISS"
 
         # Ensure estimated_time_arrival is always a datetime object
-        if order['estimated_time_arrival'] is not None and order['estimated_time_arrival'] != "":         
+        if order['estimated_time_arrival'] is not None and order['estimated_time_arrival'] != "":  
+            if order['estimated_time_arrival'] > hoje:
+                continue
             try:
                 order['estimated_time_arrival'] = datetime.strptime(order['estimated_time_arrival'], date_format)
             except ValueError:
@@ -294,7 +296,7 @@ uf_order_counts = count_atrasos_by_uf_and_transportadora(atrasos)
 transportadora_stats = count_atrasos_by_transportadora_with_percentage(atrasos) """
 
 # Modify the end of the file to save data to Redis
-def update_redis_data(transportadora=None, data_inicial=None, data_final=None, cliente=None, status=None):
+def update_transportadora_data(transportadora=None, data_inicial=None, data_final=None, cliente=None, status=None):
     atrasos = get_atrasos(
         transportadora=transportadora,
         data_inicial=data_inicial,
@@ -302,6 +304,7 @@ def update_redis_data(transportadora=None, data_inicial=None, data_final=None, c
         cliente=cliente,
         status=status
     )
+    
     order_counts = count_atrasos_by_date_and_transportadora(atrasos)
     uf_order_counts = count_atrasos_by_uf_and_transportadora(atrasos)
     transportadora_stats = count_atrasos_by_transportadora_with_percentage(atrasos)
@@ -310,10 +313,7 @@ def update_redis_data(transportadora=None, data_inicial=None, data_final=None, c
     order_counts_serializable = {str(date): counts for date, counts in order_counts.items()}
 
     # Save data to Redis
-    redis_client.set('order_counts', json.dumps(order_counts_serializable))
-    redis_client.set('uf_order_counts', json.dumps(uf_order_counts))
-    redis_client.set('transportadora_stats', json.dumps(transportadora_stats))
-    redis_client.set('total_atrasos', len(atrasos))
+
 
     return {
         'date_data': order_counts_serializable,

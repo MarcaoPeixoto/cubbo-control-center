@@ -216,6 +216,9 @@ def compute_phd():
         phd_per_day[day_only] = round(phd_value, 2)
 
 
+
+
+
     if phd_per_day:
         avg_phd = sum(phd_per_day.values()) / len(phd_per_day)
         phd_full = avg_phd
@@ -227,6 +230,11 @@ def compute_phd():
     sorted_phd_per_day = dict(sorted(phd_per_day.items(), key=lambda x: int(x[0])))
 
     # Add the average to the sorted dictionary
+    #testes
+    #phd_full = env_config.get('PHD_FULL')
+    #envios_mes = env_config.get('ENVIOS_MES')
+    #phd_full = float(phd_full)
+    #envios_mes = int(envios_mes)
 
 
 
@@ -238,6 +246,8 @@ def compute_phd():
     sla_embu_full = json.load(open('json/sla_embu.json'))['sla_mes']
     sla_embu_full = float(sla_embu_full)
 
+    #sla_embu_full = env_config.get('SLA_EMBU_FULL')
+    #sla_embu_full = float(sla_embu_full)
 
     phd_int = int(phd_full)
     phd_decimal = (phd_full - phd_int)*100
@@ -302,17 +312,16 @@ def compute_phd():
     # Add additional variables to the JSON
     #colocar aqui as questões de bonificação para serem adicionadas ao json
 
-    sorted_phd_per_day['phd_full'] = phd_full   
-    sorted_phd_per_day['sla_embu_full'] = sla_embu_full
-    sorted_phd_per_day['bonus_valido'] = bonus_valido
-    sorted_phd_per_day['valor_bonus_contagem'] = valor_bonus_contagem
-    sorted_phd_per_day['phd_bonus_values'] = phd_bonus_dict
-    sorted_phd_per_day['phd_mini_low'] = phd_mini_low
+
     porcentagem_da_barra_sla = (sla_embu_full - 95) * 20  # 20 is the factor to scale 0-5 to 0-100
     valor_bonus_contagem = envios_mes * multiplicador_bonus_sla * valor_bonus
     valor_bonus_contagem = round(valor_bonus_contagem, 2)
     # Add additional variables to the JSON
     #colocar aqui as questões de bonificação para serem adicionadas ao json
+    if phd_full >= 90:
+        porcentagem_da_barra_pdh_mini = round(phd_decimal, 2)
+    else:
+        porcentagem_da_barra_pdh_mini = 0
 
     sorted_phd_per_day['phd_full'] = phd_full   
     sorted_phd_per_day['sla_embu_full'] = sla_embu_full

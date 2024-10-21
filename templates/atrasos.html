@@ -10,10 +10,14 @@
             font-family: Arial, sans-serif;
             margin-left: 5%;
             margin-right: 5%;
+            max-width: 100%;
+            overflow-x: hidden;
         }
         .dashboard {
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-between;
+            height: 100vh; /* Use full viewport height */
         }
         .filters {
             display: flex;
@@ -34,20 +38,34 @@
         .legend {
             display: flex;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
         .legend-item {
             margin: 0 10px;
         }
-        .chart-container {
+        .chart {
+            position: relative; /* Add this to allow absolute positioning of canvas */
+        }
+        .chart canvas {
+            position: absolute;
+            top: 10%; /* Adjust based on your h3 height */
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        #ufChart, #dateChart {
+            width: 30%;
+            height: 150%; /* Increased to 95% of viewport height */
+            margin-bottom: 2%;
+        }
+        #pieChartContainer {
+            width: 40%;
+            height: 80vh; /* Same height as other charts */
             display: flex;
-            justify-content: space-between;
-        }
-        .bar-chart {
-            width: 40%;
-        }
-        .pie-chart {
-            width: 40%;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
         }
         .bar {
             height: 20px;
@@ -100,6 +118,16 @@
         }
         #dateChart {
             margin-right: 0;
+        }
+        #totalAtrasos {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        #pieChartWrapper {
+            width: 100%;
+            height: 50vh; /* Adjust as needed */
+            position: relative;
         }
 
     </style>
@@ -179,7 +207,7 @@
             <option value="Mapear Direito">Mapear Direito</option>
             <option value="Mark Ryden Brasil">Mark Ryden Brasil</option>
             <option value="Median">Median</option>
-            <option value="Mégalos Imports">Mégalos Imports</option>
+            <option value="Mégalos Imports">Mgalos Imports</option>
             <option value="Meller BR">Meller BR</option>
             <option value="Monoï Original Precieux">Monoï Original Precieux</option>
             <option value="MOOSE baby e kids">MOOSE baby e kids</option>
@@ -249,17 +277,22 @@
 
     <div class="dashboard">
         <div id="ufChart" class="chart">
-            <h3>Atrasos por UF</h3>
+            <h3 style="right: -10%; position: relative;">Atrasos por UF</h3>
             <canvas id="ufBarChart"></canvas>
         </div>
 
-        <div id="pieChartContainer" class="chart">
+        <div id="pieChartContainer">
+            <div id="legend" class="legend">
+                <!-- The legend items will be dynamically inserted here -->
+            </div>
             <div id="totalAtrasos">ATRASOS TOTAL: <span id="totalAtrasosValue">XXX</span></div>
-            <canvas id="transportadoraPieChart"></canvas>
+            <div id="pieChartWrapper">
+                <canvas id="transportadoraPieChart"></canvas>
+            </div>
         </div>
 
         <div id="dateChart" class="chart">
-            <h3>Atrasos por Data</h3>
+            <h3 style="left: 60%; position: relative;">Atrasos por Data</h3>
             <canvas id="dateBarChart"></canvas>
         </div>
     </div>
@@ -297,13 +330,41 @@
 
             ufChart = new Chart(ctx, {
                 type: 'bar',
-                data: { labels, datasets },
+                data: { 
+                    labels, 
+                    datasets: datasets.map(dataset => ({
+                        ...dataset,
+                        barThickness: 5 // Reduced bar thickness
+                    }))
+                },
                 options: {
                     indexAxis: 'y',  // This makes the chart horizontal
                     scales: {
-                        x: { stacked: false },
-                        y: { stacked: false }
-                    }
+                        x: { 
+                            stacked: false,
+                            ticks: {
+                                font: {
+                                    size: 14 // Increased font size
+                                }
+                            }
+                        },
+                        y: { 
+                            stacked: false,
+                            ticks: {
+                                autoSkip: false,
+                                font: {
+                                    size: 12 // Increased font size
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false  // Hide the legend
+                        }
+                    },
+                    maintainAspectRatio: false,
+                    responsive: true
                 }
             });
         }
@@ -319,7 +380,11 @@
 
             const labels = Object.keys(data);
             const values = labels.map(label => data[label].count);
-            const colors = ['aqua', 'chartreuse', '#ed1e79'];
+            const colors = {
+                'LOGGI': 'aqua',
+                'CORREIOS': 'chartreuse',
+                'CUBBO': '#ed1e79'
+            };
 
             pieChart = new Chart(ctx, {
                 type: 'pie',
@@ -327,14 +392,15 @@
                     labels: labels,
                     datasets: [{
                         data: values,
-                        backgroundColor: colors
+                        backgroundColor: labels.map(label => colors[label])
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'top',
+                            display: false, // Hide the legend
                         },
                         title: {
                             display: true,
@@ -375,19 +441,82 @@
 
             dateChart = new Chart(ctx, {
                 type: 'bar',
-                data: { labels, datasets },
+                data: { 
+                    labels, 
+                    datasets: datasets.map(dataset => ({
+                        ...dataset,
+                        barThickness: 5 // Reduced bar thickness
+                    }))
+                },
                 options: {
                     indexAxis: 'y',
                     scales: {
-                        x: { stacked: false },
-                        y: { stacked: false }
-                    }
+                        x: { 
+                            stacked: false,
+                            position: 'top',
+                            reverse: true,
+                            ticks: {
+                                font: {
+                                    size: 14 // Increased font size
+                                }
+                            }
+                        },
+                        y: { 
+                            stacked: false,
+                            reverse: true,
+                            ticks: {
+                                autoSkip: false,
+                                font: {
+                                    size: 12 // Increased font size
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false  // Hide the legend
+                        }
+                    },
+                    maintainAspectRatio: false,
+                    responsive: true
                 }
             });
         }
 
-        // Function to update charts based on filter values
-        function updateCharts() {
+        // Function to update the legend
+        function updateLegend(transportadora) {
+            const legendContainer = document.getElementById('legend');
+            const allTransportadoras = [
+                { name: 'Loggi', color: 'aqua' },
+                { name: 'Correios', color: 'chartreuse' },
+                { name: 'Cubbo', color: '#ed1e79' }
+            ];
+
+            // Clear existing legend items
+            legendContainer.innerHTML = '';
+
+            if (transportadora === 'None' || transportadora === '') {
+                // If no specific transportadora is selected, show all
+                allTransportadoras.forEach(t => {
+                    legendContainer.innerHTML += `
+                        <span class="legend-item">
+                            <span style="color: ${t.color};">■</span> ${t.name}
+                        </span>
+                    `;
+                });
+                legendContainer.style.display = 'flex';
+            } else {
+                // If a specific transportadora is selected, hide the legend
+                legendContainer.style.display = 'none';
+            }
+        }
+
+
+        // Add this function to handle the data update
+        function updateData() {
+            document.getElementById('updateDataBtn').disabled = true;
+            document.getElementById('updateDataBtn').textContent = 'Atualizando...';
+
             // Get filter values
             const marca = document.getElementById('marca').value;
             const transportadora = document.getElementById('transportadora').value;
@@ -395,65 +524,48 @@
             const dataFim = document.getElementById('dataFim').value;
             const status = document.getElementById('status').value;
 
-            // Prepare the query parameters
-            const params = new URLSearchParams({
+            // Prepare the data to send
+            const data = {
                 marca: marca !== 'None' ? marca : '',
                 transportadora: transportadora !== 'None' ? transportadora : '',
                 data_inicial: dataInicio,
                 data_final: dataFim,
                 status: status !== 'None' ? status : ''
-            });
+            };
 
-            // Fetch data with filter parameters
-            fetch(`/get_atrasos?${params.toString()}`)
-                .then(response => response.json())
-                .then(data => {
+            fetch('/update_atrasos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
                     updateUFChart(data.uf_data);
                     updatePieChart(data.transportadora_data);
                     updateDateChart(data.date_data);
                     document.getElementById('totalAtrasosValue').textContent = data.total_atrasos;
-                });
-        }
-
-        // Add this function to handle the data update
-        function updateData() {
-            document.getElementById('updateDataBtn').disabled = true;
-            document.getElementById('updateDataBtn').textContent = 'Atualizando...';
-
-            fetch('/update_data', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        updateUFChart(data.uf_data);
-                        updatePieChart(data.transportadora_data);
-                        updateDateChart(data.date_data);
-                        document.getElementById('totalAtrasosValue').textContent = data.total_atrasos;
-                        alert('Dados atualizados com sucesso!');
-                    } else {
-                        alert('Erro ao atualizar dados: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    alert('Erro ao atualizar dados: ' + error);
-                })
-                .finally(() => {
-                    document.getElementById('updateDataBtn').disabled = false;
-                    document.getElementById('updateDataBtn').textContent = 'Atualizar Dados';
-                });
+                    alert('Dados atualizados com sucesso!');
+                } else {
+                    alert('Erro ao atualizar dados: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Erro ao atualizar dados: ' + error);
+            })
+            .finally(() => {
+                document.getElementById('updateDataBtn').disabled = false;
+                document.getElementById('updateDataBtn').textContent = 'Atualizar Dados';
+            });
         }
 
         // Add event listener to the update button
         document.getElementById('updateDataBtn').addEventListener('click', updateData);
 
-        // Add event listeners to filter inputs
-        document.getElementById('marca').addEventListener('change', updateCharts);
-        document.getElementById('transportadora').addEventListener('change', updateCharts);
-        document.getElementById('dataInicio').addEventListener('change', updateCharts);
-        document.getElementById('dataFim').addEventListener('change', updateCharts);
-        document.getElementById('status').addEventListener('change', updateCharts);
-
-        // Remove the initial updateCharts() call
-        // updateCharts();
+        // Call updateCharts initially to load data and set up the legend
+        
 
     </script>
 </body>
