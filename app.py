@@ -150,6 +150,11 @@ def manifesto_route():
 def bonus():
     return render_template('bonus.html')
 
+@app.route('/bonus_projetor')
+@login_required
+def bonus_projetor():
+    return render_template('bonus_projetor.html')
+
 @app.route('/ops')
 @login_required
 def ops():

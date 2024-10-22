@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incentivos</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='estilo.css') }}">
+<style>
+    #bonus_main, #painel_bonus {
+        width: 100%;
+        height: 100%;
+    }
+    #lista_pedidos {
+        margin-left: -20%;
+    }
+    #envios_hoje_titulo, #pedidos_pendentes_titulo, #envios_mes_titulo, #envios_hoje, #pedidos_pendentes, #envios_mes {
+        font-size: 3em;
+    }
+    #progress-bar-container_full {
+        width: 15%;
+        margin-left: 5%;
+    }
+    #progress-bar-container {
+        width: 15%;
+        margin-left: 11%;
+    }
+    #lista_phd_full li, #lista_phd_mini li {
+        font-size: 1.5em;
+    }
+    #lista_phd_full, #lista_phd_mini {
+        height: 100%;
+    }
+    #titulo_bonus_bonus {
+        position: relative;
+        top: 10%;
+        left: 5%;
+    }
+    #titulo_bonus_phd2 {
+        margin-left: 20%;
+    }
+</style>
+</head>
+<body>
+    <div id="tudo">
+        <div class="main" id="bonus_main">
+            <div id="painel_bonus">
+                <a href="/bonus" id="titulo_bonus_bonus"><H2>BONUS</H2></a>
+                <div id="bonus_dados_direita">
+                    <ul id="lista_pedidos">
+                        <li id="envios_hoje_titulo">ENVIOS HOJE</li>
+                        <li id="envios_hoje">XXXX</li>
+                        <li id="pedidos_pendentes_titulo">PENDENTES</li>
+                        <li id="pedidos_pendentes">XXXXX</li>
+                        <li id="envios_mes_titulo">ENVIOS MES</li>
+                        <li id="envios_mes">XXXXX</li>
+                    </ul>
+                </div>
+                <div id="bonus_dados_centro">
+                    <h2 id="titulo_bonus_phd2">P-H-D</h2>
+                    <div id="progress-bars-wrapper">
+                        <ul id="lista_phd_mini">
+                            <li id="phd_mini_high">XX</li>
+                            <li id="phd_mini_low">XX</li>
+                        </ul>
+                        <div id="progress-bar-container">
+                            <div id="progress-bar"></div>
+                        </div>
+                        <div id="progress-bar-container_full">
+                            <div id="progress-bar_full"></div>
+                        </div>
+                        <ul id="lista_phd_full">
+                            <!-- This list will be populated dynamically -->
+                        </ul>
+                    </div>
+                </div>
+                <div id="bonus_dados_esquerda">
+                    <div id="apenas_bonus">
+                        <h2 id="valor_bonus_titulo">$$ BONUS $$</h2>
+                        <h2 id="valor_bonus_contagem">XXXXX</h2>
+                    </div>
+                    <div id="sla-bonus-container">
+                        <div id="sla-progress-wrapper">
+                            <h2 id="sla-bonus-titulo">SLA</h2>
+                            <div id="sla-percentages">
+                                <span>90%</span>
+                                <span>95%</span>
+                                <span>100%</span>
+                            </div>
+                            <div id="sla-progress-container">
+                                <div id="sla-progress-bar"></div>
+                            </div>
+                            <div id="sla-multipliers">
+                                <span>50%</span>
+                                <span>100%</span>
+                                <span>150%</span>
+                            </div>
+                            <span>Multiplicador</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script>
+    var myChart;
+
+    function updateData() {
+        fetch('json/phd_per_day.json?v=' + Math.random())
+            .then(response => response.json())
+            .then(data => {
+                updateBonusDisplay(data);
+                updateProgressBars(data);
+                updatePHDChart(data);
+                updatePHDList(data);
+            })
+            .catch(error => console.error('Error fetching JSON:', error));
+    }
+
+    function updateBonusDisplay(data) {
+        const valorBonusElement = document.getElementById('valor_bonus_contagem');
+        valorBonusElement.textContent = 'R$ ' + data.valor_bonus_contagem.toFixed(2);
+        valorBonusElement.style.color = data.bonus_valido ? 'rgb(50, 225, 65)' : 'red';
+        valorBonusElement.style.backgroundColor = data.bonus_valido ? 'rgba(50, 225, 65, 0.2)' : 'rgba(255, 0, 0, 0.2)';
+
+        document.getElementById('envios_hoje').textContent = data.envios_dia;
+        document.getElementById('pedidos_pendentes').textContent = data.pedidos_pendentes;
+        document.getElementById('envios_mes').textContent = data.envios_mes;
+        document.getElementById('phd_mini_high').textContent = data.phd_mini_high + ' -';
+        document.getElementById('phd_mini_low').textContent = data.phd_mini_low + ' -';
+    }
+
+    function updateProgressBars(data) {
+        updateBarColor(document.getElementById('progress-bar'), data.porcentagem_da_barra_pdh_mini);
+        updateBarColor(document.getElementById('progress-bar_full'), data.porcentagem_da_barra_pdh_full);
+        updateBarColor(document.getElementById('sla-progress-bar'), data.porcentagem_da_barra_sla);
+    }
+
+    function updateBarColor(bar, percentage) {
+        const value = percentage / 100;
+        const r = Math.round(200 - (143 * value));
+        const g = 255;
+        const b = Math.round(200 - (180 * value));
+        
+        bar.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+        bar.style[bar.id === 'sla-progress-bar' ? 'width' : 'height'] = `${percentage}%`;
+    }
+
+    function updatePHDChart(data) {
+        // ... (keep the existing chart update logic)
+    }
+
+    function updatePHDList(data) {
+        const phdBonusValues = data.phd_bonus_values;
+        const listaPhdFull = document.getElementById('lista_phd_full');
+        
+        listaPhdFull.innerHTML = '';
+        
+        Object.keys(phdBonusValues)
+            .sort((a, b) => b - a)
+            .forEach((key, index) => {
+                const li = document.createElement('li');
+                li.id = `phd_full_${index}`;
+                li.textContent = `- ${key} --> R$${phdBonusValues[key].toFixed(2)}`;
+                listaPhdFull.appendChild(li);
+            });
+    }
+
+    // Initial call and set interval
+    updateData();
+    setInterval(updateData, 60000); // Update every minute
+</script>
+<style>
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+        }
+    }
+
+    #valor_bonus_contagem {
+        padding: 10px;
+        border-radius: 5px;
+        animation: pulse 2s infinite;
+    }
+</style>
+</body>
+</html>
