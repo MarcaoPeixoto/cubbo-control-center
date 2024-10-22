@@ -279,23 +279,21 @@ def compute_phd():
     phd_bonus_dict = {}
 
     # Add the phd_bonus_dict to the sorted_phd_per_day dictionary
-    if sla_embu_full < 95 or phd_full < 90:
+    if sla_embu_full < 90 or phd_full < 90:
         bonus_valido = False
         phd_full = 90
-        sla_embu_full = 95
+        sla_embu_full = 90
     else:
         bonus_valido = True
     
-    if sla_embu_full < 96:
-        multiplicador_bonus_sla = 0.5
-    elif sla_embu_full >= 96 and sla_embu_full < 97:
-        multiplicador_bonus_sla = 0.75
-    elif sla_embu_full >= 97 and sla_embu_full < 98:
+    if sla_embu_full > 90 and sla_embu_full < 95:
         multiplicador_bonus_sla = 1
-    elif sla_embu_full >= 98 and sla_embu_full < 99:
-        multiplicador_bonus_sla = 1.25
-    elif sla_embu_full >= 99 and sla_embu_full < 100:
+    elif sla_embu_full >= 95 and sla_embu_full < 97:
+        multiplicador_bonus_sla = 1.2
+    elif sla_embu_full >= 97 and sla_embu_full < 99:
         multiplicador_bonus_sla = 1.5
+    elif sla_embu_full >= 99 and sla_embu_full <= 100:
+        multiplicador_bonus_sla = 2
     
 
     for i in range(11):
@@ -307,16 +305,12 @@ def compute_phd():
         # print(f"PHD: {phd_var} --> Valor Barra: {valor_barra_var}")  # Commented out print statement
 
     # Calculate SLA bonus percentage
-    porcentagem_da_barra_sla = (sla_embu_full - 95) * 20  # 20 is the factor to scale 0-5 to 0-100
+    porcentagem_da_barra_sla = (sla_embu_full - 90) * 10  
     valor_bonus_contagem = envios_mes * multiplicador_bonus_sla * valor_bonus
     valor_bonus_contagem = round(valor_bonus_contagem, 2)
     # Add additional variables to the JSON
     #colocar aqui as questões de bonificação para serem adicionadas ao json
 
-
-    porcentagem_da_barra_sla = (sla_embu_full - 95) * 20  # 20 is the factor to scale 0-5 to 0-100
-    valor_bonus_contagem = envios_mes * multiplicador_bonus_sla * valor_bonus
-    valor_bonus_contagem = round(valor_bonus_contagem, 2)
     # Add additional variables to the JSON
     #colocar aqui as questões de bonificação para serem adicionadas ao json
     if phd_full > 90:
