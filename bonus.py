@@ -286,7 +286,7 @@ def compute_phd():
     else:
         bonus_valido = True
     
-    if sla_embu_full > 90 and sla_embu_full < 95:
+    if sla_embu_full >= 90 and sla_embu_full < 95:
         multiplicador_bonus_sla = 1
     elif sla_embu_full >= 95 and sla_embu_full < 97:
         multiplicador_bonus_sla = 1.2
