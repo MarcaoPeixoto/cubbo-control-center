@@ -256,10 +256,10 @@ def compute_phd():
     if phd_int < 90:
         phd_int = 90
 
-    if phd_int > 90:
+    if phd_full > 90:
         phd_mini_low = phd_int
         phd_mini_high = phd_int + 1
-    else:
+    if phd_full <= 90:
         phd_mini_low = 0
         phd_mini_high = 90
 
@@ -321,8 +321,8 @@ def compute_phd():
     if phd_full > 90:
         porcentagem_da_barra_pdh_mini = round(phd_decimal, 2)
         porcentagem_da_barra_pdh_full = phd_combined*10
-    else:
-        porcentagem_da_barra_pdh_mini = phd_full*0.9
+    if phd_full <= 90:
+        porcentagem_da_barra_pdh_mini = avg_phd*0.9
         porcentagem_da_barra_pdh_full = 0
 
     sorted_phd_per_day['phd_full'] = phd_full   
