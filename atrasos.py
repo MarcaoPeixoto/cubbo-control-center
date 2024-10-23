@@ -188,6 +188,7 @@ def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente
         # Now we can safely compare datetime objects
         if order['estimated_time_arrival'] < order['delivered_at']:
             atraso = order['delivered_at'] - order['estimated_time_arrival']
+            atraso = atraso.days
             order['SLA'] = "MISS"
         else:
             order['SLA'] = "HIT"
@@ -312,14 +313,40 @@ def update_transportadora_data(transportadora=None, data_inicial=None, data_fina
     # Convert date objects to strings in order_counts
     order_counts_serializable = {str(date): counts for date, counts in order_counts.items()}
 
-    # Save data to Redis
+    # Prepare a complete list of atrasos for the frontend, including all columns
+    atrasos_list = [
+        {
+            'store_name': atraso['store_name'],
+            'order_number': atraso['order_number'],
+            'rastreio': atraso['rastreio'],
+            'transportadora': atraso['transportadora'],
+            'UF': atraso['UF'],
+            'processado': atraso['processado'].strftime("%d-%m-%Y"),
+            'first_delivery_attempt_at': atraso['first_delivery_attempt_at'].strftime("%d-%m-%Y"),
+            'shipping_status': atraso['shipping_status'],
+            'delivered_at': atraso['delivered_at'].strftime("%d-%m-%Y"),
+            'estimated_time_arrival': atraso['estimated_time_arrival'].strftime("%d-%m-%Y"),
+            'SLA': atraso['SLA'],
+            'first_delivery': atraso['first_delivery'],
+            'atraso': str(atraso['atraso'])
+        }
+        for atraso in atrasos
+    ]
 
+    # Sort the atrasos_list
+    atrasos_list_sorted = sorted(atrasos_list, key=lambda x: (
+        x['store_name'],
+        x['transportadora'],
+        x['processado'],
+        x['UF']
+    ))
 
     return {
         'date_data': order_counts_serializable,
         'uf_data': uf_order_counts,
         'transportadora_data': transportadora_stats,
-        'total_atrasos': len(atrasos)
+        'total_atrasos': len(atrasos),
+        'atrasos_list': atrasos_list_sorted
     }
 
 # Run this function to update Redis data
@@ -329,4 +356,6 @@ def update_transportadora_data(transportadora=None, data_inicial=None, data_fina
 """ print(order_counts)
 print(uf_order_counts)
 print(transportadora_stats) """
+
+
 

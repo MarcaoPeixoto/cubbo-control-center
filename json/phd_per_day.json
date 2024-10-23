@@ -19,19 +19,19 @@
     "phd_full": 90,
     "sla_embu_full": 90,
     "bonus_valido": false,
-    "valor_bonus_contagem": 334.4,
+    "valor_bonus_contagem": 335.65,
     "phd_bonus_values": {
         "90": 0.0,
-        "91": 334.4,
-        "92": 668.8,
-        "93": 1003.2,
-        "94": 1337.6,
-        "95": 1672.0,
-        "96": 2006.4,
-        "97": 2340.8,
-        "98": 2675.2,
-        "99": 3009.6,
-        "100": 3344.0
+        "91": 335.65,
+        "92": 671.3,
+        "93": 1006.95,
+        "94": 1342.6,
+        "95": 1678.25,
+        "96": 2013.9,
+        "97": 2349.55,
+        "98": 2685.2,
+        "99": 3020.85,
+        "100": 3356.5
     },
     "phd_mini_low": 0,
     "phd_mini_high": 90,
@@ -43,7 +43,7 @@
     "porcentagem_da_barra_pdh_mini": 56.025,
     "porcentagem_da_barra_pdh_full": 0,
     "valor_bonus": 0.01,
-    "pedidos_pendentes": 21154,
-    "envios_dia": 2860,
-    "envios_mes": 33440
+    "pedidos_pendentes": 21060,
+    "envios_dia": 2985,
+    "envios_mes": 33565
 }

@@ -130,6 +130,43 @@
             position: relative;
         }
 
+        .atrasos-table {
+            margin-top: 20px;
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 5%;
+        }
+
+        .atrasos-table table {
+            width: 100%;
+            border-collapse: collapse;
+            white-space: nowrap;
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        .atrasos-table th, .atrasos-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            font-size: 0.6em;
+        }
+
+        .atrasos-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+
+        .atrasos-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .atrasos-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -295,6 +332,33 @@
             <h3 style="left: 60%; position: relative;">Atrasos por Data</h3>
             <canvas id="dateBarChart"></canvas>
         </div>
+    </div>
+
+    <!-- New section for the table of delayed orders -->
+    <div id="atrasosTable" class="atrasos-table">
+        <h3>Pedidos Atrasados</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Pedido</th>
+                    <th>Rastreio</th>
+                    <th>Transportadora</th>
+                    <th>UF</th>
+                    <th>Processado</th>
+                    <th>Primeira Tentativa</th>
+                    <th>Status</th>
+                    <th>Entregue</th>
+                    <th>Previsão de Entrega</th>
+                    <th>SLA</th>
+                    <th>Primeira Entrega</th>
+                    <th>Atraso</th>
+                </tr>
+            </thead>
+            <tbody id="atrasosTableBody">
+                <!-- Table rows will be dynamically inserted here -->
+            </tbody>
+        </table>
     </div>
 
     <script>
@@ -550,6 +614,9 @@
                     // Update the legend based on the selected transportadora
                     updateLegend(transportadora);
                     
+                    // New: Update the table of delayed orders
+                    updateAtrasosTable(data.atrasos_list);
+                    
                     alert('Dados atualizados com sucesso!');
                 } else {
                     alert('Erro ao atualizar dados: ' + data.message);
@@ -561,6 +628,29 @@
             .finally(() => {
                 document.getElementById('updateDataBtn').disabled = false;
                 document.getElementById('updateDataBtn').textContent = 'Atualizar Dados';
+            });
+        }
+
+        // New function to update the table of delayed orders
+        function updateAtrasosTable(atrasosList) {
+            const tableBody = document.getElementById('atrasosTableBody');
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            atrasosList.forEach(atraso => {
+                const row = tableBody.insertRow();
+                row.insertCell(0).textContent = atraso.store_name;
+                row.insertCell(1).textContent = atraso.order_number;
+                row.insertCell(2).textContent = atraso.rastreio;
+                row.insertCell(3).textContent = atraso.transportadora;
+                row.insertCell(4).textContent = atraso.UF;
+                row.insertCell(5).textContent = atraso.processado;
+                row.insertCell(6).textContent = atraso.first_delivery_attempt_at;
+                row.insertCell(7).textContent = atraso.shipping_status;
+                row.insertCell(8).textContent = atraso.delivered_at;
+                row.insertCell(9).textContent = atraso.estimated_time_arrival;
+                row.insertCell(10).textContent = atraso.SLA;
+                row.insertCell(11).textContent = atraso.first_delivery;
+                row.insertCell(12).textContent = atraso.atraso;
             });
         }
 
