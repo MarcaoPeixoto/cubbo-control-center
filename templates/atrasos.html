@@ -56,7 +56,7 @@
 
         #ufChart, #dateChart {
             width: 30%;
-            height: 150%; /* Increased to 95% of viewport height */
+            height: 100%; /* Increased to 95% of viewport height */
             margin-bottom: 2%;
         }
         #pieChartContainer {
@@ -483,7 +483,7 @@
             });
         }
 
-        // Function to update the legend
+        // Modified updateLegend function
         function updateLegend(transportadora) {
             const legendContainer = document.getElementById('legend');
             const allTransportadoras = [
@@ -511,8 +511,7 @@
             }
         }
 
-
-        // Add this function to handle the data update
+        // Modified updateData function
         function updateData() {
             document.getElementById('updateDataBtn').disabled = true;
             document.getElementById('updateDataBtn').textContent = 'Atualizando...';
@@ -547,6 +546,10 @@
                     updatePieChart(data.transportadora_data);
                     updateDateChart(data.date_data);
                     document.getElementById('totalAtrasosValue').textContent = data.total_atrasos;
+                    
+                    // Update the legend based on the selected transportadora
+                    updateLegend(transportadora);
+                    
                     alert('Dados atualizados com sucesso!');
                 } else {
                     alert('Erro ao atualizar dados: ' + data.message);
