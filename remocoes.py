@@ -86,8 +86,11 @@ def get_remocoes():
     remocoes = get_dataset('3509')
 
     processed_remocoes = []
+    removidos_antigos = redis_client.get('removidos_antigos')
 
     for remocao in remocoes:
+        if remocao['id'] in removidos_antigos:
+            continue
         try:
             remocao['pendente'] = datetime.strptime(remocao['pendente'], date_format)
             remocao['processado'] = datetime.strptime(remocao['processado'], date_format)
