@@ -349,13 +349,66 @@ def update_transportadora_data(transportadora=None, data_inicial=None, data_fina
         'atrasos_list': atrasos_list_sorted
     }
 
-# Run this function to update Redis data
+def generate_sheets():
+    
+    atrasos = get_atrasos()
+    atrasos_list_sorted = sorted(atrasos, key=lambda x: (
+        x['store_name'],
+        x['transportadora'],
+        x['processado'],
+        x['UF']
+    ))
 
+    # Authenticate and create Google Sheets service
+    creds = Credentials.from_authorized_user_file('token.json', ['https://www.googleapis.com/auth/spreadsheets'])
+    sheets_service = build('sheets', 'v4', credentials=creds)
+
+    # Create a new spreadsheet
+    spreadsheet = sheets_service.spreadsheets().create(body={
+        'properties': {'title': 'Atrasos Report'},
+        'sheets': [{'properties': {'title': 'Atrasos Data'}}]
+    }).execute()
+    spreadsheet_id = spreadsheet['spreadsheetId']
+
+    # Prepare the data for the sheet
+    headers = ['Store Name', 'Order Number', 'Rastreio', 'Transportadora', 'UF', 'Processado', 
+               'First Delivery Attempt', 'Shipping Status', 'Delivered At', 'Estimated Time Arrival', 
+               'SLA', 'First Delivery', 'Atraso']
+    
+    values = [headers]
+    for atraso in atrasos_list_sorted:
+        values.append([
+            atraso['store_name'],
+            atraso['order_number'],
+            atraso['rastreio'],
+            atraso['transportadora'],
+            atraso['UF'],
+            atraso['processado'].strftime("%d-%m-%Y"),
+            atraso['first_delivery_attempt_at'].strftime("%d-%m-%Y"),
+            atraso['shipping_status'],
+            atraso['delivered_at'].strftime("%d-%m-%Y"),
+            atraso['estimated_time_arrival'].strftime("%d-%m-%Y"),
+            atraso['SLA'],
+            atraso['first_delivery'],
+            str(atraso['atraso'])
+        ])
+
+    # Update the sheet with the data
+    sheet_range = 'Atrasos Data!A1'
+    sheets_service.spreadsheets().values().update(
+        spreadsheetId=spreadsheet_id,
+        range=sheet_range,
+        body={'values': values},
+        valueInputOption='RAW'
+    ).execute()
+
+    print(f"Spreadsheet created successfully. ID: {spreadsheet_id}")
+    return spreadsheet_id
+
+# You can call this function to generate the sheet
+# spreadsheet_id = generate_sheets()
 
 # Optionally, you can keep the print statements for debugging
 """ print(order_counts)
 print(uf_order_counts)
 print(transportadora_stats) """
-
-
-

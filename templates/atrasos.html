@@ -167,6 +167,23 @@
             background-color: #f5f5f5;
         }
 
+        #downloadBtn {
+            width: 20px;
+            height: 20px;
+        }
+
+        button {
+            background-color: transparent;
+            border-radius: 20%;
+            border-color: #aec3e1;
+            margin-left: 2%;
+        }
+
+        #atrasosTableHeader {
+            display: flex;
+            align-items: center;
+        }
+
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -336,7 +353,10 @@
 
     <!-- New section for the table of delayed orders -->
     <div id="atrasosTable" class="atrasos-table">
-        <h3>Pedidos Atrasados</h3>
+        <div id="atrasosTableHeader">
+            <h3>Pedidos Atrasados</h3>
+            <button><img id="downloadBtn" src="/static/images/download.png" alt="download"></button>
+        </div>
         <table>
             <thead>
                 <tr>
