@@ -371,20 +371,14 @@ def generate_sheets(transportadora=None, data_inicial=None, data_final=None, cli
         
     title = ' - '.join(title_parts) + f' ({datetime.now().strftime("%d-%m-%Y")})'
     
-    # Rest of the function remains the same, but use these parameters to get atrasos
-    atrasos = get_atrasos(
+    # Get data from update_transportadora_data
+    data = update_transportadora_data(
         transportadora=transportadora,
         data_inicial=data_inicial,
         data_final=data_final,
         cliente=cliente,
         status=status
     )
-    atrasos_list_sorted = sorted(atrasos, key=lambda x: (
-        x['store_name'],
-        x['transportadora'],
-        x['processado'],
-        x['UF']
-    ))
 
     # Get credentials using the existing authentication function
     creds = None
@@ -423,26 +417,17 @@ def generate_sheets(transportadora=None, data_inicial=None, data_final=None, cli
     ).execute()
 
     # Prepare the data for the sheet
-    headers = ['Store Name', 'Order Number', 'Rastreio', 'Transportadora', 'UF', 'Processado', 
-               'First Delivery Attempt', 'Shipping Status', 'Delivered At', 'Estimated Time Arrival', 
-               'SLA', 'First Delivery', 'Atraso']
+    headers = ['Data', 'Transportadora', 'UF', 'Cliente', 'Status', 'Total']
     
     values = [headers]
-    for atraso in atrasos_list_sorted:
+    for row in data:
         values.append([
-            atraso['store_name'],
-            atraso['order_number'],
-            atraso['rastreio'],
-            atraso['transportadora'],
-            atraso['UF'],
-            atraso['processado'].strftime("%d-%m-%Y"),
-            atraso['first_delivery_attempt_at'].strftime("%d-%m-%Y"),
-            atraso['shipping_status'],
-            atraso['delivered_at'].strftime("%d-%m-%Y"),
-            atraso['estimated_time_arrival'].strftime("%d-%m-%Y"),
-            atraso['SLA'],
-            atraso['first_delivery'],
-            str(atraso['atraso'])
+            row['data'],
+            row['transportadora'],
+            row['uf'],
+            row['cliente'],
+            row['status'],
+            row['total']
         ])
 
     # Update the sheet with the data
