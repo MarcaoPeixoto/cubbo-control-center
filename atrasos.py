@@ -354,11 +354,9 @@ def update_transportadora_data(transportadora=None, data_inicial=None, data_fina
 
 def generate_sheets(transportadora=None, data_inicial=None, data_final=None, cliente=None, status=None):
     # Build title with parameters
-
     FOLDER_ID = os.getenv('PEDIDOS_ATRASADOS_FOLDER_ID')
     
     title_parts = ['Atrasos Report']
-    
     if transportadora:
         title_parts.append(f'Transp:{transportadora}')
     if data_inicial:
@@ -372,7 +370,7 @@ def generate_sheets(transportadora=None, data_inicial=None, data_final=None, cli
         
     title = ' - '.join(title_parts) + f' ({datetime.now().strftime("%d-%m-%Y")})'
     
-    # Get data from update_transportadora_data
+    # Get data directly from update_transportadora_data
     data = update_transportadora_data(
         transportadora=transportadora,
         data_inicial=data_inicial,
@@ -381,35 +379,29 @@ def generate_sheets(transportadora=None, data_inicial=None, data_final=None, cli
         status=status
     )
 
-    # Get credentials using the existing authentication function
+    # Authentication and service creation
     creds = None
     token_json = redis_client.get('token_json')
-
     if token_json:
         creds = Credentials.from_authorized_user_info(
             json.loads(token_json), 
             ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file']
         )
-
     if not creds or not creds.valid:
         raise Exception("Invalid credentials")
 
-    # Create services
     sheets_service = build('sheets', 'v4', credentials=creds)
     drive_service = build('drive', 'v3', credentials=creds)
 
-    # Create a new spreadsheet
+    # Create spreadsheet
     spreadsheet = sheets_service.spreadsheets().create(body={
-        'properties': {'title': title},
-        'sheets': [{'properties': {'title': 'Atrasos Data'}}]
+        'properties': {'title': title}
     }).execute()
     spreadsheet_id = spreadsheet['spreadsheetId']
-    sheet_id = spreadsheet['sheets'][0]['properties']['sheetId']  # Get the first sheet's ID
 
-    # Move the spreadsheet to the specified folder
+    # Move to correct folder
     file = drive_service.files().get(fileId=spreadsheet_id, fields='parents').execute()
     previous_parents = ",".join(file.get('parents', []))
-    
     drive_service.files().update(
         fileId=spreadsheet_id,
         addParents=FOLDER_ID,
@@ -417,25 +409,37 @@ def generate_sheets(transportadora=None, data_inicial=None, data_final=None, cli
         fields='id, parents'
     ).execute()
 
-    # Prepare the data for the sheet
-    headers = ['Data', 'Transportadora', 'UF', 'Cliente', 'Status', 'Total']
-    
-    values = [headers]
-    for row in data:
-        values.append([
-            row['data'],
-            row['transportadora'],
-            row['uf'],
-            row['cliente'],
-            row['status'],
-            row['total']
+    # Prepare headers and data
+    headers = [
+        'Cliente', 'Pedido', 'Rastreio', 'Transportadora', 'UF',
+        'Processado', 'Primeira Tentativa', 'Status', 'Entregue',
+        'Previsão de Entrega', 'SLA', 'Primeira Entrega', 'Atraso'
+    ]
+
+    # Get the atrasos list from the data
+    rows = [headers]
+    for atraso in data['atrasos_list']:
+        rows.append([
+            atraso['store_name'],
+            atraso['order_number'],
+            atraso['rastreio'],
+            atraso['transportadora'],
+            atraso['UF'],
+            atraso['processado'],
+            atraso['first_delivery_attempt_at'],
+            atraso['shipping_status'],
+            atraso['delivered_at'],
+            atraso['estimated_time_arrival'],
+            atraso['SLA'],
+            atraso['first_delivery'],
+            atraso['atraso']
         ])
 
-    # Update the sheet with the data
+    # Update the sheet with data
     sheets_service.spreadsheets().values().update(
         spreadsheetId=spreadsheet_id,
-        range='Atrasos Data!A1',
-        body={'values': values},
+        range='A1',
+        body={'values': rows},
         valueInputOption='RAW'
     ).execute()
 
@@ -443,24 +447,41 @@ def generate_sheets(transportadora=None, data_inicial=None, data_final=None, cli
     requests = [
         {
             'repeatCell': {
-                'range': {'sheetId': sheet_id, 'startRowIndex': 0, 'endRowIndex': 1},  # Use sheet_id instead of 0
+                'range': {
+                    'sheetId': 0,
+                    'startRowIndex': 0,
+                    'endRowIndex': 1
+                },
                 'cell': {
                     'userEnteredFormat': {
-                        'backgroundColor': {'red': 0.2, 'green': 0.2, 'blue': 0.2},
-                        'textFormat': {'bold': True, 'foregroundColor': {'red': 1, 'green': 1, 'blue': 1}}
+                        'backgroundColor': {'red': 0.9, 'green': 0.9, 'blue': 0.9},
+                        'textFormat': {'bold': True},
+                        'horizontalAlignment': 'CENTER',
+                        'verticalAlignment': 'MIDDLE'
                     }
                 },
-                'fields': 'userEnteredFormat(backgroundColor,textFormat)'
+                'fields': 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)'
             }
         },
         {
             'autoResizeDimensions': {
                 'dimensions': {
-                    'sheetId': sheet_id,  # Use sheet_id instead of 0
+                    'sheetId': 0,
                     'dimension': 'COLUMNS',
                     'startIndex': 0,
                     'endIndex': len(headers)
                 }
+            }
+        },
+        {
+            'updateSheetProperties': {
+                'properties': {
+                    'sheetId': 0,
+                    'gridProperties': {
+                        'frozenRowCount': 1
+                    }
+                },
+                'fields': 'gridProperties.frozenRowCount'
             }
         }
     ]
