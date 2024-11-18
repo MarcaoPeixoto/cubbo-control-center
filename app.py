@@ -19,7 +19,7 @@ import io
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from redis_connection import get_redis_connection
 import redis
-from atrasos import update_transportadora_data, get_atrasos, count_atrasos_by_date_and_transportadora, count_atrasos_by_uf_and_transportadora, count_atrasos_by_transportadora_with_percentage
+from atrasos import update_transportadora_data, get_atrasos, count_atrasos_by_date_and_transportadora, count_atrasos_by_uf_and_transportadora, count_atrasos_by_transportadora_with_percentage, generate_sheets
 import logging
 
 app = Flask(__name__)
@@ -475,7 +475,9 @@ def update_volumes():
 def upload_images():
     SCOPES = ['https://www.googleapis.com/auth/documents.readonly', 
               'https://www.googleapis.com/auth/drive.file',
-              'https://www.googleapis.com/auth/drive']
+              'https://www.googleapis.com/auth/drive',
+              'https://www.googleapis.com/auth/spreadsheets'
+              ]
 
     if 'images' not in request.files:
         return jsonify({'success': False, 'error': 'No images in the request'}), 400

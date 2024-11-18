@@ -27,7 +27,9 @@ redis_client = get_redis_connection()
 def authenticate_google_docs():
     SCOPES = ['https://www.googleapis.com/auth/documents.readonly', 
               'https://www.googleapis.com/auth/drive.file',
-              'https://www.googleapis.com/auth/drive']
+              'https://www.googleapis.com/auth/drive',
+              'https://www.googleapis.com/auth/spreadsheets'
+              ]
     
     creds = None
     token_json = redis_client.get('token_json')
@@ -349,10 +351,34 @@ def update_transportadora_data(transportadora=None, data_inicial=None, data_fina
         'atrasos_list': atrasos_list_sorted
     }
 
-def generate_sheets():
+def generate_sheets(transportadora=None, data_inicial=None, data_final=None, cliente=None, status=None):
+    # Build title with parameters
+
     FOLDER_ID = os.getenv('PEDIDOS_ATRASADOS_FOLDER_ID')
     
-    atrasos = get_atrasos()
+    title_parts = ['Atrasos Report']
+    
+    if transportadora:
+        title_parts.append(f'Transp:{transportadora}')
+    if data_inicial:
+        title_parts.append(f'De:{data_inicial}')
+    if data_final:
+        title_parts.append(f'Ate:{data_final}')
+    if cliente:
+        title_parts.append(f'Cliente:{cliente}')
+    if status:
+        title_parts.append(f'Status:{status}')
+        
+    title = ' - '.join(title_parts) + f' ({datetime.now().strftime("%d-%m-%Y")})'
+    
+    # Rest of the function remains the same, but use these parameters to get atrasos
+    atrasos = get_atrasos(
+        transportadora=transportadora,
+        data_inicial=data_inicial,
+        data_final=data_final,
+        cliente=cliente,
+        status=status
+    )
     atrasos_list_sorted = sorted(atrasos, key=lambda x: (
         x['store_name'],
         x['transportadora'],
@@ -379,7 +405,7 @@ def generate_sheets():
 
     # Create a new spreadsheet
     spreadsheet = sheets_service.spreadsheets().create(body={
-        'properties': {'title': f'Atrasos Report {datetime.now().strftime("%d-%m-%Y")}'},
+        'properties': {'title': title},
         'sheets': [{'properties': {'title': 'Atrasos Data'}}]
     }).execute()
     spreadsheet_id = spreadsheet['spreadsheetId']
