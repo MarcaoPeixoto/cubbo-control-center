@@ -558,9 +558,12 @@ def upload_images():
     return jsonify({'success': True, 'uploaded_files': uploaded_files})
 
 def get_google_credentials():
-    SCOPES = ['https://www.googleapis.com/auth/documents.readonly', 
-              'https://www.googleapis.com/auth/drive.file',
-              'https://www.googleapis.com/auth/drive']
+    SCOPES = [
+        'https://www.googleapis.com/auth/documents.readonly',
+        'https://www.googleapis.com/auth/drive.file',
+        'https://www.googleapis.com/auth/drive',
+        'https://www.googleapis.com/auth/spreadsheets'
+    ]
     
     creds = None
     token_json = redis_client.get('token_json')

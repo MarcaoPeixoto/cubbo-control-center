@@ -386,10 +386,24 @@ def generate_sheets(data=None, transportadora=None, data_inicial=None, data_fina
     if token_json:
         creds = Credentials.from_authorized_user_info(
             json.loads(token_json), 
-            ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file']
+            [
+                'https://www.googleapis.com/auth/spreadsheets',
+                'https://www.googleapis.com/auth/drive.file',
+                'https://www.googleapis.com/auth/drive'
+            ]
         )
     if not creds or not creds.valid:
-        raise Exception("Invalid credentials")
+        if creds and creds.expired and creds.refresh_token:
+            try:
+                creds.refresh(Request())
+            except Exception as e:
+                print(f"Error refreshing credentials: {e}")
+                raise Exception("Invalid credentials - failed to refresh")
+        else:
+            raise Exception("Invalid credentials")
+
+        # Update token in Redis
+        redis_client.set('token_json', creds.to_json())
 
     sheets_service = build('sheets', 'v4', credentials=creds)
     drive_service = build('drive', 'v3', credentials=creds)
