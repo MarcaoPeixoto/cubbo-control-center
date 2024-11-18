@@ -184,6 +184,21 @@
             align-items: center;
         }
 
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0052cc;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none; /* Hidden by default */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -355,7 +370,10 @@
     <div id="atrasosTable" class="atrasos-table">
         <div id="atrasosTableHeader">
             <h3>Pedidos Atrasados</h3>
-            <button><img id="downloadBtn" src="/static/images/download.png" alt="download"></button>
+            <button>
+                <img id="downloadBtn" src="/static/images/download.png" alt="download">
+                <div id="downloadSpinner" class="spinner"></div>
+            </button>
         </div>
         <table>
             <thead>
@@ -682,6 +700,13 @@
 
         // Add this function near the top of your script section
         function downloadToSheets() {
+            const downloadBtn = document.getElementById('downloadBtn');
+            const spinner = document.getElementById('downloadSpinner');
+            
+            // Hide download icon and show spinner
+            downloadBtn.style.display = 'none';
+            spinner.style.display = 'block';
+            
             fetch('/generate-sheets', {
                 method: 'POST',
                 headers: {
@@ -691,15 +716,20 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Open the spreadsheet in a new tab
                     window.open(`https://docs.google.com/spreadsheets/d/${data.spreadsheet_id}`, '_blank');
                 } else {
                     alert('Error generating spreadsheet: ' + data.error);
+                    // Reset to download icon
+                    downloadBtn.style.display = 'block';
+                    spinner.style.display = 'none';
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
                 alert('Error generating spreadsheet');
+                // Reset to download icon
+                downloadBtn.style.display = 'block';
+                spinner.style.display = 'none';
             });
         }
 
