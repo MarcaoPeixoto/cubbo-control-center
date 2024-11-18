@@ -409,6 +409,7 @@ def generate_sheets(transportadora=None, data_inicial=None, data_final=None, cli
         'sheets': [{'properties': {'title': 'Atrasos Data'}}]
     }).execute()
     spreadsheet_id = spreadsheet['spreadsheetId']
+    sheet_id = spreadsheet['sheets'][0]['properties']['sheetId']  # Get the first sheet's ID
 
     # Move the spreadsheet to the specified folder
     file = drive_service.files().get(fileId=spreadsheet_id, fields='parents').execute()
@@ -456,7 +457,7 @@ def generate_sheets(transportadora=None, data_inicial=None, data_final=None, cli
     requests = [
         {
             'repeatCell': {
-                'range': {'sheetId': 0, 'startRowIndex': 0, 'endRowIndex': 1},
+                'range': {'sheetId': sheet_id, 'startRowIndex': 0, 'endRowIndex': 1},  # Use sheet_id instead of 0
                 'cell': {
                     'userEnteredFormat': {
                         'backgroundColor': {'red': 0.2, 'green': 0.2, 'blue': 0.2},
@@ -469,7 +470,7 @@ def generate_sheets(transportadora=None, data_inicial=None, data_final=None, cli
         {
             'autoResizeDimensions': {
                 'dimensions': {
-                    'sheetId': 0,
+                    'sheetId': sheet_id,  # Use sheet_id instead of 0
                     'dimension': 'COLUMNS',
                     'startIndex': 0,
                     'endIndex': len(headers)
