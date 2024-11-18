@@ -352,7 +352,7 @@ def update_transportadora_data(transportadora=None, data_inicial=None, data_fina
         'atrasos_list': atrasos_list_sorted
     }
 
-def generate_sheets(transportadora=None, data_inicial=None, data_final=None, cliente=None, status=None):
+def generate_sheets(data=None, transportadora=None, data_inicial=None, data_final=None, cliente=None, status=None):
     # Build title with parameters
     FOLDER_ID = os.getenv('PEDIDOS_ATRASADOS_FOLDER_ID')
     
@@ -370,14 +370,15 @@ def generate_sheets(transportadora=None, data_inicial=None, data_final=None, cli
         
     title = ' - '.join(title_parts) + f' ({datetime.now().strftime("%d-%m-%Y")})'
     
-    # Get data directly from update_transportadora_data
-    data = update_transportadora_data(
-        transportadora=transportadora,
-        data_inicial=data_inicial,
-        data_final=data_final,
-        cliente=cliente,
-        status=status
-    )
+    # Use provided data instead of fetching new data
+    if not data:
+        data = update_transportadora_data(
+            transportadora=transportadora,
+            data_inicial=data_inicial,
+            data_final=data_final,
+            cliente=cliente,
+            status=status
+        )
 
     # Authentication and service creation
     creds = None

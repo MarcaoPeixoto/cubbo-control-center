@@ -673,10 +673,14 @@ def refresh_remocoes():
         app.logger.error(f"Error refreshing remocoes: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
+# Add a global variable to store the latest data
+latest_atrasos_data = None
 
 @app.route('/update_atrasos', methods=['POST'])
 def update_atrasos_data():
     try:
+        global latest_atrasos_data  # Declare we'll use the global variable
+        
         # Get filter parameters from the request body
         data = request.json
         marca = data.get('marca')
@@ -693,6 +697,9 @@ def update_atrasos_data():
             cliente=marca if marca else None,
             status=status if status else None
         )
+        
+        # Store the data globally
+        latest_atrasos_data = updated_data
 
         return jsonify({"success": True, **updated_data})
     except Exception as e:
@@ -702,11 +709,16 @@ def update_atrasos_data():
 @app.route('/generate-sheets', methods=['POST'])
 @login_required
 def generate_sheets_route():
-
-    spreadsheet_id = os.getenv('PEDIDOS_ATRASADOS_FOLDER_ID')
-
+    global latest_atrasos_data
+    
     try:
-        spreadsheet_id = generate_sheets()
+        if not latest_atrasos_data:
+            return jsonify({
+                'success': False,
+                'error': 'No data available. Please update the data first.'
+            }), 400
+
+        spreadsheet_id = generate_sheets(data=latest_atrasos_data)
         return jsonify({
             'success': True,
             'spreadsheet_id': spreadsheet_id
@@ -717,6 +729,7 @@ def generate_sheets_route():
             'success': False,
             'error': str(e)
         }), 500
+
 
 if __name__ == '__main__':
     try:
