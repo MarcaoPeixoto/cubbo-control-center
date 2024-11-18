@@ -130,7 +130,22 @@ def process_data(inputs):
 
 hoje = datetime.now().strftime("%Y-%m-%d")
 
+
 def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente=None, status=None):
+
+    global transp
+    global data_in
+    global data_fi
+    global cli
+    global sta
+
+
+    transp = transportadora
+    data_in = data_inicial
+    data_fi = data_final
+    cli = cliente
+    sta = status
+
 
     if data_inicial is None:
         data_inicial = hoje
@@ -237,6 +252,7 @@ def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente
     print(f"Processed {len(atrasos)} atrasos")
 
     return atrasos
+
 
 def count_atrasos_by_date_and_transportadora(atrasos):
     
@@ -352,9 +368,17 @@ def update_transportadora_data(transportadora=None, data_inicial=None, data_fina
         'atrasos_list': atrasos_list_sorted
     }
 
+
 def generate_sheets(data=None, transportadora=None, data_inicial=None, data_final=None, cliente=None, status=None):
     # Build title with parameters
     FOLDER_ID = os.getenv('PEDIDOS_ATRASADOS_FOLDER_ID')
+
+    transportadora = transp
+    data_inicial = data_in
+    data_final = data_fi
+    cliente = cli
+    status = sta
+
     
     title_parts = ['Atrasos Report']
     if transportadora:
