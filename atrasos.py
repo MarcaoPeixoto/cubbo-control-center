@@ -479,21 +479,3 @@ def generate_sheets(transportadora=None, data_inicial=None, data_final=None, cli
 """ print(order_counts)
 print(uf_order_counts)
 print(transportadora_stats) """
-
-# Setup Google Sheets API
-SCOPES = [
-    'https://www.googleapis.com/auth/documents.readonly',
-    'https://www.googleapis.com/auth/drive.file',
-    'https://www.googleapis.com/auth/drive',
-    'https://www.googleapis.com/auth/spreadsheets'
-]
-
-credentials_json = redis_client.get('credentials_json')
-
-credentials = service_account.Credentials.from_service_account_file(
-    'credentials_json',  # Make sure this file exists in your project
-    scopes=SCOPES
-)
-
-sheets_service = build('sheets', 'v4', credentials=credentials)
-drive_service = build('drive', 'v3', credentials=credentials)
