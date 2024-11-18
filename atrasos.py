@@ -350,6 +350,7 @@ def update_transportadora_data(transportadora=None, data_inicial=None, data_fina
     }
 
 def generate_sheets():
+    FOLDER_ID = os.getenv('PEDIDOS_ATRASADOS_FOLDER_ID')
     
     atrasos = get_atrasos()
     atrasos_list_sorted = sorted(atrasos, key=lambda x: (
@@ -359,16 +360,40 @@ def generate_sheets():
         x['UF']
     ))
 
-    # Authenticate and create Google Sheets service
-    creds = Credentials.from_authorized_user_file('token.json', ['https://www.googleapis.com/auth/spreadsheets'])
+    # Get credentials using the existing authentication function
+    creds = None
+    token_json = redis_client.get('token_json')
+
+    if token_json:
+        creds = Credentials.from_authorized_user_info(
+            json.loads(token_json), 
+            ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file']
+        )
+
+    if not creds or not creds.valid:
+        raise Exception("Invalid credentials")
+
+    # Create services
     sheets_service = build('sheets', 'v4', credentials=creds)
+    drive_service = build('drive', 'v3', credentials=creds)
 
     # Create a new spreadsheet
     spreadsheet = sheets_service.spreadsheets().create(body={
-        'properties': {'title': 'Atrasos Report'},
+        'properties': {'title': f'Atrasos Report {datetime.now().strftime("%d-%m-%Y")}'},
         'sheets': [{'properties': {'title': 'Atrasos Data'}}]
     }).execute()
     spreadsheet_id = spreadsheet['spreadsheetId']
+
+    # Move the spreadsheet to the specified folder
+    file = drive_service.files().get(fileId=spreadsheet_id, fields='parents').execute()
+    previous_parents = ",".join(file.get('parents', []))
+    
+    drive_service.files().update(
+        fileId=spreadsheet_id,
+        addParents=FOLDER_ID,
+        removeParents=previous_parents,
+        fields='id, parents'
+    ).execute()
 
     # Prepare the data for the sheet
     headers = ['Store Name', 'Order Number', 'Rastreio', 'Transportadora', 'UF', 'Processado', 
@@ -394,15 +419,44 @@ def generate_sheets():
         ])
 
     # Update the sheet with the data
-    sheet_range = 'Atrasos Data!A1'
     sheets_service.spreadsheets().values().update(
         spreadsheetId=spreadsheet_id,
-        range=sheet_range,
+        range='Atrasos Data!A1',
         body={'values': values},
         valueInputOption='RAW'
     ).execute()
 
-    print(f"Spreadsheet created successfully. ID: {spreadsheet_id}")
+    # Apply formatting
+    requests = [
+        {
+            'repeatCell': {
+                'range': {'sheetId': 0, 'startRowIndex': 0, 'endRowIndex': 1},
+                'cell': {
+                    'userEnteredFormat': {
+                        'backgroundColor': {'red': 0.2, 'green': 0.2, 'blue': 0.2},
+                        'textFormat': {'bold': True, 'foregroundColor': {'red': 1, 'green': 1, 'blue': 1}}
+                    }
+                },
+                'fields': 'userEnteredFormat(backgroundColor,textFormat)'
+            }
+        },
+        {
+            'autoResizeDimensions': {
+                'dimensions': {
+                    'sheetId': 0,
+                    'dimension': 'COLUMNS',
+                    'startIndex': 0,
+                    'endIndex': len(headers)
+                }
+            }
+        }
+    ]
+
+    sheets_service.spreadsheets().batchUpdate(
+        spreadsheetId=spreadsheet_id,
+        body={'requests': requests}
+    ).execute()
+
     return spreadsheet_id
 
 # You can call this function to generate the sheet

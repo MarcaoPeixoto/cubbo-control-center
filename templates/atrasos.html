@@ -680,6 +680,32 @@
         // Call updateCharts initially to load data and set up the legend
         
 
+        // Add this function near the top of your script section
+        function downloadToSheets() {
+            fetch('/generate-sheets', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Open the spreadsheet in a new tab
+                    window.open(`https://docs.google.com/spreadsheets/d/${data.spreadsheet_id}`, '_blank');
+                } else {
+                    alert('Error generating spreadsheet: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error generating spreadsheet');
+            });
+        }
+
+        // Add this event listener after your other event listeners
+        document.getElementById('downloadBtn').addEventListener('click', downloadToSheets);
+
     </script>
 </body>
 </html>

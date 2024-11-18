@@ -697,6 +697,25 @@ def update_atrasos_data():
         app.logger.error(f"Error in update_atrasos_data: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route('/generate-sheets', methods=['POST'])
+@login_required
+def generate_sheets_route():
+
+    spreadsheet_id = os.getenv('PEDIDOS_ATRASADOS_FOLDER_ID')
+
+    try:
+        spreadsheet_id = generate_sheets()
+        return jsonify({
+            'success': True,
+            'spreadsheet_id': spreadsheet_id
+        })
+    except Exception as e:
+        app.logger.error(f"Error generating sheets: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     try:
         check_redis_connectivity()
