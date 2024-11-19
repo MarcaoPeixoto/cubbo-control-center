@@ -51,7 +51,7 @@ def authenticate_google_docs():
             if not credentials_json:
                 raise Exception("credentials.json not found in Redis")
             flow = InstalledAppFlow.from_client_config(
-                json.loads(credentials_json), SCOPES)
+                redis_client.get(credentials_json), SCOPES)
             creds = flow.run_local_server(port=0)
         
         # Update token in Redis
