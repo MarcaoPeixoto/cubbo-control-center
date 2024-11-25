@@ -118,7 +118,7 @@ def process_data(inputs):
 
 def get_manifesto(carrier):
     current_date = datetime.now() - timedelta(hours=3)
-    daysback = current_date - timedelta(days=4)
+
 
     if carrier == "MELI":
         carrier = "Mercado Envíos"
@@ -127,7 +127,7 @@ def get_manifesto(carrier):
         carrier = "JT Express"
 
     manifesto_inputs = process_data(
-        {'carrier_name': carrier, 'shipping_date': daysback, 'dispatch_date': current_date})
+        {'carrier_name': carrier, 'shipping_date': current_date, 'dispatch_date': current_date})
     pedidos = get_dataset('578', manifesto_inputs)
 
     # REMOVE orders with DIFAL (Assuming get_difal_order_ids is defined)
