@@ -74,6 +74,7 @@
         .loggi { background-color: aqua; }
         .correios { background-color: chartreuse; }
         .cubbo { background-color: #ed1e79; }
+        .treggo { background-color: #deff7b; }
         .chart {
             width: 30%;
         }
@@ -324,6 +325,7 @@
             <option value="LOGGI">LOGGI</option>
             <option value="CORREIOS">CORREIOS</option>
             <option value="CUBBO">CUBBO</option>
+            <option value="TREGGO">TREGGO</option>
             <!-- Add options dynamically -->
         </select>
         <div class="date-input-container">
@@ -427,6 +429,11 @@
                     label: 'Cubbo',
                     data: labels.map(uf => data[uf]['CUBBO'] || 0),
                     backgroundColor: '#ed1e79'
+                },
+                {
+                    label: 'Treggo',
+                    data: labels.map(uf => data[uf]['TREGGO'] || 0),
+                    backgroundColor: '#deff7b'
                 }
             ];
 
@@ -485,7 +492,8 @@
             const colors = {
                 'LOGGI': 'aqua',
                 'CORREIOS': 'chartreuse',
-                'CUBBO': '#ed1e79'
+                'CUBBO': '#ed1e79',
+                'TREGGO': '#deff7b'
             };
 
             pieChart = new Chart(ctx, {
@@ -591,7 +599,8 @@
             const allTransportadoras = [
                 { name: 'Loggi', color: 'aqua' },
                 { name: 'Correios', color: 'chartreuse' },
-                { name: 'Cubbo', color: '#ed1e79' }
+                { name: 'Cubbo', color: '#ed1e79' },
+                { name: 'Treggo', color: '#deff7b' }
             ];
 
             // Clear existing legend items

@@ -218,6 +218,7 @@ def adjust_shipping_date(shipping_date, carrier):
         'CUBBO': (16, 30),
         'UELLO': (16, 0),
         'CORREIOS': (14, 0),
+        'TREGGO': (12, 30),
         'LOGGI': (13, 30),
         'Mercado Envíos': (13, 0),
         'JT Express': (16, 0)
@@ -335,7 +336,7 @@ def ajuste_pendentes():
                 shipping_time_limit = 14
             elif carrier == 'CORREIOS':
                 shipping_time_limit = 12      
-            elif carrier == 'Mercado Envíos':
+            elif carrier == 'Mercado Envíos' or carrier == 'TREGGO':
                 shipping_time_limit = 14  # Orders must be shipped by 14:30
             elif carrier == 'Armazém' or carrier == 'Externo':
                 shipping_time_limit = 17  # Orders must be shipped by 18:00
