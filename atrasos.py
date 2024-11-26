@@ -183,9 +183,9 @@ def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente
                     order['delivered_at'] = datetime.strptime(order['delivered_at'], date_format2)
                 except ValueError:
                     print(f"Warning: Unable to parse delivered_at date for order {order.get('order_number', 'Unknown')}")
-                    order['delivered_at'] = datetime.now()  # Fallback to current date
+                    order['delivered_at'] = hoje #usado par contar os dias de atraso diariamente
         else:
-            order['delivered_at'] = datetime.now() #usado par contar os dias de atraso diariamente
+            order['delivered_at'] = hoje #usado par contar os dias de atraso diariamente
             order['SLA'] = "MISS"
 
         # Ensure estimated_time_arrival is always a datetime object
