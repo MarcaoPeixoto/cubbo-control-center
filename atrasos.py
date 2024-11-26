@@ -191,8 +191,6 @@ def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente
 
         # Ensure estimated_time_arrival is always a datetime object
         if order['estimated_time_arrival'] is not None and order['estimated_time_arrival'] != "":  
-            if order['estimated_time_arrival'] > hoje_datetime:
-                continue
             try:
                 order['estimated_time_arrival'] = datetime.strptime(order['estimated_time_arrival'], date_format)
             except ValueError:
@@ -201,6 +199,9 @@ def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente
                 except ValueError:
                     print(f"Warning: Unable to parse estimated_time_arrival date for order {order.get('order_number', 'Unknown')}")
                     order['estimated_time_arrival'] = order['delivered_at']  # Fallback to delivered_at
+            
+            if order['estimated_time_arrival'] > hoje_datetime:
+                continue
         else:
             order['estimated_time_arrival'] = order['delivered_at']
             order['SLA'] = "MISS"
