@@ -129,6 +129,7 @@ def process_data(inputs):
 
 
 hoje = datetime.now().strftime("%Y-%m-%d")
+hoje_datetime = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente=None, status=None):
@@ -183,14 +184,14 @@ def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente
                     order['delivered_at'] = datetime.strptime(order['delivered_at'], date_format2)
                 except ValueError:
                     print(f"Warning: Unable to parse delivered_at date for order {order.get('order_number', 'Unknown')}")
-                    order['delivered_at'] = hoje #usado par contar os dias de atraso diariamente
+                    order['delivered_at'] = hoje_datetime #usado par contar os dias de atraso diariamente
         else:
-            order['delivered_at'] = hoje #usado par contar os dias de atraso diariamente
+            order['delivered_at'] = hoje_datetime #usado par contar os dias de atraso diariamente
             order['SLA'] = "MISS"
 
         # Ensure estimated_time_arrival is always a datetime object
         if order['estimated_time_arrival'] is not None and order['estimated_time_arrival'] != "":  
-            if order['estimated_time_arrival'] > hoje:
+            if order['estimated_time_arrival'] > hoje_datetime:
                 continue
             try:
                 order['estimated_time_arrival'] = datetime.strptime(order['estimated_time_arrival'], date_format)
@@ -204,7 +205,7 @@ def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente
             order['estimated_time_arrival'] = order['delivered_at']
             order['SLA'] = "MISS"
 
-        if order['estimated_time_arrival'] < hoje:
+        if order['estimated_time_arrival'] < hoje_datetime:
             order['SLA'] = "MISS"
         # Now we can safely compare datetime objects
         if order['estimated_time_arrival'] < order['delivered_at']:
