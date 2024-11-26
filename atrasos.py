@@ -349,24 +349,31 @@ def update_transportadora_data(transportadora=None, data_inicial=None, data_fina
     order_counts_serializable = {str(date): counts for date, counts in order_counts.items()}
 
     # Prepare a complete list of atrasos for the frontend, including all columns
-    atrasos_list = [
-        {
+    atrasos_list = []
+    for atraso in atrasos:
+        # Helper function to safely format dates
+        def format_date(date_value):
+            if isinstance(date_value, (datetime, date)):
+                return date_value.strftime("%d-%m-%Y")
+            elif date_value == "Não informado":
+                return date_value
+            return str(date_value)  # fallback for any other case
+
+        atrasos_list.append({
             'store_name': atraso['store_name'],
             'order_number': atraso['order_number'],
             'rastreio': atraso['rastreio'],
             'transportadora': atraso['transportadora'],
             'UF': atraso['UF'],
-            'processado': atraso['processado'].strftime("%d-%m-%Y"),
-            'first_delivery_attempt_at': atraso['first_delivery_attempt_at'].strftime("%d-%m-%Y"),
+            'processado': format_date(atraso['processado']),
+            'first_delivery_attempt_at': format_date(atraso['first_delivery_attempt_at']),
             'shipping_status': atraso['shipping_status'],
-            'delivered_at': atraso['delivered_at'].strftime("%d-%m-%Y"),
-            'estimated_time_arrival': atraso['estimated_time_arrival'].strftime("%d-%m-%Y"),
+            'delivered_at': format_date(atraso['delivered_at']),
+            'estimated_time_arrival': format_date(atraso['estimated_time_arrival']),
             'SLA': atraso['SLA'],
             'first_delivery': atraso['first_delivery'],
             'atraso': str(atraso['atraso'])
-        }
-        for atraso in atrasos
-    ]
+        })
 
     # Sort the atrasos_list
     atrasos_list_sorted = sorted(atrasos_list, key=lambda x: (
