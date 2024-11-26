@@ -243,6 +243,7 @@ def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente
         if order['ajuste1'] is True:
             order['delivered_at'] = "Não informado"
             order['first_delivery_attempt_at'] = "Não informado"
+            order['first_delivery'] = "MISS"
         if order['ajuste2'] is True:
             order['estimated_time_arrival'] = "Não informado"
             order['first_delivery_attempt_at'] = "Não informado"
