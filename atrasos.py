@@ -188,6 +188,7 @@ def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente
         else:
             order['delivered_at'] = hoje_datetime #usado par contar os dias de atraso diariamente
             order['SLA'] = "MISS"
+            order['ajuste'] = True
 
         # Ensure estimated_time_arrival is always a datetime object
         if order['estimated_time_arrival'] is not None and order['estimated_time_arrival'] != "":  
@@ -205,7 +206,7 @@ def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente
         else:
             order['estimated_time_arrival'] = order['delivered_at']
             order['SLA'] = "MISS"
-
+            order['ajuste'] = True
         if order['estimated_time_arrival'] < hoje_datetime:
             order['SLA'] = "MISS"
         # Now we can safely compare datetime objects
@@ -236,6 +237,10 @@ def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente
         else:
             order['first_delivery_attempt_at'] = order['delivered_at']
             order['first_delivery'] = "HIT"
+
+        if order['ajuste'] is True:
+            order['estimated_time_arrival'] = "Não informado"
+            order['delivered_at'] = "Não informado"
 
         if order['SLA'] == "MISS":
             atrasos.append({
