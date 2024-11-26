@@ -204,6 +204,8 @@ def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente
             order['estimated_time_arrival'] = order['delivered_at']
             order['SLA'] = "MISS"
 
+        if order['estimated_time_arrival'] < hoje:
+            order['SLA'] = "MISS"
         # Now we can safely compare datetime objects
         if order['estimated_time_arrival'] < order['delivered_at']:
             atraso = order['delivered_at'] - order['estimated_time_arrival']
