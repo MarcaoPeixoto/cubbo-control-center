@@ -170,9 +170,11 @@ def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente
 
     #print(dataset)
     for order in dataset:
-        # Check if order is a dictionary
+        # Initialize adjustment flags at the start
+        order['ajuste1'] = False
+        order['ajuste2'] = False
+        
         order['shipping_zip_code'] = parse_UF(order['shipping_zip_code'])
-
         order['UF'] = order['shipping_zip_code']
 
         # Ensure delivered_at is always a datetime object
