@@ -546,7 +546,12 @@
                     label: 'Cubbo',
                     data: labels.map(date => data[date]['CUBBO'] || 0),
                     backgroundColor: '#ed1e79'
-                }
+                },
+                {
+                    label: 'Treggo',
+                    data: labels.map(date => data[date]['TREGGO'] || 0),
+                    backgroundColor: '#deff7b'
+                }   
             ];
 
             dateChart = new Chart(ctx, {
