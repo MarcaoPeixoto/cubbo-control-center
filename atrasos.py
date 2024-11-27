@@ -277,7 +277,17 @@ def count_atrasos_by_date_and_transportadora(atrasos):
 
     for atraso in atrasos:
         transportadora = atraso['transportadora']
-        processado_date = atraso['processado'].date()
+        
+        # Check if processado is a string and convert it to a date
+        if isinstance(atraso['processado'], str):
+            try:
+                processado_date = datetime.strptime(atraso['processado'], "%d-%m-%Y").date()
+            except ValueError:
+                print(f"Warning: Unable to parse processado date for order {atraso.get('order_number', 'Unknown')}")
+                continue
+        else:
+            processado_date = atraso['processado'].date()
+        
         order_counts[processado_date][transportadora] += 1
 
     # Convert defaultdict to regular dict and sort dates
