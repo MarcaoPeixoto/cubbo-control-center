@@ -5,6 +5,7 @@ certifi==2024.7.4
 charset-normalizer==3.3.2
 click==8.1.7
 colorama==0.4.6
+et_xmlfile==2.0.0
 Flask==3.0.3
 Flask-Cors==4.0.1
 google-api-core==2.20.0
@@ -15,18 +16,23 @@ google-auth-oauthlib==1.2.1
 googleapis-common-protos==1.65.0
 gunicorn==22.0.0
 httplib2==0.22.0
+hubspot==0.1.14.dev0
+hubspot-api-client==10.0.0
 idna==3.8
 itsdangerous==2.2.0
 Jinja2==3.1.4
 MarkupSafe==2.1.5
 numpy==2.1.0
 oauthlib==3.2.2
+openpyxl==3.1.5
 packaging==24.1
+pandas==2.2.3
 proto-plus==1.24.0
 protobuf==5.28.2
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
 pyparsing==3.1.4
+python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 pytz==2024.1
 redis==5.0.8
@@ -40,3 +46,4 @@ tzlocal==5.2
 uritemplate==4.1.1
 urllib3==2.2.2
 Werkzeug==3.0.4
+XlsxWriter==3.2.0
