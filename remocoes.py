@@ -91,6 +91,12 @@ def get_remocoes():
     processed_remocoes = []
     removidos_antigos = redis_client.get('removidos_antigos')
 
+    # Convert removidos_antigos from JSON string to a list of integers
+    if removidos_antigos:
+        removidos_antigos = json.loads(removidos_antigos)
+    else:
+        removidos_antigos = []
+
     for remocao in remocoes:
         if remocao['id'] in removidos_antigos:
             continue
