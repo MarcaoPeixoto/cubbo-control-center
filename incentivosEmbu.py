@@ -5,7 +5,9 @@ import numpy as np
 import os
 from dotenv import dotenv_values
 from redis_connection import get_redis_connection
+from dateutil import parser
 
+env_config = dotenv_values(".env")
 
 #import pandas as pd
 #import matplotlib.pyplot as plt
@@ -14,12 +16,13 @@ from redis_connection import get_redis_connection
 
 #locale.setlocale(locale.LC_TIME, "es_ES")
 
+
 hora_agora = datetime.now()
 nova_hora = (hora_agora - timedelta(hours=3)).strftime("%H:%M")
 
-date_format = "%d-%m-%Y, %H:%M:%S"
+date_format = os.environ["DATE_FORMAT"] or env_config.get('DATE_FORMAT')
 
-date_format2 = "%d-%m-%Y, %H:%M:%S.%f"
+date_format2 = os.environ["DATE_FORMAT2"] or env_config.get('DATE_FORMAT2')
 
 redis_client = get_redis_connection()
 
@@ -289,7 +292,10 @@ def ajuste_pendentes():
         if order['status'] == "canceled" or order['status'] == "holded":
             continue
         
-        order['pending_at'] = datetime.strptime(order['pending_at'], date_format)
+        try:
+            order['pending_at'] = datetime.strptime(order['pending_at'], date_format)
+        except:
+            order['pending_at'] = datetime.strptime(order['pending_at'], date_format2)
 
         if order['pending_at'].date() in CONFIG['BR']['holidays']:
             order['pending_at'] += timedelta(days=1)
@@ -460,42 +466,42 @@ def incentivos_pedidos(todos_pedidos):
     return sla_semana_1, sla_semana_2, sla_semana_3, sla_semana_4, sla_porcent
 
 def incentivos_recibo():
-
     excluded_recibos = load_excluded_recibos()
     recibos_data = []
-
     
-    recibo_inputs = process_data(
-        {
-            'arrived_at': (datetime.now().replace(day=1) - timedelta(days=1)),
-            'wh': 4
-        }
-    )
+    recibo_inputs = process_data({
+        'arrived_at': (datetime.now().replace(day=1) - timedelta(days=1)),
+        'wh': 4
+    })
 
     recibos_list = get_dataset('1485', recibo_inputs)
 
-    #print(excluded_recibos)
     for recibo in recibos_list:
-        recibo_number = recibo['id']
-        recibo_number = str(recibo_number)
+        recibo_number = str(recibo['id'])
         if recibo_number in excluded_recibos:
             continue
 
-
-        if recibo['arrived_at'] is not None or recibo['arrived_at'] != "":
-            recibo['arrived_at'] = datetime.strptime(recibo['arrived_at'], date_format)
-            recibo_time = recibo['arrived_at'].time()
-            recibo['arrived_at'] = adjust_receiving_date(recibo['arrived_at'])
-            recibo['arrived_at'] = recibo['arrived_at'].replace(hour=recibo_time.hour, minute=recibo_time.minute, second=recibo_time.second)
+        if recibo['arrived_at'] is not None and recibo['arrived_at'] != "":
+            # Fix: Handle timezone offset in date string
+            arrived_at_str = recibo['arrived_at'].split('-06:00')[0]
+            try:
+                recibo['arrived_at'] = datetime.strptime(arrived_at_str, date_format)
+            except ValueError:
+                try:
+                    recibo['arrived_at'] = datetime.strptime(arrived_at_str, date_format2)
+                except ValueError as e:
+                    print(f"Error parsing date for recibo {recibo_number}: {e}")
+                    continue
         else:
             continue
 
-
         if recibo['completed_at'] is not None and recibo['completed_at'] != "":
             try:
-                recibo['completed_at'] = datetime.strptime(recibo['completed_at'], date_format)
-            except:
-                recibo['completed_at'] = datetime.strptime(recibo['completed_at'], date_format2)
+                # Use dateutil.parser to handle timezone
+                recibo['completed_at'] = parser.parse(recibo['completed_at'])
+            except ValueError as e:
+                print(f"Error parsing completed_at for recibo {recibo_number}: {e}")
+                continue
 
             if recibo['completed_at'].month == datetime.now().month - 1:
                 continue

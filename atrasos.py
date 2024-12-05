@@ -17,9 +17,11 @@ from collections import Counter
 import re
 from google.oauth2 import service_account
 
+env_config = dotenv_values(".env")
 
-date_format = "%d-%m-%Y"
-date_format2 = "%d-%m-%Y, %H:%M"
+date_format = os.environ["DATE_FORMAT"] or env_config.get('DATE_FORMAT')
+
+date_format2 = os.environ["DATE_FORMAT2"] or env_config.get('DATE_FORMAT2')
 
 # Replace the existing redis_client creation with:
 redis_client = get_redis_connection()

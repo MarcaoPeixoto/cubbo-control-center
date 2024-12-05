@@ -8,8 +8,11 @@ import os
 import calendar
 from redis_connection import get_redis_connection
 
-date_format = "%d-%m-%Y, %H:%M:%S"
-date_format2 = "%d-%m-%Y, %H:%M:%S.%f"
+env_config = dotenv_values(".env")
+
+date_format = os.environ["DATE_FORMAT"] or env_config.get('DATE_FORMAT')
+
+date_format2 = os.environ["DATE_FORMAT2"] or env_config.get('DATE_FORMAT2')
 
 env_config = dotenv_values(".env")
 
