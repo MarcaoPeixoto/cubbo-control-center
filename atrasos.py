@@ -133,6 +133,18 @@ def process_data(inputs):
 hoje = datetime.now().strftime("%Y-%m-%d")
 hoje_datetime = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
+# Add this helper function near the top of the file
+def parse_date(date_str):
+    if date_str is None or date_str == "":
+        return None
+    try:
+        return datetime.strptime(date_str, date_format)
+    except ValueError:
+        try:
+            return datetime.strptime(date_str, date_format2)
+        except ValueError as e:
+            print(f"Warning: Unable to parse date: {date_str}, Error: {e}")
+            return None
 
 def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente=None, status=None):
 
@@ -179,31 +191,19 @@ def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente
         order['shipping_zip_code'] = parse_UF(order['shipping_zip_code'])
         order['UF'] = order['shipping_zip_code']
 
-        # Ensure delivered_at is always a datetime object
+        # Parse delivered_at
         if order['delivered_at'] is not None and order['delivered_at'] != "":     
-            try:
-                order['delivered_at'] = datetime.strptime(order['delivered_at'], date_format)
-            except ValueError:
-                try:
-                    order['delivered_at'] = datetime.strptime(order['delivered_at'], date_format2)
-                except ValueError:
-                    print(f"Warning: Unable to parse delivered_at date for order {order.get('order_number', 'Unknown')}")
-                    order['delivered_at'] = hoje_datetime #usado par contar os dias de atraso diariamente
+            parsed_date = parse_date(order['delivered_at'])
+            order['delivered_at'] = parsed_date if parsed_date else hoje_datetime
         else:
-            order['delivered_at'] = hoje_datetime #usado par contar os dias de atraso diariamente
+            order['delivered_at'] = hoje_datetime
             order['SLA'] = "MISS"
             order['ajuste1'] = True
 
-        # Ensure estimated_time_arrival is always a datetime object
+        # Parse estimated_time_arrival
         if order['estimated_time_arrival'] is not None and order['estimated_time_arrival'] != "":  
-            try:
-                order['estimated_time_arrival'] = datetime.strptime(order['estimated_time_arrival'], date_format)
-            except ValueError:
-                try:
-                    order['estimated_time_arrival'] = datetime.strptime(order['estimated_time_arrival'], date_format2)
-                except ValueError:
-                    print(f"Warning: Unable to parse estimated_time_arrival date for order {order.get('order_number', 'Unknown')}")
-                    order['estimated_time_arrival'] = order['delivered_at']  # Fallback to delivered_at
+            parsed_date = parse_date(order['estimated_time_arrival'])
+            order['estimated_time_arrival'] = parsed_date if parsed_date else order['delivered_at']
             
             if order['estimated_time_arrival'] > hoje_datetime:
                 continue
@@ -222,18 +222,14 @@ def get_atrasos(transportadora=None, data_inicial=None, data_final=None, cliente
             order['SLA'] = "HIT"
             atraso = timedelta(0)
 
+        # Parse processado
         if order['processado'] is not None and order['processado'] != "":       
-            try:
-                order['processado'] = datetime.strptime(order['processado'], date_format)
-            except ValueError:
-                order['processado'] = datetime.strptime(order['processado'], date_format2)
+            order['processado'] = parse_date(order['processado'])
 
+        # Parse first_delivery_attempt_at
         if order['first_delivery_attempt_at'] is not None and order['first_delivery_attempt_at'] != "":
-            try:
-                order['first_delivery_attempt_at'] = datetime.strptime(order['first_delivery_attempt_at'], date_format)
-            except ValueError:
-                order['first_delivery_attempt_at'] = datetime.strptime(order['first_delivery_attempt_at'], date_format2)   
-                
+            order['first_delivery_attempt_at'] = parse_date(order['first_delivery_attempt_at'])
+            
             if order['first_delivery_attempt_at'].day < order['delivered_at'].day and order['first_delivery_attempt_at'].month == order['delivered_at'].month:
                 order['first_delivery'] = "MISS"
             else:
