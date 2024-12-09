@@ -1,8 +1,5 @@
-from datetime import datetime
 import os
 import json
-import requests
-from dotenv import dotenv_values
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -10,19 +7,9 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from redis_connection import get_redis_connection
 from google.auth.exceptions import RefreshError
 import time
+from metabase import get_dataset
+from parseDT import parse_date
 
-env_config = dotenv_values(".env")
-
-date_format = os.environ["DATE_FORMAT"] or env_config.get('DATE_FORMAT')
-
-date_format2 = os.environ["DATE_FORMAT2"] or env_config.get('DATE_FORMAT2')
-
-env_config = dotenv_values(".env")
-redis_end = env_config.get('REDIS_END') or os.environ["REDIS_END"]
-redis_port = env_config.get('REDIS_PORT') or os.environ["REDIS_PORT"]
-redis_password = env_config.get('REDIS_PASSWORD') or os.environ["REDIS_PASSWORD"]
-
-# Replace the existing redis_client creation with:
 redis_client = get_redis_connection()
 
 def authenticate_google_docs():
@@ -57,33 +44,6 @@ def authenticate_google_docs():
 
 docs_service = authenticate_google_docs()
 
-def create_metabase_token():
-    metabase_user = env_config.get('METABASE_USER') or os.environ["METABASE_USER"]
-    metabase_password = env_config.get('METABASE_PASSWORD') or os.environ["METABASE_PASSWORD"]
-
-    url = 'https://cubbo.metabaseapp.com/api/session'
-    data = {
-        'username': metabase_user,
-        'password': metabase_password
-    }
-
-    headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-    if response.status_code == 200:
-        return response.json().get('id')
-    else:
-        raise Exception(f'Failed to create token: {response.content}')
-    
-def get_dataset(question, params={}):
-    METABASE_ENDPOINT = "https://cubbo.metabaseapp.com"
-    METABASE_TOKEN = create_metabase_token()
-
-    res = requests.post(f"{METABASE_ENDPOINT}/api/card/{question}/query/json",
-                        headers={"Content-Type": "application/json",
-                                 'X-Metabase-Session': METABASE_TOKEN},
-                        params=params)
-    print(res)
-    return res.json()
 
 def get_remocoes():
     remocoes = get_dataset('3509')
@@ -101,16 +61,15 @@ def get_remocoes():
         if remocao['id'] in removidos_antigos:
             continue
         try:
-            remocao['pendente'] = datetime.strptime(remocao['pendente'], date_format)
-            remocao['processado'] = datetime.strptime(remocao['processado'], date_format)
+            remocao['pendente'] = parse_date(remocao['pendente'])
+            remocao['processado'] = parse_date(remocao['processado'])
         except ValueError:
-            remocao['pendente'] = datetime.strptime(remocao['pendente'], date_format2)
-            remocao['processado'] = datetime.strptime(remocao['processado'], date_format2)
-
+            print(f"Error parsing date: {remocao['pendente']} or {remocao['processado']}")
+            continue
         data = {
             'id': remocao['id'],
-            'pendente': remocao['pendente'].strftime(date_format) if remocao['pendente'] else None,
-            'processado': remocao['processado'].strftime(date_format) if remocao['processado'] else None,
+            'pendente': remocao['pendente'].strftime('%d-%m-%Y') if remocao['pendente'] else None,
+            'processado': remocao['processado'].strftime('%d-%m-%Y') if remocao['processado'] else None,
             'numero_pedido': remocao['numero_pedido'],
             'cliente': remocao['cliente'],
             'removido': False,

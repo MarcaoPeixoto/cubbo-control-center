@@ -6,89 +6,15 @@ import os
 from dotenv import dotenv_values
 from redis_connection import get_redis_connection
 from dateutil import parser
+from parseDT import parse_date
+from metabase import get_dataset, process_data
 
 env_config = dotenv_values(".env")
-
-#import pandas as pd
-#import matplotlib.pyplot as plt
-#import numpy as np
-#from mpl_toolkits.axes_grid1 import host_subplotS
-
-#locale.setlocale(locale.LC_TIME, "es_ES")
-
 
 hora_agora = datetime.now()
 nova_hora = (hora_agora - timedelta(hours=3)).strftime("%H:%M")
 
-date_format = os.environ["DATE_FORMAT"] or env_config.get('DATE_FORMAT')
-
-date_format2 = os.environ["DATE_FORMAT2"] or env_config.get('DATE_FORMAT2')
-
 redis_client = get_redis_connection()
-
-def create_metabase_token():
-
-    env_config = dotenv_values(".env")
-    metabase_user = env_config.get('METABASE_USER')
-    
-    if metabase_user is not None:
-        metabase_password = env_config.get('METABASE_PASSWORD')
-    else:
-        metabase_user = os.environ["METABASE_USER"]
-        metabase_password = os.environ["METABASE_PASSWORD"]
-
-    url = 'https://cubbo.metabaseapp.com/api/session'
-    data = {
-        'username': metabase_user,
-        'password': metabase_password
-    }
-
-    headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-    if response.status_code == 200:
-        return response.json().get('id')
-    else:
-        raise Exception(f'Failed to create token: {response.content}')
-
-def get_dataset(question, params={}):
-    METABASE_ENDPOINT = "https://cubbo.metabaseapp.com"
-    METABASE_TOKEN = create_metabase_token()
-
-    res = requests.post(METABASE_ENDPOINT + '/api/card/'+question+'/query/json',
-                        headers={"Content-Type": "application/json",
-                                 'X-Metabase-Session': METABASE_TOKEN},
-                        params=params,
-                        )
-    print(res)
-    dataset = res.json()
-    #print(dataset)
-
-    return dataset
-
-def process_data(inputs):
-
-    def create_param(tag, param_value):
-        param = {}
-        if type(param_value) == int:
-            param['type'] = "number/="
-            param['value'] = param_value
-        elif type(param_value) == datetime:
-            param['type'] = "date/single"
-            param['value'] = f"{param_value:%Y-%m-%d}"
-        else:
-            param['type'] = "category"
-            param['value'] = param_value
-
-        param['target'] = ["variable", ["template-tag", tag]]
-        return param
-
-    params = []
-    for input_name, input_value in inputs.items():
-        if input_value is not None:
-            param = create_param(input_name, input_value)
-            params.append(param)
-
-    return {'parameters': json.dumps(params)}
 
 class CONFIG:
 
@@ -231,7 +157,7 @@ def adjust_shipping_date(shipping_date, carrier):
 def adjust_receiving_date(recibo):
 
     # Convert recibo to numpy datetime64[D] format
-    recibo_np = np.datetime64(recibo.strftime('%Y-%m-%d'))
+    recibo_np = np.datetime64(parse_date(recibo).strftime('%Y-%m-%d'))
 
     adjusted_date_np = np.busday_offset(recibo_np, 1, roll='backward', holidays=config.JSON_CONFIG['BR']['holidays'])
 # Replace deprecated usage
@@ -292,10 +218,7 @@ def ajuste_pendentes():
         if order['status'] == "canceled" or order['status'] == "holded":
             continue
         
-        try:
-            order['pending_at'] = datetime.strptime(order['pending_at'], date_format)
-        except:
-            order['pending_at'] = datetime.strptime(order['pending_at'], date_format2)
+        order['pending_at'] = parse_date(order['pending_at'])
 
         if order['pending_at'].date() in CONFIG['BR']['holidays']:
             order['pending_at'] += timedelta(days=1)
@@ -315,17 +238,9 @@ def ajuste_pendentes():
 
 
         if order['shipping_date'] is not None and order['shipping_date'] !="":
-            try:
-                order['shipping_date'] = datetime.strptime(order['shipping_date'], date_format)
-            except:
-                order['shipping_date'] = datetime.strptime(order['shipping_date'], date_format2)
+            order['shipping_date'] = parse_date(order['shipping_date'])
             if order['shipping_date'].month == datetime.now().month - 1:
                 continue
-
-
-            #if order['shipping_date'].day > 5 or order['pending_at'].day > 5:
-                #continue
-
 
             carrier = order['carrier_name']
             if carrier == 'CORREIOS':
@@ -481,41 +396,20 @@ def incentivos_recibo():
         if recibo_number in excluded_recibos:
             continue
 
-        if recibo['arrived_at'] is not None and recibo['arrived_at'] != "":
-            # Fix: Handle timezone offset in date string
-            arrived_at_str = recibo['arrived_at'].split('-06:00')[0]
-            try:
-                recibo['arrived_at'] = datetime.strptime(arrived_at_str, date_format)
-            except ValueError:
-                try:
-                    recibo['arrived_at'] = datetime.strptime(arrived_at_str, date_format2)
-                except ValueError as e:
-                    print(f"Error parsing date for recibo {recibo_number}: {e}")
-                    continue
-        else:
-            continue
+        # Initialize SLA as MISS by default
+        recibo['SLA'] = "MISS"
+
+        recibo['arrived_at'] = parse_date(recibo['arrived_at'])
+        recibo['completed_at'] = parse_date(recibo['completed_at'])
 
         if recibo['completed_at'] is not None and recibo['completed_at'] != "":
-            try:
-                # Use dateutil.parser to handle timezone
-                recibo['completed_at'] = parser.parse(recibo['completed_at'])
-            except ValueError as e:
-                print(f"Error parsing completed_at for recibo {recibo_number}: {e}")
-                continue
-
             if recibo['completed_at'].month == datetime.now().month - 1:
                 continue
-
-            recibo['arrived_at'] = recibo['arrived_at'].replace(tzinfo=None)
-            recibo['completed_at'] = recibo['completed_at'].replace(tzinfo=None)
-
-            if recibo['arrived_at'] > recibo['completed_at']:
-                recibo['SLA']="HIT"          
-            else:
-                recibo['SLA']="MISS"
+            if recibo['arrived_at'] is not None and recibo['arrived_at'] != "":
+                if recibo['arrived_at'] > recibo['completed_at']:
+                    recibo['SLA'] = "HIT"
         else:
             recibo['completed_at'] = "PROCESSANDO"
-            continue
 
         recibos_data.append({
             'id': recibo['id'],
@@ -525,7 +419,7 @@ def incentivos_recibo():
             'completed_at': recibo['completed_at'],
             'dock_to_stock_in_days': recibo['dock_to_stock_in_days'],
             'SLA': recibo['SLA']
-            })
+        })
 
     hit_count_recibos = 0
     atraso_recibo = []
@@ -653,12 +547,8 @@ def incentivos_picking(picking_list_mes):
         if pedidos['pending_at'].day == datetime.now().day:
             pedidos_hj += 1
 
-
         if pedidos['picking_complete'] is not None and pedidos['picking_complete'] != "":
-            try:
-                pedidos['picking_complete'] = datetime.strptime(pedidos['picking_complete'], date_format)
-            except:
-                pedidos['picking_complete'] = datetime.strptime(pedidos['picking_complete'], date_format2)  
+            pedidos['picking_complete'] = parse_date(pedidos['picking_complete'])
         else:
             continue
 

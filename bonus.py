@@ -7,89 +7,13 @@ from dotenv import dotenv_values
 import os
 import calendar
 from redis_connection import get_redis_connection
+from metabase import get_dataset, process_data
+from parseDT import parse_date
 
 env_config = dotenv_values(".env")
-
-date_format = os.environ["DATE_FORMAT"] or env_config.get('DATE_FORMAT')
-
-date_format2 = os.environ["DATE_FORMAT2"] or env_config.get('DATE_FORMAT2')
-
-env_config = dotenv_values(".env")
-
-redis_end = env_config.get('REDIS_END')
-
-if redis_end is not None:
-    redis_port = env_config.get('REDIS_PORT')
-    redis_password = env_config.get('REDIS_PASSWORD')
-else:
-    redis_end = os.environ["REDIS_END"]
-    redis_port = os.environ["REDIS_PORT"]
-    redis_password = os.environ["REDIS_PASSWORD"]
 
 # Replace the existing redis_client creation with:
 redis_client = get_redis_connection()
-
-def create_metabase_token():
-
-    env_config = dotenv_values(".env")
-    metabase_user = env_config.get('METABASE_USER')
-    
-    if metabase_user is not None:
-        metabase_password = env_config.get('METABASE_PASSWORD')
-    else:
-        metabase_user = os.environ["METABASE_USER"]
-        metabase_password = os.environ["METABASE_PASSWORD"]
-
-    url = 'https://cubbo.metabaseapp.com/api/session'
-    data = {
-        'username': metabase_user,
-        'password': metabase_password
-    }
-
-    headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-    if response.status_code == 200:
-        return response.json().get('id')
-    else:
-        raise Exception(f'Failed to create token: {response.content}')
-
-
-def get_dataset(question, params={}):
-    METABASE_ENDPOINT = "https://cubbo.metabaseapp.com"
-    METABASE_TOKEN = create_metabase_token()
-
-    res = requests.post(METABASE_ENDPOINT + '/api/card/' + question + '/query/json',
-                        headers={"Content-Type": "application/json",
-                                 'X-Metabase-Session': METABASE_TOKEN},
-                        params=params,
-                        )
-    dataset = res.json()
-    return dataset
-
-
-def process_data(inputs):
-    def create_param(tag, param_value):
-        param = {}
-        if isinstance(param_value, int):
-            param['type'] = "number/="
-            param['value'] = param_value
-        elif isinstance(param_value, datetime):
-            param['type'] = "date/single"
-            param['value'] = param_value.strftime("%Y-%m-%d")
-        else:
-            param['type'] = "category"
-            param['value'] = param_value
-
-        param['target'] = ["variable", ["template-tag", tag]]
-        return param
-
-    params = []
-    for input_name, input_value in inputs.items():
-        if input_value is not None:
-            param = create_param(input_name, input_value)
-            params.append(param)
-
-    return {'parameters': json.dumps(params)}
 
 
 dir_path = os.path.dirname(os.path.abspath(__file__))
@@ -130,15 +54,12 @@ def dt_processado():
 
     for order in orders_list:
         if order['shipping_date'] is not None and order['shipping_date'] != "":
-            try:
-                order['shipping_date'] = datetime.strptime(order['shipping_date'], date_format)
-            except:
-                order['shipping_date'] = datetime.strptime(order['shipping_date'], date_format2)
+            order['shipping_date'] = parse_date(order['shipping_date'])
 
-            shipping_date = order['shipping_date']
-
-            if shipping_date.month != today.month:
+            if order['shipping_date'].month != today.month:
                 continue
+
+
 
         else:
             if order['account_type'] != "CUSTOMER_ACCOUNT":
@@ -222,12 +143,14 @@ def compute_phd():
 
 
 
+
     if phd_per_day:
         avg_phd = sum(phd_per_day.values()) / len(phd_per_day)
         phd_full = avg_phd
         avg_phd = round(avg_phd, 2)
     else:
         avg_phd = None  # Or 0
+
 
     # Sort the phd_per_day dictionary by day
     sorted_phd_per_day = dict(sorted(phd_per_day.items(), key=lambda x: int(x[0])))
