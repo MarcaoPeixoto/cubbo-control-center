@@ -18,49 +18,19 @@ import re
 from google.oauth2 import service_account
 from parseDT import parse_date
 from metabase import get_dataset, process_data
+from google_auth import authenticate_google, get_sheets_service
 
 env_config = dotenv_values(".env")
 
 # Replace the existing redis_client creation with:
 redis_client = get_redis_connection()
 
-# Replace the existing authentication code with this:
-def authenticate_google_docs():
-    SCOPES = ['https://www.googleapis.com/auth/documents.readonly', 
-              'https://www.googleapis.com/auth/drive.file',
-              'https://www.googleapis.com/auth/drive',
-              'https://www.googleapis.com/auth/spreadsheets'
-              ]
-    
-    creds = None
-    token_json = redis_client.get('token_json')
-
-    if token_json:
-        creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
-    
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            try:
-                creds.refresh(Request())
-            except Exception as e:
-                print(f"Error refreshing credentials: {e}")
-                creds = None
-        
-        if not creds:
-            credentials_json = redis_client.get('credentials_json')
-            if not credentials_json:
-                raise Exception("credentials.json not found in Redis")
-            flow = InstalledAppFlow.from_client_config(
-                redis_client.get(credentials_json), SCOPES)
-            creds = flow.run_local_server(port=0)
-        
-        # Update token in Redis
-        redis_client.set('token_json', creds.to_json())
-
-    return build('docs', 'v1', credentials=creds)
 
 # Replace the existing docs_service initialization with this:
-docs_service = authenticate_google_docs()
+sheets_service = authenticate_google('sheets')
+
+# When you need sheets service:
+sheets_service = get_sheets_service()
 
 # Existing functions
 
@@ -326,7 +296,7 @@ def update_transportadora_data(transportadora=None, data_inicial=None, data_fina
 
 def generate_sheets(data=None, transportadora=None, data_inicial=None, data_final=None, cliente=None, status=None):
     # Build title with parameters
-    FOLDER_ID = os.getenv('PEDIDOS_ATRASADOS_FOLDER_ID')
+    FOLDER_ID = os.getenv('PEDIDOS_ATRASADOS_FOLDER_ID') or os.environ.get('PEDIDOS_ATRASADOS_FOLDER_ID')
 
     transportadora = transp
     data_inicial = data_in
@@ -384,8 +354,8 @@ def generate_sheets(data=None, transportadora=None, data_inicial=None, data_fina
         # Update token in Redis
         redis_client.set('token_json', creds.to_json())
 
-    sheets_service = build('sheets', 'v4', credentials=creds)
-    drive_service = build('drive', 'v3', credentials=creds)
+    sheets_service = authenticate_google('sheets')
+    drive_service = authenticate_google('drive')
 
     # Create spreadsheet
     spreadsheet = sheets_service.spreadsheets().create(body={

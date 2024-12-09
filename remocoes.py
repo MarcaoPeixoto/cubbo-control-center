@@ -9,70 +9,44 @@ from google.auth.exceptions import RefreshError
 import time
 from metabase import get_dataset
 from parseDT import parse_date
+from google_auth import authenticate_google
+from dotenv import dotenv_values
+
+env_config = dotenv_values(".env")
 
 redis_client = get_redis_connection()
 
-def authenticate_google_docs():
-    SCOPES = ['https://www.googleapis.com/auth/documents.readonly', 
-              'https://www.googleapis.com/auth/drive.file',
-              'https://www.googleapis.com/auth/drive']
-    
-    creds = None
-    token_json = redis_client.get('token_json')
-
-    if token_json:
-        creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
-    
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            try:
-                creds.refresh(Request())
-            except Exception as e:
-                print(f"Error refreshing credentials: {e}")
-                creds = None
-        
-        if not creds:
-            credentials_json = redis_client.get('credentials_json')
-            if not credentials_json:
-                raise Exception("credentials.json not found in Redis")
-            flow = InstalledAppFlow.from_client_config(json.loads(credentials_json), SCOPES)
-            creds = flow.run_local_server(port=0)
-        
-        redis_client.set('token_json', creds.to_json())
-
-    return build('docs', 'v1', credentials=creds)
-
-docs_service = authenticate_google_docs()
+drive_service = authenticate_google('drive')
 
 
 def get_remocoes():
+    """Get and process removal orders from the dataset"""
     remocoes = get_dataset('3509')
-
     processed_remocoes = []
-    removidos_antigos = redis_client.get('removidos_antigos')
-
-    # Convert removidos_antigos from JSON string to a list of integers
-    if removidos_antigos:
-        removidos_antigos = json.loads(removidos_antigos)
-    else:
-        removidos_antigos = []
+    
+    # Get the set of removed order IDs from Redis
+    removed_orders = redis_client.smembers("removed_orders")
+    if not removed_orders:
+        removed_orders = set()
 
     for remocao in remocoes:
-        if remocao['id'] in removidos_antigos:
-            continue
         try:
             remocao['pendente'] = parse_date(remocao['pendente'])
             remocao['processado'] = parse_date(remocao['processado'])
         except ValueError:
             print(f"Error parsing date: {remocao['pendente']} or {remocao['processado']}")
             continue
+
+        # Check if the order is in the removed_orders set
+        is_removed = str(remocao['id']) in removed_orders
+
         data = {
             'id': remocao['id'],
             'pendente': remocao['pendente'].strftime('%d-%m-%Y') if remocao['pendente'] else None,
             'processado': remocao['processado'].strftime('%d-%m-%Y') if remocao['processado'] else None,
             'numero_pedido': remocao['numero_pedido'],
             'cliente': remocao['cliente'],
-            'removido': False,
+            'removido': is_removed,
             'volumes': remocao.get('volumes', 1)
         }
 
@@ -84,35 +58,17 @@ def get_remocoes():
     return processed_remocoes
  
 def check_removido_status(numero_pedido, cliente, max_retries=3, delay=1):
+    """
+    Check if a removal order has been processed by looking for matching files in Google Drive.
+    Returns True if matching files are found, False otherwise.
+    """
     SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
     
     for attempt in range(max_retries):
         try:
-            creds = None
-            token_json = redis_client.get('token_json')
+            drive_service = authenticate_google('drive')  # Use the existing authenticated service
 
-            if token_json:
-                creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
-            
-            if not creds or not creds.valid:
-                if creds and creds.expired and creds.refresh_token:
-                    try:
-                        creds.refresh(Request())
-                    except RefreshError:
-                        creds = None
-                
-                if not creds:
-                    credentials_json = redis_client.get('credentials_json')
-                    if not credentials_json:
-                        raise Exception("credentials.json not found in Redis")
-                    flow = InstalledAppFlow.from_client_config(json.loads(credentials_json), SCOPES)
-                    creds = flow.run_local_server(port=0)
-                
-                redis_client.set('token_json', creds.to_json())
-
-            drive_service = build('drive', 'v3', credentials=creds)
-
-            folder_id = os.environ.get('REMOCOES_FOLDER_ID')
+            folder_id = os.environ.get('REMOCOES_FOLDER_ID') or os.getenv('REMOCOES_FOLDER_ID')
             query = f"'{folder_id}' in parents and (name contains '{numero_pedido}' and name contains '{cliente}')"
 
             results = drive_service.files().list(q=query, fields="files(id, name)", pageSize=1).execute()

@@ -11,45 +11,15 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from redis_connection import get_redis_connection
 import requests
 from metabase import get_dataset, process_data
+from google_auth import get_docs_service, get_drive_service
+from google_auth import authenticate_google
 
 # Replace the existing redis_client creation with:
 redis_client = get_redis_connection()
 
-# Replace the existing authentication code with this:
-def authenticate_google_docs():
-    SCOPES = ['https://www.googleapis.com/auth/documents.readonly', 
-              'https://www.googleapis.com/auth/drive.file',
-              'https://www.googleapis.com/auth/drive']
-    
-    creds = None
-    token_json = redis_client.get('token_json')
-
-    if token_json:
-        creds = Credentials.from_authorized_user_info(json.loads(token_json), SCOPES)
-    
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            try:
-                creds.refresh(Request())
-            except Exception as e:
-                print(f"Error refreshing credentials: {e}")
-                creds = None
-        
-        if not creds:
-            credentials_json = redis_client.get('credentials_json')
-            if not credentials_json:
-                raise Exception("credentials.json not found in Redis")
-            flow = InstalledAppFlow.from_client_config(
-                json.loads(credentials_json), SCOPES)
-            creds = flow.run_local_server(port=0)
-        
-        # Update token in Redis
-        redis_client.set('token_json', creds.to_json())
-
-    return build('docs', 'v1', credentials=creds)
 
 # Replace the existing docs_service initialization with this:
-docs_service = authenticate_google_docs()
+docs_service = authenticate_google()
 
 # Existing functions
 
@@ -136,8 +106,6 @@ def nao_despachados(data, transportadora):
 def save_to_google_docs(document_title, data, folder_id=None):
     #colocar a transportadora em maiusculo aqui!
     try:
-        # Get the credentials from the docs_service
-        creds = docs_service._http.credentials
 
         # Create a new document
         document = {
@@ -146,7 +114,7 @@ def save_to_google_docs(document_title, data, folder_id=None):
         
         # If a folder_id is provided, create the document in that folder
         if folder_id:
-            drive_service = build('drive', 'v3', credentials=creds)
+            drive_service = get_drive_service()
             file_metadata = {
                 'name': document_title,
                 'parents': [folder_id],

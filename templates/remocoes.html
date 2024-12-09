@@ -215,12 +215,20 @@
 
         function fetchRemocoes(searchTerm = '') {
             fetch(`/api/remocoes?search=${encodeURIComponent(searchTerm)}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     remocoes = data;
                     renderTable(remocoes);
                 })
-                .catch(error => console.error('Error fetching data:', error));
+                .catch(error => {
+                    console.error('Erro ao buscar dados:', error);
+                    alert('Erro ao carregar a lista de remoções. Por favor, tente novamente.');
+                });
         }
 
         // Add this new function to refresh remocoes
@@ -284,6 +292,10 @@
         function addEventListeners() {
             document.querySelectorAll('.volumes-input').forEach(input => {
                 input.addEventListener('change', function() {
+                    const value = parseInt(this.value);
+                    if (value < 1) {
+                        this.value = 1;
+                    }
                     updateVolumes(this.dataset.id, parseInt(this.value));
                 });
             });
@@ -329,17 +341,16 @@
             const volumes = volumesInput.value;
 
             if (files.length === 0) {
-                alert('Please select at least one file to upload.');
+                alert('Por favor, selecione pelo menos um arquivo para upload.');
                 return;
             }
 
             const remocao = remocoes.find(r => r.id.toString() === id);
             const formData = new FormData();
 
+            // Add all files to formData
             for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const fileName = `${remocao.numero_pedido}_${remocao.cliente}_${volumes}_volumes_${new Date().toISOString().split('T')[0]}${i > 0 ? i + 1 : ''}.${file.name.split('.').pop()}`;
-                formData.append('images', file, fileName);
+                formData.append('images', files[i]);
             }
 
             formData.append('id', id);
@@ -351,20 +362,24 @@
                     body: formData
                 });
 
-                if (response.ok) {
-                    const result = await response.json();
-                    if (result.success) {
-                        alert('Images uploaded successfully');
-                        fetchRemocoes(); // Fetch updated remocoes after successful upload
-                    } else {
-                        alert('Failed to upload images');
-                    }
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('Imagens enviadas com sucesso!');
+                    // Clear the file input
+                    fileInput.value = '';
+                    fileInput.nextElementSibling.textContent = 'Selecionar foto';
+                    // Refresh the table to show updated status
+                    fetchRemocoes();
                 } else {
-                    alert('Failed to upload images');
+                    alert(`Falha ao enviar imagens: ${result.error || 'Erro desconhecido'}`);
                 }
             } catch (error) {
-                console.error('Error uploading images:', error);
-                alert('An error occurred while uploading images');
+                console.error('Erro ao enviar imagens:', error);
+                alert('Ocorreu um erro ao enviar as imagens');
             }
         }
 
