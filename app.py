@@ -49,10 +49,11 @@ logger = logging.getLogger(__name__)
 
 # Add this near the top with other imports and constants
 SCOPES = [
-    'https://www.googleapis.com/auth/drive.metadata.readonly',
-    'https://www.googleapis.com/auth/drive.file',
-    'https://www.googleapis.com/auth/drive'
-]
+        'https://www.googleapis.com/auth/documents.readonly',
+        'https://www.googleapis.com/auth/drive.file',
+        'https://www.googleapis.com/auth/drive',
+        'https://www.googleapis.com/auth/spreadsheets'
+    ]
 
 def login_required(f):
     @wraps(f)
