@@ -399,7 +399,7 @@ def incentivos_recibo():
         # Initialize SLA as MISS by default
         recibo['SLA'] = "MISS"
 
-        recibo['arrived_at'] = parse_date(recibo['arrived_at'])
+        recibo['arrived_at'] = parse_date(recibo['arrived_at']) + timedelta(days=1)
         recibo['completed_at'] = parse_date(recibo['completed_at'])
 
         if recibo['completed_at'] is not None and recibo['completed_at'] != "":
