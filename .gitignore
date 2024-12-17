@@ -129,13 +129,13 @@ atrasosBOT.py
 
 
 EM TESTE:
-pipeline0.py
 pipeline.py
-pipeline2.py
+pipeline_auto.py
 orders_by_brand.xlsx
 LFbot.py
 LFbot_para relatorio_ontem_copia.py
 
 LFbot.py
 LFbot_para relatório_ontem_copia.py
+slack_bot_interface.py
 

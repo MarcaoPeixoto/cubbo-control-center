@@ -42,7 +42,7 @@ def get_manifesto(carrier):
     # pedidos_difal = get_difal_order_ids()
     # pedidos = [item for item in pedidos if item.get('cubbo_id') not in pedidos_difal]
     # Filter out orders where 'shipping_number' starts with 'MEL'
-    filtered_pedidos = [order for order in pedidos if not order.get('shipping_number', '').startswith('MEL')]
+    filtered_pedidos = [order for order in pedidos if order.get('shipping_number') is not None and not order.get('shipping_number', '').startswith('MEL')]
 
     # Now proceed with the filtered list
     trackings_dispatched = [x['shipping_number'] for x in filtered_pedidos if x.get('dispatched_at')]
