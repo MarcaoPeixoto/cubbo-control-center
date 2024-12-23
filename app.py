@@ -126,6 +126,16 @@ def home():
 def ct():
     return render_template('ct.html')
 
+@app.route('/cs')
+@login_required
+def cs():
+    return render_template('cs.html')
+
+@app.route('/sansoes')
+@login_required
+def sansoes():
+    return render_template('sansoes.html')
+
 @app.route('/manifesto', methods=['GET', 'POST'])
 @login_required
 def manifesto_route():
