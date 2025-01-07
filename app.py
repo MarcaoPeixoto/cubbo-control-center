@@ -21,6 +21,12 @@ from redis_connection import get_redis_connection
 import redis
 from atrasos import update_transportadora_data, get_atrasos, count_atrasos_by_date_and_transportadora, count_atrasos_by_uf_and_transportadora, count_atrasos_by_transportadora_with_percentage, generate_sheets
 import logging
+from PyPDF2 import PdfReader, PdfWriter
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from io import BytesIO
+import base64
+import time
 
 
 app = Flask(__name__)
@@ -39,6 +45,7 @@ env_config = dotenv_values(".env")
 # Get environment variables
 CORRECT_PASSWORD = os.getenv('LOGIN_PASSWORD') or os.environ.get('LOGIN_PASSWORD')
 REMOCOES_FOLDER_ID = os.getenv('REMOCOES_FOLDER_ID') or os.environ.get('REMOCOES_FOLDER_ID')
+SANCOES_FOLDER_ID = os.getenv('SANCOES_FOLDER_ID') or os.environ.get('SANCOES_FOLDER_ID')
 
 # Replace the existing redis_client creation with:
 redis_client = get_redis_connection()
@@ -131,10 +138,139 @@ def ct():
 def cs():
     return render_template('cs.html')
 
-@app.route('/sansoes')
+@app.route('/rh')
 @login_required
-def sansoes():
-    return render_template('sansoes.html')
+def rh():
+    return render_template('rh.html')
+
+@app.route('/sancoes', methods=['GET', 'POST'])
+@login_required
+def sancoes():
+    if request.method == 'POST':
+        output_path = None
+        try:
+            # Get form data
+            nome_colaborador = request.form.get('nome_colaborador')
+            cpf_colaborador = request.form.get('cpf_colaborador')
+            cargo_colaborador = request.form.get('cargo_colaborador')
+            nome_representante = request.form.get('nome_representante')
+            cargo_representante = request.form.get('cargo_representante')
+            assinatura_colaborador = request.form.get('assinaturaColaborador')
+            assinatura_representante = request.form.get('assinaturaRepresentante')
+            
+            # Current date in São Paulo format
+            current_date = datetime.now().strftime('São Paulo, %d/%m/%Y')
+
+            # Create a temporary PDF with the signatures and text
+            packet = BytesIO()
+            c = canvas.Canvas(packet, pagesize=letter)
+            
+            # Adjust Y coordinates for tighter spacing
+            c.setFont("Helvetica", 12)
+            c.drawString(50, 280, current_date)  # Date
+            c.drawString(50, 250, f"Nome do Colaborador: {nome_colaborador}")  # Moved up
+            c.drawString(50, 235, f"CPF: {cpf_colaborador}")  # 15 pixels below nome
+            c.drawString(50, 220, f"Cargo: {cargo_colaborador}")  # 15 pixels below CPF
+            
+            # Add colaborador signature
+            if assinatura_colaborador:
+                try:
+                    img_data = base64.b64decode(assinatura_colaborador.split(',')[1])
+                    temp_img_path = f"temp/sig_col_{datetime.now().strftime('%Y%m%d%H%M%S')}.png"
+                    
+                    with open(temp_img_path, 'wb') as img_file:
+                        img_file.write(img_data)
+                    
+                    c.drawImage(temp_img_path, 50, 160, 200, 50)  # Signature space
+                    os.remove(temp_img_path)
+                    
+                except Exception as e:
+                    print(f"Error processing colaborador signature: {e}")
+            
+            # Representante info with tighter spacing
+            c.drawString(50, 140, f"Nome do Representante da Empresa: {nome_representante}")
+            c.drawString(50, 125, f"Cargo: {cargo_representante}")  # 15 pixels below nome
+            
+            # Add representante signature
+            if assinatura_representante:
+                try:
+                    img_data = base64.b64decode(assinatura_representante.split(',')[1])
+                    temp_img_path = f"temp/sig_rep_{datetime.now().strftime('%Y%m%d%H%M%S')}.png"
+                    
+                    with open(temp_img_path, 'wb') as img_file:
+                        img_file.write(img_data)
+                    
+                    c.drawImage(temp_img_path, 50, 65, 200, 50)  # Signature space
+                    os.remove(temp_img_path)
+                    
+                except Exception as e:
+                    print(f"Error processing representante signature: {e}")
+            
+            c.save()
+            packet.seek(0)
+            
+            # Create a new PDF with all pages
+            new_pdf = PdfReader(packet)
+            existing_pdf = PdfReader("static/sancoes.pdf")
+            output = PdfWriter()
+            
+            # Copy all pages except the last one as-is
+            for i in range(len(existing_pdf.pages) - 1):
+                output.add_page(existing_pdf.pages[i])
+            
+            # Merge the last page with our new content
+            last_page = existing_pdf.pages[-1]
+            last_page.merge_page(new_pdf.pages[0])
+            output.add_page(last_page)
+            
+            # Generate unique filename
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+            output_path = f"temp/sancoes_{timestamp}.pdf"
+            
+            # Write the output file
+            with open(output_path, "wb") as output_file:
+                output.write(output_file)
+            
+            # Upload to Google Drive
+            creds = get_google_credentials()
+            drive_service = build('drive', 'v3', credentials=creds)
+            
+            file_metadata = {
+                'name': f'Sancoes_{nome_colaborador}_{datetime.now().strftime('%d_%m_%Y')}.pdf',
+                'parents': [SANCOES_FOLDER_ID]
+            }
+            
+            # Create MediaFileUpload object and immediately use it
+            with open(output_path, 'rb') as file:
+                media = MediaFileUpload(output_path, mimetype='application/pdf', resumable=True)
+                file = drive_service.files().create(
+                    body=file_metadata,
+                    media_body=media,
+                    fields='id'
+                ).execute()
+            
+            # Close and delete the file
+            media._fd.close()
+            time.sleep(0.5)
+            
+            if os.path.exists(output_path):
+                os.remove(output_path)
+            
+            return jsonify({'success': True, 'file_id': file.get('id')})
+            
+        except Exception as e:
+            print(f"Error in sancoes: {str(e)}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+            
+        finally:
+            try:
+                if output_path and os.path.exists(output_path):
+                    time.sleep(0.5)
+                    os.remove(output_path)
+            except Exception as e:
+                print(f"Error cleaning up file: {str(e)}")
+            
+    return render_template('sancoes.html')
 
 @app.route('/manifesto', methods=['GET', 'POST'])
 @login_required
