@@ -411,6 +411,10 @@ def incentivos_recibo():
         else:
             recibo['completed_at'] = "PROCESSANDO"
 
+        # Print ID if SLA is MISS
+        #if recibo['SLA'] == "MISS":
+            #print(f"MISS Recibo ID: {recibo['id']}")
+
         recibos_data.append({
             'id': recibo['id'],
             'status': recibo['status'],
