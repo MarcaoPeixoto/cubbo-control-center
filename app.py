@@ -45,7 +45,7 @@ env_config = dotenv_values(".env")
 # Get environment variables
 CORRECT_PASSWORD = os.getenv('LOGIN_PASSWORD') or os.environ.get('LOGIN_PASSWORD')
 REMOCOES_FOLDER_ID = os.getenv('REMOCOES_FOLDER_ID') or os.environ.get('REMOCOES_FOLDER_ID')
-SANCOES_FOLDER_ID = os.getenv('SANCOES_FOLDER_ID') or os.environ.get('SANCOES_FOLDER_ID')
+RH_FOLDER_ID = os.getenv('RH_FOLDER_ID') or os.environ.get('RH_FOLDER_ID')
 
 # Replace the existing redis_client creation with:
 redis_client = get_redis_connection()
@@ -143,9 +143,9 @@ def cs():
 def rh():
     return render_template('rh.html')
 
-@app.route('/sancoes', methods=['GET', 'POST'])
+@app.route('/advertencia', methods=['GET', 'POST'])
 @login_required
-def sancoes():
+def advertencia():
     if request.method == 'POST':
         output_path = None
         try:
@@ -211,8 +211,11 @@ def sancoes():
             
             # Create a new PDF with all pages
             new_pdf = PdfReader(packet)
-            existing_pdf = PdfReader("static/sancoes.pdf")
+            existing_pdf = PdfReader("static/advertencia.pdf")
             output = PdfWriter()
+
+            # Extract filename without extension from existing PDF path
+            base_filename = os.path.splitext(os.path.basename("static/advertencia.pdf"))[0]
             
             # Copy all pages except the last one as-is
             for i in range(len(existing_pdf.pages) - 1):
@@ -225,7 +228,7 @@ def sancoes():
             
             # Generate unique filename
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-            output_path = f"temp/sancoes_{timestamp}.pdf"
+            output_path = f"temp/{base_filename}_{timestamp}.pdf"
             
             # Write the output file
             with open(output_path, "wb") as output_file:
@@ -236,8 +239,8 @@ def sancoes():
             drive_service = build('drive', 'v3', credentials=creds)
             
             file_metadata = {
-                'name': f'Sancoes_{nome_colaborador}_{datetime.now().strftime('%d_%m_%Y')}.pdf',
-                'parents': [SANCOES_FOLDER_ID]
+                'name': f'{base_filename}_{cpf_colaborador}_{datetime.now().strftime('%d_%m_%Y')}.pdf',
+                'parents': [RH_FOLDER_ID]
             }
             
             # Create MediaFileUpload object and immediately use it
@@ -259,7 +262,7 @@ def sancoes():
             return jsonify({'success': True, 'file_id': file.get('id')})
             
         except Exception as e:
-            print(f"Error in sancoes: {str(e)}")
+            print(f"Error in advertencia: {str(e)}")
             return jsonify({'success': False, 'error': str(e)}), 500
             
         finally:
@@ -270,7 +273,7 @@ def sancoes():
             except Exception as e:
                 print(f"Error cleaning up file: {str(e)}")
             
-    return render_template('sancoes.html')
+    return render_template('advertencia.html')
 
 @app.route('/manifesto', methods=['GET', 'POST'])
 @login_required

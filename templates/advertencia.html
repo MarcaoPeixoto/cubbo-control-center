@@ -217,7 +217,7 @@
         </div>
 
         <div class="pdf-container">
-            <embed src="{{ url_for('static', filename='sancoes.pdf') }}"
+            <embed src="{{ url_for('static', filename='advertencia.pdf') }}"
                    type="application/pdf">
         </div>
         
@@ -460,7 +460,7 @@
             const formData = new FormData(form);
 
             try {
-                const response = await fetch('/sancoes', {
+                const response = await fetch('/advertencia', {
                     method: 'POST',
                     body: formData
                 });
