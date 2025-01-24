@@ -27,6 +27,8 @@ from reportlab.lib.pagesizes import letter
 from io import BytesIO
 import base64
 import time
+import tempfile
+import fitz  # PyMuPDF
 
 
 app = Flask(__name__)
@@ -46,6 +48,7 @@ env_config = dotenv_values(".env")
 CORRECT_PASSWORD = os.getenv('LOGIN_PASSWORD') or os.environ.get('LOGIN_PASSWORD')
 REMOCOES_FOLDER_ID = os.getenv('REMOCOES_FOLDER_ID') or os.environ.get('REMOCOES_FOLDER_ID')
 RH_FOLDER_ID = os.getenv('RH_FOLDER_ID') or os.environ.get('RH_FOLDER_ID')
+RH_DOCS_FOLDER_ID = os.getenv('RH_DOCS_FOLDER_ID') or os.environ.get('RH_DOCS_FOLDER_ID')
 
 # Replace the existing redis_client creation with:
 redis_client = get_redis_connection()
@@ -147,132 +150,238 @@ def rh():
 @login_required
 def advertencia():
     if request.method == 'POST':
-        output_path = None
-        try:
-            # Get form data
-            nome_colaborador = request.form.get('nome_colaborador')
-            cpf_colaborador = request.form.get('cpf_colaborador')
-            cargo_colaborador = request.form.get('cargo_colaborador')
-            nome_representante = request.form.get('nome_representante')
-            cargo_representante = request.form.get('cargo_representante')
-            assinatura_colaborador = request.form.get('assinaturaColaborador')
-            assinatura_representante = request.form.get('assinaturaRepresentante')
+        if 'pdf_file' in request.files:
+            # Handle PDF upload
+            pdf_file = request.files['pdf_file']
+            doc_name = request.form.get('doc_name')
             
-            # Current date in São Paulo format
-            current_date = datetime.now().strftime('São Paulo, %d/%m/%Y')
-
-            # Create a temporary PDF with the signatures and text
-            packet = BytesIO()
-            c = canvas.Canvas(packet, pagesize=letter)
+            if not pdf_file or not doc_name:
+                return jsonify({'success': False, 'error': 'Missing PDF file or document name'}), 400
             
-            # Adjust Y coordinates for tighter spacing
-            c.setFont("Helvetica", 12)
-            c.drawString(50, 280, current_date)  # Date
-            c.drawString(50, 250, f"Nome do Colaborador: {nome_colaborador}")  # Moved up
-            c.drawString(50, 235, f"CPF: {cpf_colaborador}")  # 15 pixels below nome
-            c.drawString(50, 220, f"Cargo: {cargo_colaborador}")  # 15 pixels below CPF
-            
-            # Add colaborador signature
-            if assinatura_colaborador:
-                try:
-                    img_data = base64.b64decode(assinatura_colaborador.split(',')[1])
-                    temp_img_path = f"temp/sig_col_{datetime.now().strftime('%Y%m%d%H%M%S')}.png"
-                    
-                    with open(temp_img_path, 'wb') as img_file:
-                        img_file.write(img_data)
-                    
-                    c.drawImage(temp_img_path, 50, 160, 200, 50)  # Signature space
-                    os.remove(temp_img_path)
-                    
-                except Exception as e:
-                    print(f"Error processing colaborador signature: {e}")
-            
-            # Representante info with tighter spacing
-            c.drawString(50, 140, f"Nome do Representante da Empresa: {nome_representante}")
-            c.drawString(50, 125, f"Cargo: {cargo_representante}")  # 15 pixels below nome
-            
-            # Add representante signature
-            if assinatura_representante:
-                try:
-                    img_data = base64.b64decode(assinatura_representante.split(',')[1])
-                    temp_img_path = f"temp/sig_rep_{datetime.now().strftime('%Y%m%d%H%M%S')}.png"
-                    
-                    with open(temp_img_path, 'wb') as img_file:
-                        img_file.write(img_data)
-                    
-                    c.drawImage(temp_img_path, 50, 65, 200, 50)  # Signature space
-                    os.remove(temp_img_path)
-                    
-                except Exception as e:
-                    print(f"Error processing representante signature: {e}")
-            
-            c.save()
-            packet.seek(0)
-            
-            # Create a new PDF with all pages
-            new_pdf = PdfReader(packet)
-            existing_pdf = PdfReader("static/advertencia.pdf")
-            output = PdfWriter()
-
-            # Extract filename without extension from existing PDF path
-            base_filename = os.path.splitext(os.path.basename("static/advertencia.pdf"))[0]
-            
-            # Copy all pages except the last one as-is
-            for i in range(len(existing_pdf.pages) - 1):
-                output.add_page(existing_pdf.pages[i])
-            
-            # Merge the last page with our new content
-            last_page = existing_pdf.pages[-1]
-            last_page.merge_page(new_pdf.pages[0])
-            output.add_page(last_page)
-            
-            # Generate unique filename
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-            output_path = f"temp/{base_filename}_{timestamp}.pdf"
-            
-            # Write the output file
-            with open(output_path, "wb") as output_file:
-                output.write(output_file)
-            
-            # Upload to Google Drive
-            creds = get_google_credentials()
-            drive_service = build('drive', 'v3', credentials=creds)
-            
-            file_metadata = {
-                'name': f'{base_filename}_{cpf_colaborador}_{datetime.now().strftime('%d_%m_%Y')}.pdf',
-                'parents': [RH_FOLDER_ID]
-            }
-            
-            # Create MediaFileUpload object and immediately use it
-            with open(output_path, 'rb') as file:
-                media = MediaFileUpload(output_path, mimetype='application/pdf', resumable=True)
+            temp_file = None
+            try:
+                # Get Google Drive credentials
+                creds = get_google_credentials()
+                drive_service = build('drive', 'v3', credentials=creds)
+                
+                # Save PDF to Drive
+                file_metadata = {
+                    'name': f"{doc_name}.pdf",
+                    'parents': [RH_DOCS_FOLDER_ID]
+                }
+                
+                # Create a temporary file
+                temp_file = tempfile.NamedTemporaryFile(delete=False)
+                temp_path = temp_file.name
+                temp_file.close()  # Close the file immediately
+                
+                # Save the uploaded file to the temporary path
+                pdf_file.save(temp_path)
+                
+                media = MediaFileUpload(
+                    temp_path,
+                    mimetype='application/pdf',
+                    resumable=True
+                )
+                
                 file = drive_service.files().create(
                     body=file_metadata,
                     media_body=media,
                     fields='id'
                 ).execute()
-            
-            # Close and delete the file
-            media._fd.close()
-            time.sleep(0.5)
-            
-            if os.path.exists(output_path):
-                os.remove(output_path)
-            
-            return jsonify({'success': True, 'file_id': file.get('id')})
-            
-        except Exception as e:
-            print(f"Error in advertencia: {str(e)}")
-            return jsonify({'success': False, 'error': str(e)}), 500
-            
-        finally:
-            try:
-                if output_path and os.path.exists(output_path):
-                    time.sleep(0.5)
-                    os.remove(output_path)
+                
+                return jsonify({'success': True, 'file_id': file.get('id')})
+                
             except Exception as e:
-                print(f"Error cleaning up file: {str(e)}")
+                app.logger.error(f"Error uploading PDF: {str(e)}")
+                return jsonify({'success': False, 'error': str(e)}), 500
             
+            finally:
+                # Clean up the temporary file in the finally block
+                if temp_file:
+                    try:
+                        os.unlink(temp_file.name)
+                    except Exception as e:
+                        app.logger.error(f"Error deleting temporary file: {str(e)}")
+                
+        else:
+            # Handle form submission with signatures
+            try:
+                # Get form data
+                file_id = request.form.get('file_id')
+                signing_mode = request.form.get('signing_mode', 'full')
+                
+                if not file_id:
+                    return jsonify({'success': False, 'error': 'No file ID provided'}), 400
+                
+                # Get Google Drive credentials
+                creds = get_google_credentials()
+                drive_service = build('drive', 'v3', credentials=creds)
+                
+                # Create temporary files
+                temp_original = tempfile.NamedTemporaryFile(delete=False)
+                temp_output = tempfile.NamedTemporaryFile(delete=False)
+                
+                try:
+                    # Download the original PDF from Drive
+                    drive_request = drive_service.files().get_media(fileId=file_id)
+                    fh = io.BytesIO(drive_request.execute())
+                    temp_original.write(fh.getvalue())
+                    temp_original.close()
+
+                    # Create PDF reader and writer objects
+                    reader = PdfReader(temp_original.name)
+                    writer = PdfWriter()
+
+                    # Get the last page
+                    page = reader.pages[-1]  # Changed from [0] to [-1] to get last page
+                    
+                    # Create a new PDF with Reportlab for the signatures and text
+                    packet = BytesIO()
+                    can = canvas.Canvas(packet, pagesize=letter)
+                    
+                    # Get page dimensions
+                    page_width = letter[0]
+                    page_height = letter[1]
+                    
+                    # Add text elements at the bottom section
+                    bottom_section_y = 150  # Base Y position for bottom section
+                    current_date = datetime.now().strftime("%d/%m/%Y")
+                    can.drawString(100, bottom_section_y + 80, f"Data: São Paulo, {current_date}")
+                    
+                    # Calculate signature positions
+                    if signing_mode == 'full':
+                        # Two signatures side by side
+                        left_sig_x = page_width * 0.2  # 20% from left
+                        right_sig_x = page_width * 0.6  # 60% from left
+                        sig_y = bottom_section_y
+                        sig_width = 200
+                        sig_height = 60
+                        
+                        # Add collaborator signature on the left
+                        collab_signature = request.form.get('assinaturaColaborador')
+                        if collab_signature:
+                            img_data = base64.b64decode(collab_signature.split(',')[1])
+                            img_temp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+                            img_temp.write(img_data)
+                            img_temp.close()
+                            
+                            # Add collaborator signature and details
+                            can.drawImage(img_temp.name, left_sig_x, sig_y, width=sig_width, height=sig_height)
+                            can.drawString(left_sig_x, sig_y - 20, "___________________________")
+                            can.drawString(left_sig_x, sig_y - 40, request.form.get('nome_colaborador'))
+                            can.drawString(left_sig_x, sig_y - 60, f"CPF: {request.form.get('cpf_colaborador')}")
+                            os.unlink(img_temp.name)
+                        
+                        # Add representative signature on the right
+                        rep_signature = request.form.get('assinaturaRepresentante')
+                        if rep_signature:
+                            img_data = base64.b64decode(rep_signature.split(',')[1])
+                            img_temp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+                            img_temp.write(img_data)
+                            img_temp.close()
+                            
+                            # Add representative signature and details
+                            can.drawImage(img_temp.name, right_sig_x, sig_y, width=sig_width, height=sig_height)
+                            can.drawString(right_sig_x, sig_y - 20, "___________________________")
+                            can.drawString(right_sig_x, sig_y - 40, request.form.get('nome_representante'))
+                            can.drawString(right_sig_x, sig_y - 60, f"Cargo: {request.form.get('cargo_representante')}")
+                            os.unlink(img_temp.name)
+                    else:
+                        # Single signature centered
+                        center_x = page_width * 0.4  # 40% from left
+                        sig_y = bottom_section_y
+                        sig_width = 200
+                        sig_height = 60
+                        
+                        # Add collaborator signature
+                        collab_signature = request.form.get('assinaturaColaborador')
+                        if collab_signature:
+                            img_data = base64.b64decode(collab_signature.split(',')[1])
+                            img_temp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+                            img_temp.write(img_data)
+                            img_temp.close()
+                            
+                            # Add centered signature and details
+                            can.drawImage(img_temp.name, center_x, sig_y, width=sig_width, height=sig_height)
+                            can.drawString(center_x, sig_y - 20, "___________________________")
+                            can.drawString(center_x, sig_y - 40, request.form.get('nome_colaborador'))
+                            can.drawString(center_x, sig_y - 60, f"CPF: {request.form.get('cpf_colaborador')}")
+                            os.unlink(img_temp.name)
+                    
+                    can.save()
+                    
+                    # Move to the beginning of the packet
+                    packet.seek(0)
+                    new_pdf = PdfReader(packet)
+                    
+                    # Add the "watermark" to the existing page
+                    page.merge_page(new_pdf.pages[0])
+                    
+                    # Add all pages to the writer
+                    for i in range(len(reader.pages)):
+                        if i == len(reader.pages) - 1:
+                            # Last page (already modified with signatures)
+                            writer.add_page(page)
+                        else:
+                            # Other pages (unchanged)
+                            writer.add_page(reader.pages[i])
+                    
+                    # Write the output file
+                    with open(temp_output.name, 'wb') as output_file:
+                        writer.write(output_file)
+                    
+                    # Get employee CPF and clean it
+                    cpf = request.form.get('cpf_colaborador', '').replace('.', '').replace('-', '')
+                    
+                    # Get or create employee folder using only CPF
+                    employee_folder_id = get_or_create_employee_folder(drive_service, cpf)
+                    
+                    # Get the original file name from Drive
+                    file_metadata_response = drive_service.files().get(
+                        fileId=file_id, 
+                        fields='name'
+                    ).execute()
+                    original_filename = file_metadata_response.get('name', '').replace('.pdf', '')
+                    
+                    # Get current date in the desired format
+                    current_date = datetime.now().strftime('%d%m%Y')
+                    
+                    # Create the new filename
+                    new_filename = f"{original_filename}_{cpf}_{current_date}.pdf"
+                    
+                    # Upload the modified PDF to the employee's folder
+                    file_metadata = {
+                        'name': new_filename,
+                        'parents': [employee_folder_id]  # Use employee folder instead of RH_DOCS_FOLDER_ID
+                    }
+                    
+                    media = MediaFileUpload(
+                        temp_output.name,
+                        mimetype='application/pdf',
+                        resumable=True
+                    )
+                    
+                    file = drive_service.files().create(
+                        body=file_metadata,
+                        media_body=media,
+                        fields='id'
+                    ).execute()
+                    
+                    return jsonify({'success': True, 'file_id': file.get('id')})
+                    
+                finally:
+                    # Clean up temporary files
+                    for temp_file in [temp_original, temp_output]:
+                        try:
+                            os.unlink(temp_file.name)
+                        except Exception as e:
+                            app.logger.error(f"Error deleting temporary file: {str(e)}")
+                            
+            except Exception as e:
+                app.logger.error(f"Error processing form: {str(e)}")
+                return jsonify({'success': False, 'error': str(e)}), 500
+
     return render_template('advertencia.html')
 
 @app.route('/manifesto', methods=['GET', 'POST'])
@@ -961,6 +1070,87 @@ def generate_sheets_route():
             'error': str(e)
         }), 500
 
+@app.route('/get-documents')
+@login_required
+def get_documents():
+    try:
+        creds = get_google_credentials()
+        drive_service = build('drive', 'v3', credentials=creds)
+        
+        # Query files in the RH_DOCS_FOLDER_ID
+        results = drive_service.files().list(
+            q=f"'{RH_DOCS_FOLDER_ID}' in parents and mimeType='application/pdf'",
+            fields="files(id, name)"
+        ).execute()
+        
+        files = results.get('files', [])
+        
+        # Return list of documents
+        return jsonify([{
+            'id': file['id'],
+            'name': file['name']
+        } for file in files])
+        
+    except Exception as e:
+        app.logger.error(f"Error getting documents: {str(e)}")
+        return jsonify([]), 500
+
+# Add this function near the top of your file with other helper functions
+def get_or_create_employee_folder(drive_service, employee_cpf):
+    """
+    Get or create a folder for an employee in Google Drive using only CPF.
+    First checks Redis cache, then Drive, creates if doesn't exist.
+    """
+    try:
+        # Try to get folder ID from Redis first
+        folder_key = f"employee_folder:{employee_cpf}"
+        folder_id = redis_client.get(folder_key)
+        
+        if folder_id:
+            # Verify folder still exists in Drive
+            try:
+                drive_service.files().get(fileId=folder_id.decode('utf-8')).execute()
+                return folder_id.decode('utf-8')
+            except Exception:
+                # Folder not found in Drive, remove from Redis
+                redis_client.delete(folder_key)
+                folder_id = None
+        
+        if not folder_id:
+            # Search for existing folder in Drive using only CPF
+            query = f"'{RH_FOLDER_ID}' in parents and name='{employee_cpf}' and mimeType='application/vnd.google-apps.folder'"
+            results = drive_service.files().list(
+                q=query,
+                spaces='drive',
+                fields='files(id, name)'
+            ).execute()
+            
+            if results.get('files'):
+                # Folder exists, cache and return ID
+                folder_id = results['files'][0]['id']
+                redis_client.set(folder_key, folder_id)
+                return folder_id
+            
+            # Create new folder using only CPF
+            folder_metadata = {
+                'name': employee_cpf,  # Only use CPF for folder name
+                'mimeType': 'application/vnd.google-apps.folder',
+                'parents': [RH_FOLDER_ID]
+            }
+            
+            folder = drive_service.files().create(
+                body=folder_metadata,
+                fields='id'
+            ).execute()
+            
+            # Cache the new folder ID
+            folder_id = folder.get('id')
+            redis_client.set(folder_key, folder_id)
+            return folder_id
+            
+    except Exception as e:
+        app.logger.error(f"Error managing employee folder: {str(e)}")
+        raise
 
 if __name__ == '__main__':
     try:
