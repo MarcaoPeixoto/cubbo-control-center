@@ -138,4 +138,9 @@ LFbot_para relatorio_ontem_copia.py
 LFbot.py
 LFbot_para relatório_ontem_copia.py
 slack_bot_interface.py
+peca_operador.py
+pesoXvalor_pedido.py
+peca_operador_report.xlsx
+peso_valor_pedido_report.xlsx
 
+picker_livre.py

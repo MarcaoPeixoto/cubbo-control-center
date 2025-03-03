@@ -314,7 +314,7 @@ def link_docs(transportadora):
     loggi_folder = env_config.get('LOGGI_FOLDER_ID') or os.environ["LOGGI_FOLDER_ID"]
     meli_folder = env_config.get('MELI_FOLDER_ID') or os.environ["MELI_FOLDER_ID"]
     correios_folder = env_config.get('CORREIOS_FOLDER_ID') or os.environ["CORREIOS_FOLDER_ID"]
-    treggo_folder = env_config.get('TREGGO_FOLDER_ID') or os.environ["TREGGO_FOLDER_ID"]
+    imile_folder = env_config.get('IMILE_FOLDER_ID') or os.environ["IMILE_FOLDER_ID"]
 
     # Determine the correct folder ID based on the transportadora
     if transportadora == "LOGGI":
@@ -323,8 +323,8 @@ def link_docs(transportadora):
         folder_id = meli_folder
     elif transportadora == "CORREIOS":
         folder_id = correios_folder
-    elif transportadora == "TREGGO":
-        folder_id = treggo_folder
+    elif transportadora == "IMILE":
+        folder_id = imile_folder
     else:
         print(f"Unknown transportadora: {transportadora}")
         return None
