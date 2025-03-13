@@ -14,6 +14,7 @@ from metabase import get_dataset, process_data
 from google_auth import get_docs_service, get_drive_service
 from google_auth import authenticate_google
 
+#para atualizar
 # Replace the existing redis_client creation with:
 redis_client = get_redis_connection()
 
