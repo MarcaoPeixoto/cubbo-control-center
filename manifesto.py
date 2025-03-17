@@ -22,12 +22,13 @@ redis_client = get_redis_connection()
 # Replace the existing docs_service initialization with this:
 docs_service = authenticate_google()
 
-# Existing functions
-
 
 def get_manifesto(carrier):
+    # Get current date (with -3 hours adjustment)
     current_date = datetime.now() - timedelta(hours=3)
-
+    # Format the date for display
+    formatted_date = current_date.strftime('%Y-%m-%d')
+    print(f"Current date being used: {formatted_date}")
 
     if carrier == "MELI":
         carrier = "Mercado Envíos"
@@ -35,15 +36,48 @@ def get_manifesto(carrier):
     if carrier == "JT":
         carrier = "JT Express"
 
-    manifesto_inputs = process_data(
-        {'carrier_name': carrier, 'shipping_date': current_date, 'dispatch_date': current_date})
+    # Add debug print to see what's being sent to the query
+    manifesto_inputs = {
+        'carrier_name': carrier,
+        'shipping_date': formatted_date,
+        'dispatch_date': formatted_date
+    }
+    print(f"Query parameters: {manifesto_inputs}")
+    
+    manifesto_inputs = process_data(manifesto_inputs)
+    
     pedidos = get_dataset('578', manifesto_inputs)
-
-    # REMOVE orders with DIFAL (Assuming get_difal_order_ids is defined)
-    # pedidos_difal = get_difal_order_ids()
-    # pedidos = [item for item in pedidos if item.get('cubbo_id') not in pedidos_difal]
+    print(f"Total orders from initial dataset: {len(pedidos)}")
+    
+    # Filter only by dispatched_at date
+    pedidos = [
+        order for order in pedidos 
+        if (
+            order.get('dispatched_at') and 
+            str(order.get('dispatched_at')).startswith(formatted_date)
+        )
+    ]
+    print(f"Orders after dispatch date filtering: {len(pedidos)}")
+    
+    # Rest of the filtering
+    pedidos_difal = get_difal_order_ids()
+    print(f"Number of DIFAL orders to exclude: {len(pedidos_difal)}")
+    pedidos = [item for item in pedidos if item.get('cubbo_id') not in pedidos_difal]
+    print(f"Orders after DIFAL filtering: {len(pedidos)}")
+    
+    # Print a sample order to debug date formats
+    if pedidos:
+        print("Sample order dates:")
+        print(f"shipping_date: {pedidos[0].get('shipping_date')}")
+        print(f"dispatched_at: {pedidos[0].get('dispatched_at')}")
+    
     # Filter out orders where 'shipping_number' starts with 'MEL'
     filtered_pedidos = [order for order in pedidos if order.get('shipping_number') is not None and not order.get('shipping_number', '').startswith('MEL')]
+    print(f"Final filtered orders count: {len(filtered_pedidos)}")
+    
+    # Add sample data print to check the structure
+    if filtered_pedidos:
+        print(f"Sample order data structure: {filtered_pedidos[0]}")
 
     # Now proceed with the filtered list
     trackings_dispatched = [x['shipping_number'] for x in filtered_pedidos if x.get('dispatched_at')]
@@ -51,7 +85,7 @@ def get_manifesto(carrier):
 
     # Collect data to insert into Google Doc
     data = {
-        'current_date': current_date,
+        'current_date': formatted_date,
         'carrier': carrier,
         'total_pedidos': len(pedidos),
         'not_dispatched_count': len(trackings_not_dispatched),
@@ -180,7 +214,7 @@ def save_to_google_docs(document_title, data, folder_id=None):
         header_requests = []
 
         # Prepare the manifesto_text
-        manifesto_text = (f"ROMANEIO\n\nData: {data['current_date']:%d/%m/%Y}\n"
+        manifesto_text = (f"ROMANEIO\n\nData: {data['current_date']}\n"
                           f"Transportadora: {data['carrier']}\nQuantidade: {data['total_pedidos']}\n\n")
 
         # Insert the manifesto_text into the header
@@ -350,3 +384,5 @@ def link_docs(transportadora):
 def get_difal_order_ids():
     pedidos_difal = get_dataset('613')
     return [d['Orders → ID'] for d in pedidos_difal if 'Orders → ID' in d]
+
+get_manifesto("LOGGI")
