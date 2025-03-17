@@ -26,38 +26,52 @@ docs_service = authenticate_google()
 def get_manifesto(carrier):
     # Get current date (with -3 hours adjustment)
     current_date = datetime.now() - timedelta(hours=3)
-    # Format the date for display
     formatted_date = current_date.strftime('%Y-%m-%d')
     print(f"Current date being used: {formatted_date}")
 
-    if carrier == "MELI":
-        carrier = "Mercado Envíos"
+    # Map carrier names exactly as they appear in the database
+    carrier_mapping = {
+        "MELI": "Mercado Envíos",
+        "JT": "JT Express",
+        "CORREIOS": "CORREIOS",  # Make sure this matches exactly
+        "LOGGI": "LOGGI",        # Make sure this matches exactly
+        "IMILE": "IMILE"         # Make sure this matches exactly
+    }
 
-    if carrier == "JT":
-        carrier = "JT Express"
+    if carrier not in carrier_mapping:
+        raise ValueError(f"Unknown carrier: {carrier}")
+    
+    carrier_name = carrier_mapping[carrier]
+    print(f"Using carrier name: {carrier_name}")  # Debug print
 
-    # Add debug print to see what's being sent to the query
     manifesto_inputs = {
-        'carrier_name': carrier,
+        'carrier_name': carrier_name,
         'shipping_date': formatted_date,
         'dispatch_date': formatted_date
     }
     print(f"Query parameters: {manifesto_inputs}")
     
     manifesto_inputs = process_data(manifesto_inputs)
+    print(f"Processed parameters: {manifesto_inputs}")  # Debug print
     
     pedidos = get_dataset('578', manifesto_inputs)
     print(f"Total orders from initial dataset: {len(pedidos)}")
     
-    # Filter only by dispatched_at date
+    # Double check carrier name in results
+    if pedidos:
+        unique_carriers = set(order.get('carrier_name') for order in pedidos)
+        print(f"Carriers found in results: {unique_carriers}")
+    
+    # Filter by both dispatch date and carrier
     pedidos = [
         order for order in pedidos 
         if (
             order.get('dispatched_at') and 
-            str(order.get('dispatched_at')).startswith(formatted_date)
+            str(order.get('dispatched_at')).startswith(formatted_date) and
+            order.get('carrier_name') == carrier_name  # Use exact carrier name
         )
     ]
-    print(f"Orders after dispatch date filtering: {len(pedidos)}")
+    print(f"Orders after date and carrier filtering: {len(pedidos)}")
     
     # Rest of the filtering
     pedidos_difal = get_difal_order_ids()
@@ -86,7 +100,7 @@ def get_manifesto(carrier):
     # Collect data to insert into Google Doc
     data = {
         'current_date': formatted_date,
-        'carrier': carrier,
+        'carrier': carrier_name,
         'total_pedidos': len(pedidos),
         'not_dispatched_count': len(trackings_not_dispatched),
         'not_dispatched_trackings': trackings_not_dispatched,
@@ -384,3 +398,5 @@ def link_docs(transportadora):
 def get_difal_order_ids():
     pedidos_difal = get_dataset('613')
     return [d['Orders → ID'] for d in pedidos_difal if 'Orders → ID' in d]
+
+#get_manifesto("CORREIOS")
