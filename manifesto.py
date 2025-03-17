@@ -162,13 +162,12 @@ def save_to_google_docs(document_title, data, folder_id=None, transportadora=Non
         raise ValueError("Missing required data or document title")
 
     try:
-        #colocar a transportadora em maiusculo aqui!
+        print("\nStarting document creation:")
+        print(f"Title: {document_title}")
+        print(f"Folder ID: {folder_id}")
+        print(f"Transportadora: {transportadora}")
+
         # Create a new document
-        document = {
-            'title': document_title
-        }
-        
-        # If a folder_id is provided, create the document in that folder
         if folder_id:
             drive_service = get_drive_service()
             file_metadata = {
@@ -176,11 +175,21 @@ def save_to_google_docs(document_title, data, folder_id=None, transportadora=Non
                 'parents': [folder_id],
                 'mimeType': 'application/vnd.google-apps.document'
             }
-            file = drive_service.files().create(body=file_metadata, fields='id').execute()
+            
+            print("\nCreating document in specified folder...")
+            file = drive_service.files().create(
+                body=file_metadata, 
+                fields='id,parents,name'
+            ).execute()
+            
             document_id = file.get('id')
+            print(f"Document created:")
+            print(f"ID: {document_id}")
+            print(f"Name: {file.get('name')}")
+            print(f"Parent folders: {file.get('parents')}")
         else:
-            # Create the document in the root folder
-            document = docs_service.documents().create(body=document).execute()
+            print("Warning: No folder ID provided, creating in root")
+            document = docs_service.documents().create(body={'title': document_title}).execute()
             document_id = document.get('documentId')
 
         print(f"Document created with ID: {document_id}")
@@ -367,43 +376,73 @@ def save_to_google_docs(document_title, data, folder_id=None, transportadora=Non
         raise
 
 def link_docs(transportadora):
-    
-    env_config = dotenv_values(".env")
-    # Load folder IDs from environment variables
-    loggi_folder = env_config.get('LOGGI_FOLDER_ID') or os.environ["LOGGI_FOLDER_ID"]
-    meli_folder = env_config.get('MELI_FOLDER_ID') or os.environ["MELI_FOLDER_ID"]
-    correios_folder = env_config.get('CORREIOS_FOLDER_ID') or os.environ["CORREIOS_FOLDER_ID"]
-    imile_folder = env_config.get('IMILE_FOLDER_ID') or os.environ["IMILE_FOLDER_ID"]
+    try:
+        env_config = dotenv_values(".env")
+        # Load folder IDs from environment variables with debug prints
+        loggi_folder = env_config.get('LOGGI_FOLDER_ID') or os.environ.get("LOGGI_FOLDER_ID")
+        meli_folder = env_config.get('MELI_FOLDER_ID') or os.environ.get("MELI_FOLDER_ID")
+        correios_folder = env_config.get('CORREIOS_FOLDER_ID') or os.environ.get("CORREIOS_FOLDER_ID")
+        imile_folder = env_config.get('IMILE_FOLDER_ID') or os.environ.get("IMILE_FOLDER_ID")
 
-    # Determine the correct folder ID based on the transportadora
-    if transportadora == "LOGGI":
-        folder_id = loggi_folder
-    elif transportadora == "MELI":
-        folder_id = meli_folder
-    elif transportadora == "CORREIOS":
-        folder_id = correios_folder
-    elif transportadora == "IMILE":
-        folder_id = imile_folder
-    else:
-        print(f"Unknown transportadora: {transportadora}")
-        return None
+        print("\nFolder IDs from environment:")
+        print(f"LOGGI Folder ID: {loggi_folder}")
+        print(f"MELI Folder ID: {meli_folder}")
+        print(f"CORREIOS Folder ID: {correios_folder}")
+        print(f"IMILE Folder ID: {imile_folder}")
 
-    print(f"Using folder ID: {folder_id}")
-    
-    data = get_manifesto(transportadora)
-    current_date = datetime.now() - timedelta(hours=3)
-    document_title = f'Manifesto {transportadora} {current_date:%d/%m/%Y}'
+        # Determine the correct folder ID based on the transportadora
+        folder_id = None
+        if transportadora == "LOGGI":
+            folder_id = loggi_folder
+        elif transportadora == "MELI":
+            folder_id = meli_folder
+        elif transportadora == "CORREIOS":
+            folder_id = correios_folder
+        elif transportadora == "IMILE":
+            folder_id = imile_folder
 
-    print(f"Attempting to create document: {document_title}")
-    document_id = save_to_google_docs(document_title, data, folder_id, transportadora)
-    if document_id:
-        doc_url = f'https://docs.google.com/document/d/{document_id}/edit'
-        print(f"Document created successfully: {doc_url}")
-        return doc_url
-    else:
-        print("Failed to create document")
-        return None
-    
+        if not folder_id:
+            print(f"Error: No folder ID found for transportadora: {transportadora}")
+            return None
+
+        print(f"\nSelected folder details:")
+        print(f"Transportadora: {transportadora}")
+        print(f"Using folder ID: {folder_id}")
+
+        # Verify folder exists before proceeding
+        try:
+            drive_service = get_drive_service()
+            folder = drive_service.files().get(fileId=folder_id).execute()
+            print(f"Verified folder name: {folder.get('name')}")
+        except Exception as e:
+            print(f"Error verifying folder: {str(e)}")
+            return None
+
+        # Get manifesto data
+        data = get_manifesto(transportadora)
+        current_date = datetime.now() - timedelta(hours=3)
+        document_title = f'Manifesto {transportadora} {current_date:%d/%m/%Y}'
+
+        print(f"\nCreating document:")
+        print(f"Title: {document_title}")
+        print(f"Date: {current_date:%d/%m/%Y}")
+        
+        # Create the document
+        document_id = save_to_google_docs(document_title, data, folder_id, transportadora)
+        
+        if document_id:
+            doc_url = f'https://docs.google.com/document/d/{document_id}/edit'
+            print(f"\nSuccess:")
+            print(f"Document created successfully: {doc_url}")
+            print(f"In folder: {folder.get('name')} ({folder_id})")
+            return doc_url
+        else:
+            print("\nError: Failed to create document")
+            return None
+
+    except Exception as e:
+        print(f"\nError in link_docs: {str(e)}")
+        raise
 
 def get_difal_order_ids():
     pedidos_difal = get_dataset('613')
