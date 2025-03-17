@@ -22,95 +22,100 @@ redis_client = get_redis_connection()
 # Replace the existing docs_service initialization with this:
 docs_service = authenticate_google()
 
+# Existing functions
+
 
 def get_manifesto(carrier):
-    # Get current date (with -3 hours adjustment)
-    current_date = datetime.now() - timedelta(hours=3)
-    formatted_date = current_date.strftime('%Y-%m-%d')
-    print(f"Current date being used: {formatted_date}")
+    try:
+        current_date = datetime.now() - timedelta(hours=3)
+        
+        if carrier == "MELI":
+            carrier = "Mercado Envíos"
+        elif carrier == "JT":
+            carrier = "JT Express"
 
-    # Map carrier names exactly as they appear in the database
-    carrier_mapping = {
-        "MELI": "Mercado Envíos",
-        "JT": "JT Express",
-        "CORREIOS": "CORREIOS",  # Make sure this matches exactly
-        "LOGGI": "LOGGI",        # Make sure this matches exactly
-        "IMILE": "IMILE"         # Make sure this matches exactly
-    }
+        # Convert dates to string format YYYY-MM-DD
+        date_str = current_date.strftime('%Y-%m-%d')
+        
+        manifesto_inputs = {
+            'carrier_name': carrier, 
+            'shipping_date': date_str,
+            'dispatch_date': date_str
+        }
+        
+        # Debug prints
+        print("Input parameters:")
+        print(f"Carrier: {carrier}")
+        print(f"Date: {date_str}")
+        
+        processed_params = process_data(manifesto_inputs)
+        print("Processed parameters:")
+        print(json.dumps(processed_params, indent=2))
+        
+        # Get the dataset with parameters
+        response = get_dataset('578', processed_params)
+        
+        # Debug print the response
+        print(f"Response type: {type(response)}")
+        print(f"Response content: {response}")
+        
+        # Convert response to list if it's a dictionary
+        if isinstance(response, dict):
+            if 'data' in response:
+                pedidos = response['data']
+            else:
+                pedidos = [response]  # Convert single dict to list
+        else:
+            pedidos = response
 
-    if carrier not in carrier_mapping:
-        raise ValueError(f"Unknown carrier: {carrier}")
-    
-    carrier_name = carrier_mapping[carrier]
-    print(f"Using carrier name: {carrier_name}")  # Debug print
+        if not pedidos:  # Add validation
+            print(f"No orders found for carrier {carrier} on date {date_str}")
+            raise ValueError("No orders found for the specified carrier and date")
 
-    manifesto_inputs = {
-        'carrier_name': carrier_name,
-        'shipping_date': formatted_date,
-        'dispatch_date': formatted_date
-    }
-    print(f"Query parameters: {manifesto_inputs}")
-    
-    manifesto_inputs = process_data(manifesto_inputs)
-    print(f"Processed parameters: {manifesto_inputs}")  # Debug print
-    
-    pedidos = get_dataset('578', manifesto_inputs)
-    print(f"Total orders from initial dataset: {len(pedidos)}")
-    
-    # Double check carrier name in results
-    if pedidos:
-        unique_carriers = set(order.get('carrier_name') for order in pedidos)
-        print(f"Carriers found in results: {unique_carriers}")
-    
-    # Filter by both dispatch date and carrier
-    pedidos = [
-        order for order in pedidos 
-        if (
-            order.get('dispatched_at') and 
-            str(order.get('dispatched_at')).startswith(formatted_date) and
-            order.get('carrier_name') == carrier_name  # Use exact carrier name
-        )
-    ]
-    print(f"Orders after date and carrier filtering: {len(pedidos)}")
-    
-    # Rest of the filtering
-    pedidos_difal = get_difal_order_ids()
-    print(f"Number of DIFAL orders to exclude: {len(pedidos_difal)}")
-    pedidos = [item for item in pedidos if item.get('cubbo_id') not in pedidos_difal]
-    print(f"Orders after DIFAL filtering: {len(pedidos)}")
-    
-    # Print a sample order to debug date formats
-    if pedidos:
-        print("Sample order dates:")
-        print(f"shipping_date: {pedidos[0].get('shipping_date')}")
-        print(f"dispatched_at: {pedidos[0].get('dispatched_at')}")
-    
-    # Filter out orders where 'shipping_number' starts with 'MEL'
-    filtered_pedidos = [order for order in pedidos if order.get('shipping_number') is not None and not order.get('shipping_number', '').startswith('MEL')]
-    print(f"Final filtered orders count: {len(filtered_pedidos)}")
-    
-    # Add sample data print to check the structure
-    if filtered_pedidos:
-        print(f"Sample order data structure: {filtered_pedidos[0]}")
+        # Debug prints for data structure
+        print("\nData Structure Analysis:")
+        print(f"Pedidos type: {type(pedidos)}")
+        if pedidos:
+            print(f"First item type: {type(pedidos[0])}")
+            print(f"Available keys in first item: {pedidos[0].keys() if isinstance(pedidos[0], dict) else 'Not a dictionary'}")
+            print(f"\nFirst item content: {json.dumps(pedidos[0], indent=2)}")
 
-    # Now proceed with the filtered list
-    trackings_dispatched = [x['shipping_number'] for x in filtered_pedidos if x.get('dispatched_at')]
-    trackings_not_dispatched = [x['shipping_number'] for x in filtered_pedidos if not x.get('dispatched_at')]
+        # Validate required fields exist
+        required_fields = ['shipping_number', 'dispatched_at']
+        if pedidos and isinstance(pedidos[0], dict):
+            missing_fields = [field for field in required_fields if field not in pedidos[0]]
+            if missing_fields:
+                print(f"Warning: Missing required fields: {missing_fields}")
 
-    # Collect data to insert into Google Doc
-    data = {
-        'current_date': formatted_date,
-        'carrier': carrier_name,
-        'total_pedidos': len(pedidos),
-        'not_dispatched_count': len(trackings_not_dispatched),
-        'not_dispatched_trackings': trackings_not_dispatched,
-        'dispatched_count': len(trackings_dispatched),
-        'dispatched_trackings': trackings_dispatched
-    }
+        print(f"Total orders retrieved: {len(pedidos)}")
+        print(f"Sample order format: {pedidos[0] if pedidos else 'No orders'}")
 
-    return data
+        # Filter out orders where 'shipping_number' starts with 'MEL'
+        filtered_pedidos = [order for order in pedidos if order.get('shipping_number') is not None and not order.get('shipping_number', '').startswith('MEL')]
 
-transportadora = "LOGGI"
+        # Now proceed with the filtered list
+        trackings_dispatched = [x['shipping_number'] for x in filtered_pedidos if x.get('dispatched_at')]
+        trackings_not_dispatched = [x['shipping_number'] for x in filtered_pedidos if not x.get('dispatched_at')]
+
+        # Collect data to insert into Google Doc
+        data = {
+            'current_date': current_date,
+            'carrier': carrier,
+            'total_pedidos': len(pedidos),
+            'not_dispatched_count': len(trackings_not_dispatched),
+            'not_dispatched_trackings': trackings_not_dispatched,
+            'dispatched_count': len(trackings_dispatched),
+            'dispatched_trackings': trackings_dispatched
+        }
+
+        return data
+    except Exception as e:
+        print(f"Error in get_manifesto: {str(e)}")
+        print(f"Type of pedidos: {type(pedidos)}")  # Debug print
+        if pedidos:
+            print(f"Type of first item: {type(pedidos[0])}")  # Debug print
+            print(f"First item content: {pedidos[0]}")  # Debug print
+        raise
 
 def nao_despachados(data, transportadora):
     quantidade_nao_despachados = data['not_dispatched_count']
@@ -153,9 +158,11 @@ def nao_despachados(data, transportadora):
 
 
 def save_to_google_docs(document_title, data, folder_id=None):
-    #colocar a transportadora em maiusculo aqui!
-    try:
+    if not data or not document_title:
+        raise ValueError("Missing required data or document title")
 
+    try:
+        #colocar a transportadora em maiusculo aqui!
         # Create a new document
         document = {
             'title': document_title
@@ -228,7 +235,7 @@ def save_to_google_docs(document_title, data, folder_id=None):
         header_requests = []
 
         # Prepare the manifesto_text
-        manifesto_text = (f"ROMANEIO\n\nData: {data['current_date']}\n"
+        manifesto_text = (f"ROMANEIO\n\nData: {data['current_date']:%d/%m/%Y}\n"
                           f"Transportadora: {data['carrier']}\nQuantidade: {data['total_pedidos']}\n\n")
 
         # Insert the manifesto_text into the header
@@ -353,8 +360,11 @@ def save_to_google_docs(document_title, data, folder_id=None):
 
         return document_id
     except HttpError as err:
-        print(f"An error occurred: {err}")
-        return None
+        print(f"Google API error: {err}")
+        raise
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        raise
 
 def link_docs(transportadora):
     
@@ -399,4 +409,10 @@ def get_difal_order_ids():
     pedidos_difal = get_dataset('613')
     return [d['Orders → ID'] for d in pedidos_difal if 'Orders → ID' in d]
 
-#get_manifesto("CORREIOS")
+""" # Move this to a if __name__ == "__main__": block
+if __name__ == "__main__":
+    try:
+        result = get_manifesto("LOGGI")
+        print("Manifesto generated successfully")
+    except Exception as e:
+        print(f"Failed to generate manifesto: {e}") """

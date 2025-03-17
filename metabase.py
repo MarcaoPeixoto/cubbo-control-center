@@ -32,16 +32,33 @@ def get_dataset(question, params={}):
     METABASE_ENDPOINT = "https://cubbo.metabaseapp.com"
     METABASE_TOKEN = create_metabase_token()
 
-    res = requests.post(METABASE_ENDPOINT + '/api/card/'+question+'/query/json',
-                        headers={"Content-Type": "application/json",
-                                 'X-Metabase-Session': METABASE_TOKEN},
-                        params=params,
-                        )
-    print(res)
-    dataset = res.json()
-    #print(dataset)
+    # Debug print to verify the request
+    print(f"Making request to question {question} with parameters: {params}")
 
-    return dataset
+    try:
+        res = requests.post(
+            f"{METABASE_ENDPOINT}/api/card/{question}/query/json",
+            headers={
+                "Content-Type": "application/json",
+                'X-Metabase-Session': METABASE_TOKEN
+            },
+            json=params,  # Use json parameter instead of params
+            timeout=30  # Add timeout
+        )
+        
+        # Debug response
+        print(f"Response status code: {res.status_code}")
+        
+        if res.status_code != 200:
+            print(f"Error response from Metabase: {res.text}")
+            raise Exception(f"Metabase query failed with status {res.status_code}")
+            
+        dataset = res.json()
+        return dataset
+
+    except requests.exceptions.RequestException as e:
+        print(f"Request failed: {str(e)}")
+        raise
 
 def process_data(inputs):
 
