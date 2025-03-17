@@ -384,5 +384,3 @@ def link_docs(transportadora):
 def get_difal_order_ids():
     pedidos_difal = get_dataset('613')
     return [d['Orders → ID'] for d in pedidos_difal if 'Orders → ID' in d]
-
-get_manifesto("LOGGI")
