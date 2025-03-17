@@ -157,7 +157,7 @@ def nao_despachados(data, transportadora):
     return warning_text
 
 
-def save_to_google_docs(document_title, data, folder_id=None):
+def save_to_google_docs(document_title, data, folder_id=None, transportadora=None):
     if not data or not document_title:
         raise ValueError("Missing required data or document title")
 
@@ -305,7 +305,7 @@ def save_to_google_docs(document_title, data, folder_id=None):
         content = ""
 
         # Add warning about not dispatched orders if any
-        if transportadora == "MELI" or transportadora == "CORREIOS":
+        if transportadora in ["MELI", "CORREIOS"]:
             content += "\t\t".join(data['dispatched_trackings'])
             content += "\n\n\nAssinatura Transportadora:\n\nAssinatura Cubbo:"
         else:
@@ -395,7 +395,7 @@ def link_docs(transportadora):
     document_title = f'Manifesto {transportadora} {current_date:%d/%m/%Y}'
 
     print(f"Attempting to create document: {document_title}")
-    document_id = save_to_google_docs(document_title, data, folder_id)
+    document_id = save_to_google_docs(document_title, data, folder_id, transportadora)
     if document_id:
         doc_url = f'https://docs.google.com/document/d/{document_id}/edit'
         print(f"Document created successfully: {doc_url}")
