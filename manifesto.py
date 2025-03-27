@@ -383,12 +383,14 @@ def link_docs(transportadora):
         meli_folder = env_config.get('MELI_FOLDER_ID') or os.environ.get("MELI_FOLDER_ID")
         correios_folder = env_config.get('CORREIOS_FOLDER_ID') or os.environ.get("CORREIOS_FOLDER_ID")
         imile_folder = env_config.get('IMILE_FOLDER_ID') or os.environ.get("IMILE_FOLDER_ID")
+        jt_folder = env_config.get('JT_FOLDER_ID') or os.environ.get("JT_FOLDER_ID")
 
         print("\nFolder IDs from environment:")
         print(f"LOGGI Folder ID: {loggi_folder}")
         print(f"MELI Folder ID: {meli_folder}")
         print(f"CORREIOS Folder ID: {correios_folder}")
         print(f"IMILE Folder ID: {imile_folder}")
+        print(f"JT Folder ID: {jt_folder}")
 
         # Determine the correct folder ID based on the transportadora
         folder_id = None
@@ -400,6 +402,8 @@ def link_docs(transportadora):
             folder_id = correios_folder
         elif transportadora == "IMILE":
             folder_id = imile_folder
+        elif transportadora == "JT":
+            folder_id = jt_folder
 
         if not folder_id:
             print(f"Error: No folder ID found for transportadora: {transportadora}")

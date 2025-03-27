@@ -84,3 +84,5 @@ def process_data(inputs):
             params.append(param)
 
     return {'parameters': json.dumps(params)}
+
+print(create_metabase_token())
