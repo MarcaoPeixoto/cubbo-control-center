@@ -57,7 +57,6 @@ def get_manifesto(carrier):
         
         # Debug print the response
         print(f"Response type: {type(response)}")
-        print(f"Response content: {response}")
         
         # Convert response to list if it's a dictionary
         if isinstance(response, dict):
@@ -75,10 +74,6 @@ def get_manifesto(carrier):
         # Debug prints for data structure
         print("\nData Structure Analysis:")
         print(f"Pedidos type: {type(pedidos)}")
-        if pedidos:
-            print(f"First item type: {type(pedidos[0])}")
-            print(f"Available keys in first item: {pedidos[0].keys() if isinstance(pedidos[0], dict) else 'Not a dictionary'}")
-            print(f"\nFirst item content: {json.dumps(pedidos[0], indent=2)}")
 
         # Validate required fields exist
         required_fields = ['shipping_number', 'dispatched_at']
