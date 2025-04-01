@@ -138,7 +138,7 @@ def process_single_day(day_to_process, max_retries=5):
             })
             
             # Increasing timeout for difficult queries
-            daily_orders = get_dataset('1496', incentivo_inputs)
+            daily_orders = get_dataset('6512', incentivo_inputs)
             
             # Check if we got valid data back
             if not daily_orders or not isinstance(daily_orders, list):
@@ -458,9 +458,9 @@ def generate_csv(data, google_sheet_data, sheet_url, only_process_today=True):
 
     print(f"Data has been written to the '{new_sheet_name}' tab in the Google Sheet.")
 
-""" if __name__ == "__main__":
+if __name__ == "__main__":
     # Default: only process today's data
-    only_process_today = False
+    only_process_today = True
     
     # Process full history if an argument is passed
     # You can enable this through command line arguments if needed
@@ -468,4 +468,4 @@ def generate_csv(data, google_sheet_data, sheet_url, only_process_today=True):
     data = ajuste_pendentes(only_process_today)
     google_sheet_url = 'https://docs.google.com/spreadsheets/d/1mpFed0ZENWecHYT_VmHj6Kx_5JSBXC8Q4hrm7RU-4u0/edit#gid=395863523'
     google_sheet_data = get_google_sheet(google_sheet_url, 'Operadores/dia')
-    generate_csv(data, google_sheet_data, google_sheet_url, only_process_today) """
+    generate_csv(data, google_sheet_data, google_sheet_url, only_process_today)

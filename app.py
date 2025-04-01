@@ -94,9 +94,17 @@ def job_bonus():
     except subprocess.CalledProcessError as e:
         print(f"An error occurred in Bonus job: {e}")
 
+def job_report_ops():
+    try:
+        subprocess.run(['python', 'report_ops.py'])
+        print("Report Ops atualizados")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred in Report Ops job: {e}")
+
 scheduler.add_job(job_embu, 'interval', minutes=5, max_instances=10000)
 scheduler.add_job(job_extrema, 'interval', minutes=7, max_instances=10000)
 scheduler.add_job(job_bonus, 'interval', minutes=3, max_instances=10000)
+scheduler.add_job(job_report_ops, 'cron', hour='20', minute='0', max_instances=10000)
 
 @app.before_request
 def start_scheduler():
