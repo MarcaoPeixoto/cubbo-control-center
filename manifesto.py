@@ -106,10 +106,15 @@ def get_manifesto(carrier):
         return data
     except Exception as e:
         print(f"Error in get_manifesto: {str(e)}")
-        print(f"Type of pedidos: {type(pedidos)}")  # Debug print
-        if pedidos:
-            print(f"Type of first item: {type(pedidos[0])}")  # Debug print
-            print(f"First item content: {pedidos[0]}")  # Debug print
+        # Only try to print details about pedidos if it exists
+        pedidos_exists = 'pedidos' in locals() or 'pedidos' in globals()
+        if pedidos_exists:
+            print(f"Type of pedidos: {type(pedidos)}")  # Debug print
+            if pedidos:
+                print(f"Type of first item: {type(pedidos[0])}")  # Debug print
+                print(f"First item content: {pedidos[0]}")  # Debug print
+        else:
+            print("Error occurred before pedidos variable was defined")
         raise
 
 def nao_despachados(data, transportadora):
