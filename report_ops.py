@@ -460,7 +460,7 @@ def generate_csv(data, google_sheet_data, sheet_url, only_process_today=True):
 
 if __name__ == "__main__":
     # Default: only process today's data
-    only_process_today = True
+    only_process_today = False
     
     # Process full history if an argument is passed
     # You can enable this through command line arguments if needed
