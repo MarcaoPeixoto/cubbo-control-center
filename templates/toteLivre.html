@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='estilo.css') }}">
+    <title>Tote Livre</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+        }
+        button {
+            background-color: #0741dd;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0536b5;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e6f3ff;
+            border-radius: 4px;
+            color: black;
+            display: none;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        .back-button {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #0741dd;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/ops">
+            <button class="back-button">Voltar</button>
+        </a>
+        <h2>Totes Disponíveis</h2>
+        <button id="displayButton">Mostrar Totes</button>
+        
+        <div id="loading" class="loading">
+            <p>Carregando dados...</p>
+        </div>
+        
+        <div id="dataResult" class="result">
+            <!-- Data will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('displayButton').addEventListener('click', function() {
+            const loadingElement = document.getElementById('loading');
+            const resultDiv = document.getElementById('dataResult');
+            
+            // Show loading indicator and hide results
+            loadingElement.style.display = 'block';
+            resultDiv.style.display = 'none';
+            
+            // Make API call to fetch tote data
+            fetch('/api/tote-livre')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loading indicator
+                    loadingElement.style.display = 'none';
+                    
+                    // Process and display the data
+                    if (data.error) {
+                        resultDiv.innerHTML = `<p>Erro ao carregar dados: ${data.error}</p>`;
+                    } else if (data.length === 0) {
+                        resultDiv.innerHTML = '<p>Nenhum tote disponível encontrado.</p>';
+                    } else {
+                        let html = '<h3>Totes Disponíveis</h3>';
+                        html += '<table>';
+                        html += '<tr>';
+                        
+                        // Create table headers based on the first item's keys
+                        const firstItem = data[0];
+                        const headers = Object.keys(firstItem);
+                        
+                        headers.forEach(header => {
+                            html += `<th>${header}</th>`;
+                        });
+                        
+                        html += '</tr>';
+                        
+                        // Add data rows
+                        data.forEach(item => {
+                            html += '<tr>';
+                            headers.forEach(header => {
+                                html += `<td>${item[header] || ''}</td>`;
+                            });
+                            html += '</tr>';
+                        });
+                        
+                        html += '</table>';
+                        html += `<p>Total: ${data.length} totes</p>`;
+                        
+                        resultDiv.innerHTML = html;
+                    }
+                    
+                    // Show the result div
+                    resultDiv.style.display = 'block';
+                })
+                .catch(error => {
+                    // Hide loading and show error
+                    loadingElement.style.display = 'none';
+                    resultDiv.innerHTML = `<p>Erro ao carregar dados: ${error.message}</p>`;
+                    resultDiv.style.display = 'block';
+                });
+        });
+    </script>
+</body>
+</html> 

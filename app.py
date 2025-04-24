@@ -29,6 +29,7 @@ import base64
 import time
 import tempfile
 import fitz  # PyMuPDF
+from toteLivre import get_tote_livre
 
 
 app = Flask(__name__)
@@ -437,6 +438,11 @@ def bonus_projetor():
 @login_required
 def ops():
     return render_template('ops.html')
+
+@app.route('/toteLivre')
+@login_required
+def toteLivre():
+    return render_template('toteLivre.html')
 
 @app.route('/atrasos')
 @login_required
@@ -1159,6 +1165,17 @@ def get_or_create_employee_folder(drive_service, employee_cpf):
     except Exception as e:
         app.logger.error(f"Error managing employee folder: {str(e)}")
         raise
+
+@app.route('/api/tote-livre', methods=['GET'])
+@login_required
+def api_tote_livre():
+    try:
+        # Get real-time data directly from the get_tote_livre function
+        tote_data = get_tote_livre()
+        return jsonify(tote_data)
+    except Exception as e:
+        app.logger.error(f"Error getting tote livre data: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     try:
