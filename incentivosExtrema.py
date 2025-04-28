@@ -643,11 +643,10 @@ def main():
 
     data_erros = load_to_json()
 
-    if data_erros:
+    if data_erros and isinstance(data_erros, dict):
         ajuste_recibos = int(data_erros.get("ajuste_recibos", 0))
         ajuste_picking = int(data_erros.get("ajuste_picking", 0))
         ajuste_pedidos = int(data_erros.get("ajuste_pedidos", 0))
-
 
     SLA_recibos_total = SLA_recibos_total - (ajuste_recibos*0.01)
     sla_picking_total = sla_picking_total - (ajuste_picking*0.01)
