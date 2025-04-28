@@ -130,11 +130,11 @@ def adjust_shipping_date(shipping_date, carrier):
     cut_off_hours = {
         'CUBBO': (16, 30),
         'UELLO': (16, 0),
-        'CORREIOS': (14, 0),
-        'IMILE': (15, 0),
-        'LOGGI': (17, 0),
+        'CORREIOS': (14, 30),
+        'IMILE': (16, 0),
+        'LOGGI': (16, 0),
         'Mercado Envíos': (14, 0),
-        'JT Express': (16, 0)
+        'JT Express': (17, 0)
     }
 
     hour, minute = cut_off_hours.get(carrier, cut_off_hours['LOGGI'])
@@ -242,11 +242,12 @@ def ajuste_pendentes():
             if order['shipping_date'].month == datetime.now().month - 1:
                 continue
 
+
             carrier = order['carrier_name']
             if carrier == 'CORREIOS':
                 shipping_time_limit = 15
-            elif carrier == 'IMILE':
-                shipping_time_limit = 16
+            elif carrier == 'IMILE' or carrier == 'CUBBO':
+                shipping_time_limit = 17
             elif carrier == 'Mercado Envíos':
                 shipping_time_limit = 15  # Orders must be shipped by 14:30
             elif carrier == 'Armazém' or carrier == 'Externo' or carrier == 'LOGGI':
