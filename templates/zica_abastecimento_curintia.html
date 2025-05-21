@@ -1,0 +1,7332 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZICA Abastecimento</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            min-width: 100vw;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+            /* Center children with flexbox */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .video-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+            background: #000;
+        }
+        .video-bg iframe {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 120vw;
+            height: 67.5vw; /* 16:9 aspect ratio */
+            min-width: 100vw;
+            min-height: 100vh;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        .container {
+            width: 95%;
+            max-width: 900px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            /* Center itself in flex parent */
+            /* Remove margin auto if present, not needed with flex parent */
+        }
+        h1 {
+            color: #fff;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 0 2px 8px #000;
+        }
+        .input-container {
+            margin-bottom: 30px;
+        }
+        #codeInput {
+            width: 100%;
+            padding: 20px;
+            font-size: 24px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+            background: rgba(255,255,255,0.9);
+        }
+        #resultContainer {
+            background-color: rgba(255,255,255,0.95);
+            border-radius: 10px;
+            padding: 20px;
+            width: 100%;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        .error {
+            color: red;
+            margin-top: 15px;
+            font-size: 20px;
+            display: none;
+            text-shadow: 0 1px 2px #fff;
+        }
+        .parsed-info {
+            text-align: left;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f2f2f2;
+            border-radius: 5px;
+        }
+        .results-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .result-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+        .primary-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .info-box {
+            text-align: center;
+        }
+        .info-box.primary {
+            flex: 1;
+            padding: 15px;
+            background-color: #f0f8ff;
+            border-radius: 8px;
+            margin: 0 5px;
+        }
+        .info-box.secondary {
+            flex: 1;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            margin: 0 5px;
+        }
+        .info-box.tertiary {
+            flex: 1;
+            padding: 8px;
+            background-color: #f2f2f2;
+            border-radius: 5px;
+            margin: 0 5px;
+        }
+        .info-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .info-value.primary {
+            font-size: 32px;
+            font-weight: bold;
+            color: #000;
+        }
+        .info-value.secondary {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        .info-value.tertiary {
+            font-size: 16px;
+            color: #555;
+        }
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            font-size: 20px;
+            color: #666;
+        }
+        .secondary-info {
+            display: flex;
+            justify-content: space-between;
+        }
+        .tertiary-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="video-bg">
+        <iframe
+            src="https://www.youtube.com/embed/VYLtOaMpW6E?autoplay=1&mute=1&loop=1&playlist=VYLtOaMpW6E"
+            frameborder="0"
+            allow="autoplay; encrypted-media"
+            allowfullscreen
+            tabindex="-1"
+        ></iframe>
+    </div>
+    <div class="container">
+        <h1>ZICA Abastecimento</h1>
+        <div class="input-container">
+            <input type="text" id="codeInput" placeholder="Digite o código (ex: 1727050910A5000692050472328)" autocomplete="off">
+            <div id="error" class="error">Código inválido, por favor verifique.</div>
+        </div>
+        <div id="resultContainer">
+            <div id="results" class="results-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global variable to store the loaded JSON data
+        let jsonData = {};
+
+        // Embed the JSON data directly to avoid CORS issues
+        // Paste the contents of remessa_20250520.json here
+        jsonData['remessa_20250520'] = [
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50011",
+    "SKU": 50270693,
+    "Peças": 40,
+    "Peças por Caixa": 20,
+    "Caixas": 2.0,
+    "SKU-LOT": "50270693-A50011"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40003",
+    "SKU": 50275980,
+    "Peças": 150,
+    "Peças por Caixa": 30,
+    "Caixas": 5.0,
+    "SKU-LOT": "50275980-A40003"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40005",
+    "SKU": 50282124,
+    "Peças": 56,
+    "Peças por Caixa": 28,
+    "Caixas": 2.0,
+    "SKU-LOT": "50282124-A40005"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50006",
+    "SKU": 50282126,
+    "Peças": 28,
+    "Peças por Caixa": 28,
+    "Caixas": 1.0,
+    "SKU-LOT": "50282126-A50006"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A20005",
+    "SKU": 50282126,
+    "Peças": 28,
+    "Peças por Caixa": 28,
+    "Caixas": 1.0,
+    "SKU-LOT": "50282126-A20005"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40015",
+    "SKU": 50296248,
+    "Peças": 225,
+    "Peças por Caixa": 25,
+    "Caixas": 9.0,
+    "SKU-LOT": "50296248-A40015"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40014",
+    "SKU": 50296248,
+    "Peças": 25,
+    "Peças por Caixa": 25,
+    "Caixas": 1.0,
+    "SKU-LOT": "50296248-A40014"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A5AJ01",
+    "SKU": 50317330,
+    "Peças": 272,
+    "Peças por Caixa": 136,
+    "Caixas": 2.0,
+    "SKU-LOT": "50317330-A5AJ01"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40001",
+    "SKU": 50318946,
+    "Peças": 90,
+    "Peças por Caixa": 30,
+    "Caixas": 3.0,
+    "SKU-LOT": "50318946-A40001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A30001",
+    "SKU": 50329619,
+    "Peças": 18,
+    "Peças por Caixa": 18,
+    "Caixas": 1.0,
+    "SKU-LOT": "50329619-A30001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40002",
+    "SKU": 50334949,
+    "Peças": 180,
+    "Peças por Caixa": 30,
+    "Caixas": 6.0,
+    "SKU-LOT": "50334949-A40002"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40001",
+    "SKU": 50342343,
+    "Peças": 45,
+    "Peças por Caixa": 45,
+    "Caixas": 1.0,
+    "SKU-LOT": "50342343-A40001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50004",
+    "SKU": 50342545,
+    "Peças": 64,
+    "Peças por Caixa": 64,
+    "Caixas": 1.0,
+    "SKU-LOT": "50342545-A50004"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "Z2WN02",
+    "SKU": 50351462,
+    "Peças": 720,
+    "Peças por Caixa": 720,
+    "Caixas": 1.0,
+    "SKU-LOT": "50351462-Z2WN02"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50003",
+    "SKU": 50355897,
+    "Peças": 720,
+    "Peças por Caixa": 18,
+    "Caixas": 40.0,
+    "SKU-LOT": "50355897-A50003"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A30002",
+    "SKU": 50365442,
+    "Peças": 112,
+    "Peças por Caixa": 28,
+    "Caixas": 4.0,
+    "SKU-LOT": "50365442-A30002"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40001",
+    "SKU": 50369546,
+    "Peças": 144,
+    "Peças por Caixa": 72,
+    "Caixas": 2.0,
+    "SKU-LOT": "50369546-A40001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40010",
+    "SKU": 50372397,
+    "Peças": 400,
+    "Peças por Caixa": 25,
+    "Caixas": 16.0,
+    "SKU-LOT": "50372397-A40010"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "Z30037",
+    "SKU": 50374194,
+    "Peças": 100,
+    "Peças por Caixa": 25,
+    "Caixas": 4.0,
+    "SKU-LOT": "50374194-Z30037"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "Z10007",
+    "SKU": 50374194,
+    "Peças": 25,
+    "Peças por Caixa": 25,
+    "Caixas": 1.0,
+    "SKU-LOT": "50374194-Z10007"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "Z10006",
+    "SKU": 50374194,
+    "Peças": 250,
+    "Peças por Caixa": 25,
+    "Caixas": 10.0,
+    "SKU-LOT": "50374194-Z10006"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40029",
+    "SKU": 50374194,
+    "Peças": 25,
+    "Peças por Caixa": 25,
+    "Caixas": 1.0,
+    "SKU-LOT": "50374194-A40029"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40026",
+    "SKU": 50374194,
+    "Peças": 75,
+    "Peças por Caixa": 25,
+    "Caixas": 3.0,
+    "SKU-LOT": "50374194-A40026"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A10004",
+    "SKU": 50374194,
+    "Peças": 25,
+    "Peças por Caixa": 25,
+    "Caixas": 1.0,
+    "SKU-LOT": "50374194-A10004"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A20001",
+    "SKU": 50379332,
+    "Peças": 84,
+    "Peças por Caixa": 28,
+    "Caixas": 3.0,
+    "SKU-LOT": "50379332-A20001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40008",
+    "SKU": 50384292,
+    "Peças": 627,
+    "Peças por Caixa": 627,
+    "Caixas": 1.0,
+    "SKU-LOT": "50384292-A40008"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50003",
+    "SKU": 50389919,
+    "Peças": 546,
+    "Peças por Caixa": 546,
+    "Caixas": 1.0,
+    "SKU-LOT": "50389919-A50003"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A30002",
+    "SKU": 50395216,
+    "Peças": 84,
+    "Peças por Caixa": 28,
+    "Caixas": 3.0,
+    "SKU-LOT": "50395216-A30002"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40002",
+    "SKU": 50398973,
+    "Peças": 84,
+    "Peças por Caixa": 28,
+    "Caixas": 3.0,
+    "SKU-LOT": "50398973-A40002"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50003",
+    "SKU": 50401909,
+    "Peças": 900,
+    "Peças por Caixa": 45,
+    "Caixas": 20.0,
+    "SKU-LOT": "50401909-A50003"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50015",
+    "SKU": 50402083,
+    "Peças": 64,
+    "Peças por Caixa": 64,
+    "Caixas": 1.0,
+    "SKU-LOT": "50402083-A50015"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50006",
+    "SKU": 50418062,
+    "Peças": 140,
+    "Peças por Caixa": 28,
+    "Caixas": 5.0,
+    "SKU-LOT": "50418062-A50006"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50001",
+    "SKU": 50453869,
+    "Peças": 120,
+    "Peças por Caixa": 40,
+    "Caixas": 3.0,
+    "SKU-LOT": "50453869-A50001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50002",
+    "SKU": 50453870,
+    "Peças": 240,
+    "Peças por Caixa": 40,
+    "Caixas": 6.0,
+    "SKU-LOT": "50453870-A50002"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50045",
+    "SKU": 50461853,
+    "Peças": 440,
+    "Peças por Caixa": 40,
+    "Caixas": 11.0,
+    "SKU-LOT": "50461853-A50045"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50044",
+    "SKU": 50461853,
+    "Peças": 120,
+    "Peças por Caixa": 40,
+    "Caixas": 3.0,
+    "SKU-LOT": "50461853-A50044"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50003",
+    "SKU": 50461854,
+    "Peças": 45,
+    "Peças por Caixa": 45,
+    "Caixas": 1.0,
+    "SKU-LOT": "50461854-A50003"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50003",
+    "SKU": 50461856,
+    "Peças": 45,
+    "Peças por Caixa": 45,
+    "Caixas": 1.0,
+    "SKU-LOT": "50461856-A50003"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40040",
+    "SKU": 50462185,
+    "Peças": 150,
+    "Peças por Caixa": 25,
+    "Caixas": 6.0,
+    "SKU-LOT": "50462185-A40040"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40032",
+    "SKU": 50462189,
+    "Peças": 42,
+    "Peças por Caixa": 21,
+    "Caixas": 2.0,
+    "SKU-LOT": "50462189-A40032"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40025",
+    "SKU": 50462189,
+    "Peças": 42,
+    "Peças por Caixa": 21,
+    "Caixas": 2.0,
+    "SKU-LOT": "50462189-A40025"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40015",
+    "SKU": 50462198,
+    "Peças": 800,
+    "Peças por Caixa": 25,
+    "Caixas": 32.0,
+    "SKU-LOT": "50462198-A40015"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A4MD04",
+    "SKU": 50462458,
+    "Peças": 350,
+    "Peças por Caixa": 350,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462458-A4MD04"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A20026",
+    "SKU": 50475257,
+    "Peças": 21,
+    "Peças por Caixa": 21,
+    "Caixas": 1.0,
+    "SKU-LOT": "50475257-A20026"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50012",
+    "SKU": 50481927,
+    "Peças": 80,
+    "Peças por Caixa": 40,
+    "Caixas": 2.0,
+    "SKU-LOT": "50481927-A50012"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50006",
+    "SKU": 50481930,
+    "Peças": 42,
+    "Peças por Caixa": 42,
+    "Caixas": 1.0,
+    "SKU-LOT": "50481930-A50006"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50023",
+    "SKU": 50481931,
+    "Peças": 72,
+    "Peças por Caixa": 36,
+    "Caixas": 2.0,
+    "SKU-LOT": "50481931-A50023"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40015",
+    "SKU": 50481933,
+    "Peças": 144,
+    "Peças por Caixa": 36,
+    "Caixas": 4.0,
+    "SKU-LOT": "50481933-A40015"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40015",
+    "SKU": 50481936,
+    "Peças": 108,
+    "Peças por Caixa": 36,
+    "Caixas": 3.0,
+    "SKU-LOT": "50481936-A40015"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40013",
+    "SKU": 50481936,
+    "Peças": 36,
+    "Peças por Caixa": 36,
+    "Caixas": 1.0,
+    "SKU-LOT": "50481936-A40013"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50007",
+    "SKU": 50485653,
+    "Peças": 752,
+    "Peças por Caixa": 752,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485653-A50007"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "ZB0001",
+    "SKU": 50485676,
+    "Peças": 630,
+    "Peças por Caixa": 630,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485676-ZB0001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50012",
+    "SKU": 50487859,
+    "Peças": 30,
+    "Peças por Caixa": 30,
+    "Caixas": 1.0,
+    "SKU-LOT": "50487859-A50012"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "ZA0007",
+    "SKU": 50487891,
+    "Peças": 30,
+    "Peças por Caixa": 30,
+    "Caixas": 1.0,
+    "SKU-LOT": "50487891-ZA0007"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "ZB0001",
+    "SKU": 50501453,
+    "Peças": 120,
+    "Peças por Caixa": 40,
+    "Caixas": 3.0,
+    "SKU-LOT": "50501453-ZB0001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A10001",
+    "SKU": 50503886,
+    "Peças": 44,
+    "Peças por Caixa": 22,
+    "Caixas": 2.0,
+    "SKU-LOT": "50503886-A10001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40002",
+    "SKU": 50506706,
+    "Peças": 320,
+    "Peças por Caixa": 320,
+    "Caixas": 1.0,
+    "SKU-LOT": "50506706-A40002"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A10001",
+    "SKU": 50506866,
+    "Peças": 294,
+    "Peças por Caixa": 294,
+    "Caixas": 1.0,
+    "SKU-LOT": "50506866-A10001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40008",
+    "SKU": 50508053,
+    "Peças": 320,
+    "Peças por Caixa": 320,
+    "Caixas": 1.0,
+    "SKU-LOT": "50508053-A40008"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50002",
+    "SKU": 50510551,
+    "Peças": 120,
+    "Peças por Caixa": 120,
+    "Caixas": 1.0,
+    "SKU-LOT": "50510551-A50002"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A30006",
+    "SKU": 50510552,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50510552-A30006"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40002",
+    "SKU": 50510810,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50510810-A40002"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A2L005",
+    "SKU": 50511656,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50511656-A2L005"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40001",
+    "SKU": 50512600,
+    "Peças": 80,
+    "Peças por Caixa": 80,
+    "Caixas": 1.0,
+    "SKU-LOT": "50512600-A40001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40001",
+    "SKU": 50512601,
+    "Peças": 80,
+    "Peças por Caixa": 80,
+    "Caixas": 1.0,
+    "SKU-LOT": "50512601-A40001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40001",
+    "SKU": 50512602,
+    "Peças": 80,
+    "Peças por Caixa": 80,
+    "Caixas": 1.0,
+    "SKU-LOT": "50512602-A40001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A30008",
+    "SKU": 50514872,
+    "Peças": 30,
+    "Peças por Caixa": 30,
+    "Caixas": 1.0,
+    "SKU-LOT": "50514872-A30008"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A30002",
+    "SKU": 50520049,
+    "Peças": 72,
+    "Peças por Caixa": 36,
+    "Caixas": 2.0,
+    "SKU-LOT": "50520049-A30002"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A20001",
+    "SKU": 50520049,
+    "Peças": 288,
+    "Peças por Caixa": 36,
+    "Caixas": 8.0,
+    "SKU-LOT": "50520049-A20001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40002",
+    "SKU": 50520051,
+    "Peças": 120,
+    "Peças por Caixa": 40,
+    "Caixas": 3.0,
+    "SKU-LOT": "50520051-A40002"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40014",
+    "SKU": 50520053,
+    "Peças": 324,
+    "Peças por Caixa": 36,
+    "Caixas": 9.0,
+    "SKU-LOT": "50520053-A40014"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40013",
+    "SKU": 50520053,
+    "Peças": 396,
+    "Peças por Caixa": 36,
+    "Caixas": 11.0,
+    "SKU-LOT": "50520053-A40013"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A30002",
+    "SKU": 50520054,
+    "Peças": 80,
+    "Peças por Caixa": 40,
+    "Caixas": 2.0,
+    "SKU-LOT": "50520054-A30002"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40008",
+    "SKU": 50520211,
+    "Peças": 198,
+    "Peças por Caixa": 66,
+    "Caixas": 3.0,
+    "SKU-LOT": "50520211-A40008"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50018",
+    "SKU": 50522517,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50522517-A50018"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50035",
+    "SKU": 50522535,
+    "Peças": 42,
+    "Peças por Caixa": 21,
+    "Caixas": 2.0,
+    "SKU-LOT": "50522535-A50035"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A4W001",
+    "SKU": 50522559,
+    "Peças": 418,
+    "Peças por Caixa": 418,
+    "Caixas": 1.0,
+    "SKU-LOT": "50522559-A4W001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40001",
+    "SKU": 50524554,
+    "Peças": 56,
+    "Peças por Caixa": 28,
+    "Caixas": 2.0,
+    "SKU-LOT": "50524554-A40001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50008",
+    "SKU": 50527966,
+    "Peças": 560,
+    "Peças por Caixa": 56,
+    "Caixas": 10.0,
+    "SKU-LOT": "50527966-A50008"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50001",
+    "SKU": 50527970,
+    "Peças": 135,
+    "Peças por Caixa": 45,
+    "Caixas": 3.0,
+    "SKU-LOT": "50527970-A50001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50001",
+    "SKU": 50527971,
+    "Peças": 450,
+    "Peças por Caixa": 45,
+    "Caixas": 10.0,
+    "SKU-LOT": "50527971-A50001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40001",
+    "SKU": 50527996,
+    "Peças": 270,
+    "Peças por Caixa": 45,
+    "Caixas": 6.0,
+    "SKU-LOT": "50527996-A40001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A5H290",
+    "SKU": 50528198,
+    "Peças": 75,
+    "Peças por Caixa": 75,
+    "Caixas": 1.0,
+    "SKU-LOT": "50528198-A5H290"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A30003",
+    "SKU": 50531812,
+    "Peças": 100,
+    "Peças por Caixa": 20,
+    "Caixas": 5.0,
+    "SKU-LOT": "50531812-A30003"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40003",
+    "SKU": 50533878,
+    "Peças": 224,
+    "Peças por Caixa": 56,
+    "Caixas": 4.0,
+    "SKU-LOT": "50533878-A40003"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A50007",
+    "SKU": 50534879,
+    "Peças": 1600,
+    "Peças por Caixa": 40,
+    "Caixas": 40.0,
+    "SKU-LOT": "50534879-A50007"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A4L002",
+    "SKU": 50535250,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50535250-A4L002"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40001",
+    "SKU": 50539027,
+    "Peças": 432,
+    "Peças por Caixa": 432,
+    "Caixas": 1.0,
+    "SKU-LOT": "50539027-A40001"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A3MD03",
+    "SKU": 50540406,
+    "Peças": 900,
+    "Peças por Caixa": 900,
+    "Caixas": 1.0,
+    "SKU-LOT": "50540406-A3MD03"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A4MD07",
+    "SKU": 50542132,
+    "Peças": 1350,
+    "Peças por Caixa": 450,
+    "Caixas": 3.0,
+    "SKU-LOT": "50542132-A4MD07"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A4MD06",
+    "SKU": 50542132,
+    "Peças": 3150,
+    "Peças por Caixa": 450,
+    "Caixas": 7.0,
+    "SKU-LOT": "50542132-A4MD06"
+  },
+  {
+    "ID_SAP": 180831681,
+    "NF": 6799,
+    "Carreta": 1,
+    "Remessa": 445834,
+    "Lote": "A40008",
+    "SKU": 50566226,
+    "Peças": 120,
+    "Peças por Caixa": 24,
+    "Caixas": 5.0,
+    "SKU-LOT": "50566226-A40008"
+  },
+  {
+    "ID_SAP": 180831682,
+    "NF": 6800,
+    "Carreta": 1,
+    "Remessa": 445832,
+    "Lote": "A20003",
+    "SKU": 50305782,
+    "Peças": 128,
+    "Peças por Caixa": 64,
+    "Caixas": 2.0,
+    "SKU-LOT": "50305782-A20003"
+  },
+  {
+    "ID_SAP": 180831682,
+    "NF": 6800,
+    "Carreta": 1,
+    "Remessa": 445832,
+    "Lote": "A30006",
+    "SKU": 50305783,
+    "Peças": 128,
+    "Peças por Caixa": 64,
+    "Caixas": 2.0,
+    "SKU-LOT": "50305783-A30006"
+  },
+  {
+    "ID_SAP": 180831682,
+    "NF": 6800,
+    "Carreta": 1,
+    "Remessa": 445832,
+    "Lote": "A40001",
+    "SKU": 50470204,
+    "Peças": 84,
+    "Peças por Caixa": 84,
+    "Caixas": 1.0,
+    "SKU-LOT": "50470204-A40001"
+  },
+  {
+    "ID_SAP": 180831682,
+    "NF": 6800,
+    "Carreta": 1,
+    "Remessa": 445832,
+    "Lote": "Z9MD05",
+    "SKU": 50470207,
+    "Peças": 630,
+    "Peças por Caixa": 630,
+    "Caixas": 1.0,
+    "SKU-LOT": "50470207-Z9MD05"
+  },
+  {
+    "ID_SAP": 180831682,
+    "NF": 6800,
+    "Carreta": 1,
+    "Remessa": 445832,
+    "Lote": "Z9MD04",
+    "SKU": 50470207,
+    "Peças": 3150,
+    "Peças por Caixa": 630,
+    "Caixas": 5.0,
+    "SKU-LOT": "50470207-Z9MD04"
+  },
+  {
+    "ID_SAP": 180831682,
+    "NF": 6800,
+    "Carreta": 1,
+    "Remessa": 445832,
+    "Lote": "A40001",
+    "SKU": 50475258,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50475258-A40001"
+  },
+  {
+    "ID_SAP": 180831682,
+    "NF": 6800,
+    "Carreta": 1,
+    "Remessa": 445832,
+    "Lote": "A30004",
+    "SKU": 50523632,
+    "Peças": 588,
+    "Peças por Caixa": 588,
+    "Caixas": 1.0,
+    "SKU-LOT": "50523632-A30004"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "Z3MD05",
+    "SKU": 50365522,
+    "Peças": 630,
+    "Peças por Caixa": 630,
+    "Caixas": 1.0,
+    "SKU-LOT": "50365522-Z3MD05"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40001",
+    "SKU": 50365738,
+    "Peças": 84,
+    "Peças por Caixa": 84,
+    "Caixas": 1.0,
+    "SKU-LOT": "50365738-A40001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "Z70009",
+    "SKU": 50365741,
+    "Peças": 42,
+    "Peças por Caixa": 42,
+    "Caixas": 1.0,
+    "SKU-LOT": "50365741-Z70009"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40001",
+    "SKU": 50365911,
+    "Peças": 96,
+    "Peças por Caixa": 48,
+    "Caixas": 2.0,
+    "SKU-LOT": "50365911-A40001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A30002",
+    "SKU": 50366361,
+    "Peças": 42,
+    "Peças por Caixa": 42,
+    "Caixas": 1.0,
+    "SKU-LOT": "50366361-A30002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "Z5L002",
+    "SKU": 50366769,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50366769-Z5L002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "Y5L002",
+    "SKU": 50366769,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50366769-Y5L002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "ZCWE01",
+    "SKU": 50367455,
+    "Peças": 322,
+    "Peças por Caixa": 322,
+    "Caixas": 1.0,
+    "SKU-LOT": "50367455-ZCWE01"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "Z8WE01",
+    "SKU": 50367456,
+    "Peças": 322,
+    "Peças por Caixa": 322,
+    "Caixas": 1.0,
+    "SKU-LOT": "50367456-Z8WE01"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "Z5WE01",
+    "SKU": 50368361,
+    "Peças": 322,
+    "Peças por Caixa": 322,
+    "Caixas": 1.0,
+    "SKU-LOT": "50368361-Z5WE01"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A30001",
+    "SKU": 50373960,
+    "Peças": 30,
+    "Peças por Caixa": 30,
+    "Caixas": 1.0,
+    "SKU-LOT": "50373960-A30001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A20006",
+    "SKU": 50373962,
+    "Peças": 38,
+    "Peças por Caixa": 38,
+    "Caixas": 1.0,
+    "SKU-LOT": "50373962-A20006"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A20002",
+    "SKU": 50373964,
+    "Peças": 38,
+    "Peças por Caixa": 38,
+    "Caixas": 1.0,
+    "SKU-LOT": "50373964-A20002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "Z4CE02",
+    "SKU": 50373966,
+    "Peças": 168,
+    "Peças por Caixa": 168,
+    "Caixas": 1.0,
+    "SKU-LOT": "50373966-Z4CE02"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A20005",
+    "SKU": 50376273,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50376273-A20005"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "Z60022",
+    "SKU": 50378477,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50378477-Z60022"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40002",
+    "SKU": 50378478,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50378478-A40002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A20003",
+    "SKU": 50379331,
+    "Peças": 150,
+    "Peças por Caixa": 25,
+    "Caixas": 6.0,
+    "SKU-LOT": "50379331-A20003"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "ZC0005",
+    "SKU": 50380657,
+    "Peças": 18,
+    "Peças por Caixa": 18,
+    "Caixas": 1.0,
+    "SKU-LOT": "50380657-ZC0005"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A30004",
+    "SKU": 50384137,
+    "Peças": 627,
+    "Peças por Caixa": 627,
+    "Caixas": 1.0,
+    "SKU-LOT": "50384137-A30004"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40004",
+    "SKU": 50384138,
+    "Peças": 627,
+    "Peças por Caixa": 627,
+    "Caixas": 1.0,
+    "SKU-LOT": "50384138-A40004"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40003",
+    "SKU": 50384301,
+    "Peças": 627,
+    "Peças por Caixa": 627,
+    "Caixas": 1.0,
+    "SKU-LOT": "50384301-A40003"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40002",
+    "SKU": 50388037,
+    "Peças": 36,
+    "Peças por Caixa": 36,
+    "Caixas": 1.0,
+    "SKU-LOT": "50388037-A40002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40002",
+    "SKU": 50389920,
+    "Peças": 546,
+    "Peças por Caixa": 546,
+    "Caixas": 1.0,
+    "SKU-LOT": "50389920-A40002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "Z70006",
+    "SKU": 50390012,
+    "Peças": 60,
+    "Peças por Caixa": 30,
+    "Caixas": 2.0,
+    "SKU-LOT": "50390012-Z70006"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "ZB0016",
+    "SKU": 50391674,
+    "Peças": 84,
+    "Peças por Caixa": 84,
+    "Caixas": 1.0,
+    "SKU-LOT": "50391674-ZB0016"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A50002",
+    "SKU": 50392495,
+    "Peças": 32,
+    "Peças por Caixa": 32,
+    "Caixas": 1.0,
+    "SKU-LOT": "50392495-A50002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A3W002",
+    "SKU": 50395172,
+    "Peças": 77,
+    "Peças por Caixa": 77,
+    "Caixas": 1.0,
+    "SKU-LOT": "50395172-A3W002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A1W001",
+    "SKU": 50395175,
+    "Peças": 77,
+    "Peças por Caixa": 77,
+    "Caixas": 1.0,
+    "SKU-LOT": "50395175-A1W001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A3W001",
+    "SKU": 50395177,
+    "Peças": 77,
+    "Peças por Caixa": 77,
+    "Caixas": 1.0,
+    "SKU-LOT": "50395177-A3W001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A4LL06",
+    "SKU": 50401201,
+    "Peças": 39,
+    "Peças por Caixa": 39,
+    "Caixas": 1.0,
+    "SKU-LOT": "50401201-A4LL06"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40009",
+    "SKU": 50401214,
+    "Peças": 126,
+    "Peças por Caixa": 42,
+    "Caixas": 3.0,
+    "SKU-LOT": "50401214-A40009"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40001",
+    "SKU": 50401217,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50401217-A40001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A50004",
+    "SKU": 50401218,
+    "Peças": 30,
+    "Peças por Caixa": 30,
+    "Caixas": 1.0,
+    "SKU-LOT": "50401218-A50004"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40022",
+    "SKU": 50401222,
+    "Peças": 21,
+    "Peças por Caixa": 21,
+    "Caixas": 1.0,
+    "SKU-LOT": "50401222-A40022"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A10005",
+    "SKU": 50401222,
+    "Peças": 21,
+    "Peças por Caixa": 21,
+    "Caixas": 1.0,
+    "SKU-LOT": "50401222-A10005"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A10001",
+    "SKU": 50402084,
+    "Peças": 48,
+    "Peças por Caixa": 24,
+    "Caixas": 2.0,
+    "SKU-LOT": "50402084-A10001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40004",
+    "SKU": 50402221,
+    "Peças": 81,
+    "Peças por Caixa": 81,
+    "Caixas": 1.0,
+    "SKU-LOT": "50402221-A40004"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A20001",
+    "SKU": 50403259,
+    "Peças": 30,
+    "Peças por Caixa": 30,
+    "Caixas": 1.0,
+    "SKU-LOT": "50403259-A20001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A50004",
+    "SKU": 50404135,
+    "Peças": 546,
+    "Peças por Caixa": 546,
+    "Caixas": 1.0,
+    "SKU-LOT": "50404135-A50004"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "Z90003",
+    "SKU": 50404171,
+    "Peças": 546,
+    "Peças por Caixa": 546,
+    "Caixas": 1.0,
+    "SKU-LOT": "50404171-Z90003"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40025",
+    "SKU": 50404318,
+    "Peças": 56,
+    "Peças por Caixa": 56,
+    "Caixas": 1.0,
+    "SKU-LOT": "50404318-A40025"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A30021",
+    "SKU": 50404318,
+    "Peças": 616,
+    "Peças por Caixa": 56,
+    "Caixas": 11.0,
+    "SKU-LOT": "50404318-A30021"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A20001",
+    "SKU": 50404532,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50404532-A20001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "Z50005",
+    "SKU": 50404533,
+    "Peças": 96,
+    "Peças por Caixa": 96,
+    "Caixas": 1.0,
+    "SKU-LOT": "50404533-Z50005"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40003",
+    "SKU": 50406900,
+    "Peças": 60,
+    "Peças por Caixa": 30,
+    "Caixas": 2.0,
+    "SKU-LOT": "50406900-A40003"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40001",
+    "SKU": 50406905,
+    "Peças": 384,
+    "Peças por Caixa": 48,
+    "Caixas": 8.0,
+    "SKU-LOT": "50406905-A40001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A30001",
+    "SKU": 50406918,
+    "Peças": 135,
+    "Peças por Caixa": 45,
+    "Caixas": 3.0,
+    "SKU-LOT": "50406918-A30001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "Y90018",
+    "SKU": 50407711,
+    "Peças": 144,
+    "Peças por Caixa": 36,
+    "Caixas": 4.0,
+    "SKU-LOT": "50407711-Y90018"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A50001",
+    "SKU": 50411424,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50411424-A50001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A30001",
+    "SKU": 50411929,
+    "Peças": 42,
+    "Peças por Caixa": 42,
+    "Caixas": 1.0,
+    "SKU-LOT": "50411929-A30001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A10001",
+    "SKU": 50412037,
+    "Peças": 27,
+    "Peças por Caixa": 27,
+    "Caixas": 1.0,
+    "SKU-LOT": "50412037-A10001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "ZB0002",
+    "SKU": 50412039,
+    "Peças": 72,
+    "Peças por Caixa": 36,
+    "Caixas": 2.0,
+    "SKU-LOT": "50412039-ZB0002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "ZALL01",
+    "SKU": 50413103,
+    "Peças": 26,
+    "Peças por Caixa": 26,
+    "Caixas": 1.0,
+    "SKU-LOT": "50413103-ZALL01"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "Z8LL04",
+    "SKU": 50413103,
+    "Peças": 26,
+    "Peças por Caixa": 26,
+    "Caixas": 1.0,
+    "SKU-LOT": "50413103-Z8LL04"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A5WE01",
+    "SKU": 50418367,
+    "Peças": 72,
+    "Peças por Caixa": 72,
+    "Caixas": 1.0,
+    "SKU-LOT": "50418367-A5WE01"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A50006",
+    "SKU": 50418393,
+    "Peças": 56,
+    "Peças por Caixa": 56,
+    "Caixas": 1.0,
+    "SKU-LOT": "50418393-A50006"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A10001",
+    "SKU": 50421338,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50421338-A10001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "ZB0005",
+    "SKU": 50421435,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50421435-ZB0005"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A30002",
+    "SKU": 50424995,
+    "Peças": 36,
+    "Peças por Caixa": 36,
+    "Caixas": 1.0,
+    "SKU-LOT": "50424995-A30002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A50010",
+    "SKU": 50435123,
+    "Peças": 99,
+    "Peças por Caixa": 99,
+    "Caixas": 1.0,
+    "SKU-LOT": "50435123-A50010"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "Z30031",
+    "SKU": 50435496,
+    "Peças": 32,
+    "Peças por Caixa": 32,
+    "Caixas": 1.0,
+    "SKU-LOT": "50435496-Z30031"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "Z70008",
+    "SKU": 50435771,
+    "Peças": 22,
+    "Peças por Caixa": 22,
+    "Caixas": 1.0,
+    "SKU-LOT": "50435771-Z70008"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "Z70011",
+    "SKU": 50435780,
+    "Peças": 22,
+    "Peças por Caixa": 22,
+    "Caixas": 1.0,
+    "SKU-LOT": "50435780-Z70011"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40003",
+    "SKU": 50440382,
+    "Peças": 147,
+    "Peças por Caixa": 147,
+    "Caixas": 1.0,
+    "SKU-LOT": "50440382-A40003"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40002",
+    "SKU": 50440387,
+    "Peças": 147,
+    "Peças por Caixa": 147,
+    "Caixas": 1.0,
+    "SKU-LOT": "50440387-A40002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40003",
+    "SKU": 50440390,
+    "Peças": 147,
+    "Peças por Caixa": 147,
+    "Caixas": 1.0,
+    "SKU-LOT": "50440390-A40003"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40003",
+    "SKU": 50440392,
+    "Peças": 147,
+    "Peças por Caixa": 147,
+    "Caixas": 1.0,
+    "SKU-LOT": "50440392-A40003"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40003",
+    "SKU": 50440917,
+    "Peças": 546,
+    "Peças por Caixa": 546,
+    "Caixas": 1.0,
+    "SKU-LOT": "50440917-A40003"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A3LA01",
+    "SKU": 50453823,
+    "Peças": 672,
+    "Peças por Caixa": 672,
+    "Caixas": 1.0,
+    "SKU-LOT": "50453823-A3LA01"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A30003",
+    "SKU": 50453837,
+    "Peças": 108,
+    "Peças por Caixa": 54,
+    "Caixas": 2.0,
+    "SKU-LOT": "50453837-A30003"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A10001",
+    "SKU": 50453839,
+    "Peças": 162,
+    "Peças por Caixa": 54,
+    "Caixas": 3.0,
+    "SKU-LOT": "50453839-A10001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A30004",
+    "SKU": 50453841,
+    "Peças": 162,
+    "Peças por Caixa": 54,
+    "Caixas": 3.0,
+    "SKU-LOT": "50453841-A30004"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A50002",
+    "SKU": 50453873,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50453873-A50002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A30002",
+    "SKU": 50453909,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50453909-A30002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "ZB0003",
+    "SKU": 50453911,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50453911-ZB0003"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40003",
+    "SKU": 50453914,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50453914-A40003"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40003",
+    "SKU": 50453916,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50453916-A40003"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40001",
+    "SKU": 50453919,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50453919-A40001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A50005",
+    "SKU": 50453927,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50453927-A50005"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A50004",
+    "SKU": 50453930,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50453930-A50004"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A30001",
+    "SKU": 50453935,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50453935-A30001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "E27BOL",
+    "SKU": 50474204,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50474204-E27BOL"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40002",
+    "SKU": 50485116,
+    "Peças": 400,
+    "Peças por Caixa": 400,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485116-A40002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40004",
+    "SKU": 50485646,
+    "Peças": 752,
+    "Peças por Caixa": 752,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485646-A40004"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40003",
+    "SKU": 50485658,
+    "Peças": 752,
+    "Peças por Caixa": 752,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485658-A40003"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40004",
+    "SKU": 50485661,
+    "Peças": 752,
+    "Peças por Caixa": 752,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485661-A40004"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40002",
+    "SKU": 50485663,
+    "Peças": 752,
+    "Peças por Caixa": 752,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485663-A40002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A30001",
+    "SKU": 50485671,
+    "Peças": 630,
+    "Peças por Caixa": 630,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485671-A30001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40001",
+    "SKU": 50485672,
+    "Peças": 630,
+    "Peças por Caixa": 630,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485672-A40001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40001",
+    "SKU": 50485674,
+    "Peças": 630,
+    "Peças por Caixa": 630,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485674-A40001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A50006",
+    "SKU": 50492257,
+    "Peças": 546,
+    "Peças por Caixa": 546,
+    "Caixas": 1.0,
+    "SKU-LOT": "50492257-A50006"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A50004",
+    "SKU": 50492258,
+    "Peças": 546,
+    "Peças por Caixa": 546,
+    "Caixas": 1.0,
+    "SKU-LOT": "50492258-A50004"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A50002",
+    "SKU": 50492277,
+    "Peças": 546,
+    "Peças por Caixa": 546,
+    "Caixas": 1.0,
+    "SKU-LOT": "50492277-A50002"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A30012",
+    "SKU": 50497753,
+    "Peças": 800,
+    "Peças por Caixa": 25,
+    "Caixas": 32.0,
+    "SKU-LOT": "50497753-A30012"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A20011",
+    "SKU": 50497753,
+    "Peças": 75,
+    "Peças por Caixa": 25,
+    "Caixas": 3.0,
+    "SKU-LOT": "50497753-A20011"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A20010",
+    "SKU": 50497753,
+    "Peças": 225,
+    "Peças por Caixa": 25,
+    "Caixas": 9.0,
+    "SKU-LOT": "50497753-A20010"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A40001",
+    "SKU": 50512478,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50512478-A40001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A30001",
+    "SKU": 50512510,
+    "Peças": 80,
+    "Peças por Caixa": 80,
+    "Caixas": 1.0,
+    "SKU-LOT": "50512510-A30001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A50001",
+    "SKU": 50538897,
+    "Peças": 209,
+    "Peças por Caixa": 209,
+    "Caixas": 1.0,
+    "SKU-LOT": "50538897-A50001"
+  },
+  {
+    "ID_SAP": 180831685,
+    "NF": 6801,
+    "Carreta": 1,
+    "Remessa": 445838,
+    "Lote": "A30002",
+    "SKU": 50544225,
+    "Peças": 36,
+    "Peças por Caixa": 36,
+    "Caixas": 1.0,
+    "SKU-LOT": "50544225-A30002"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40002",
+    "SKU": 50247147,
+    "Peças": 48,
+    "Peças por Caixa": 24,
+    "Caixas": 2.0,
+    "SKU-LOT": "50247147-A40002"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A30014",
+    "SKU": 50262106,
+    "Peças": 64,
+    "Peças por Caixa": 64,
+    "Caixas": 1.0,
+    "SKU-LOT": "50262106-A30014"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50005",
+    "SKU": 50270692,
+    "Peças": 22,
+    "Peças por Caixa": 22,
+    "Caixas": 1.0,
+    "SKU-LOT": "50270692-A50005"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50002",
+    "SKU": 50270984,
+    "Peças": 36,
+    "Peças por Caixa": 36,
+    "Caixas": 1.0,
+    "SKU-LOT": "50270984-A50002"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "ZCW001",
+    "SKU": 50272354,
+    "Peças": 416,
+    "Peças por Caixa": 416,
+    "Caixas": 1.0,
+    "SKU-LOT": "50272354-ZCW001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A3W001",
+    "SKU": 50272355,
+    "Peças": 416,
+    "Peças por Caixa": 416,
+    "Caixas": 1.0,
+    "SKU-LOT": "50272355-A3W001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50003",
+    "SKU": 50275981,
+    "Peças": 132,
+    "Peças por Caixa": 22,
+    "Caixas": 6.0,
+    "SKU-LOT": "50275981-A50003"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40002",
+    "SKU": 50275981,
+    "Peças": 88,
+    "Peças por Caixa": 22,
+    "Caixas": 4.0,
+    "SKU-LOT": "50275981-A40002"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A10002",
+    "SKU": 50276367,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50276367-A10002"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "Z50002",
+    "SKU": 50280609,
+    "Peças": 63,
+    "Peças por Caixa": 63,
+    "Caixas": 1.0,
+    "SKU-LOT": "50280609-Z50002"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40008",
+    "SKU": 50280981,
+    "Peças": 22,
+    "Peças por Caixa": 22,
+    "Caixas": 1.0,
+    "SKU-LOT": "50280981-A40008"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40002",
+    "SKU": 50282150,
+    "Peças": 36,
+    "Peças por Caixa": 36,
+    "Caixas": 1.0,
+    "SKU-LOT": "50282150-A40002"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A10001",
+    "SKU": 50282157,
+    "Peças": 36,
+    "Peças por Caixa": 36,
+    "Caixas": 1.0,
+    "SKU-LOT": "50282157-A10001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A20006",
+    "SKU": 50283362,
+    "Peças": 46,
+    "Peças por Caixa": 23,
+    "Caixas": 2.0,
+    "SKU-LOT": "50283362-A20006"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50001",
+    "SKU": 50286594,
+    "Peças": 144,
+    "Peças por Caixa": 36,
+    "Caixas": 4.0,
+    "SKU-LOT": "50286594-A50001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A20004",
+    "SKU": 50304278,
+    "Peças": 56,
+    "Peças por Caixa": 28,
+    "Caixas": 2.0,
+    "SKU-LOT": "50304278-A20004"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40006",
+    "SKU": 50304282,
+    "Peças": 180,
+    "Peças por Caixa": 30,
+    "Caixas": 6.0,
+    "SKU-LOT": "50304282-A40006"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40005",
+    "SKU": 50308144,
+    "Peças": 80,
+    "Peças por Caixa": 40,
+    "Caixas": 2.0,
+    "SKU-LOT": "50308144-A40005"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40014",
+    "SKU": 50310293,
+    "Peças": 286,
+    "Peças por Caixa": 286,
+    "Caixas": 1.0,
+    "SKU-LOT": "50310293-A40014"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "Z5W001",
+    "SKU": 50310447,
+    "Peças": 476,
+    "Peças por Caixa": 476,
+    "Caixas": 1.0,
+    "SKU-LOT": "50310447-Z5W001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50002",
+    "SKU": 50311433,
+    "Peças": 80,
+    "Peças por Caixa": 40,
+    "Caixas": 2.0,
+    "SKU-LOT": "50311433-A50002"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50001",
+    "SKU": 50311433,
+    "Peças": 80,
+    "Peças por Caixa": 40,
+    "Caixas": 2.0,
+    "SKU-LOT": "50311433-A50001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50017",
+    "SKU": 50314403,
+    "Peças": 400,
+    "Peças por Caixa": 25,
+    "Caixas": 16.0,
+    "SKU-LOT": "50314403-A50017"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A4WE01",
+    "SKU": 50316088,
+    "Peças": 264,
+    "Peças por Caixa": 132,
+    "Caixas": 2.0,
+    "SKU-LOT": "50316088-A4WE01"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A4WE02",
+    "SKU": 50316089,
+    "Peças": 264,
+    "Peças por Caixa": 132,
+    "Caixas": 2.0,
+    "SKU-LOT": "50316089-A4WE02"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A4WE03",
+    "SKU": 50316510,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50316510-A4WE03"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "ZAFC01",
+    "SKU": 50316512,
+    "Peças": 648,
+    "Peças por Caixa": 648,
+    "Caixas": 1.0,
+    "SKU-LOT": "50316512-ZAFC01"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A30006",
+    "SKU": 50316517,
+    "Peças": 170,
+    "Peças por Caixa": 170,
+    "Caixas": 1.0,
+    "SKU-LOT": "50316517-A30006"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A3WE02",
+    "SKU": 50316518,
+    "Peças": 228,
+    "Peças por Caixa": 228,
+    "Caixas": 1.0,
+    "SKU-LOT": "50316518-A3WE02"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "Z1FC01",
+    "SKU": 50316560,
+    "Peças": 648,
+    "Peças por Caixa": 648,
+    "Caixas": 1.0,
+    "SKU-LOT": "50316560-Z1FC01"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50001",
+    "SKU": 50318698,
+    "Peças": 320,
+    "Peças por Caixa": 320,
+    "Caixas": 1.0,
+    "SKU-LOT": "50318698-A50001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "ZB0020",
+    "SKU": 50319901,
+    "Peças": 99,
+    "Peças por Caixa": 99,
+    "Caixas": 1.0,
+    "SKU-LOT": "50319901-ZB0020"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A10002",
+    "SKU": 50320210,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50320210-A10002"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "Z80002",
+    "SKU": 50320545,
+    "Peças": 95,
+    "Peças por Caixa": 95,
+    "Caixas": 1.0,
+    "SKU-LOT": "50320545-Z80002"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A1AL01",
+    "SKU": 50321196,
+    "Peças": 276,
+    "Peças por Caixa": 276,
+    "Caixas": 1.0,
+    "SKU-LOT": "50321196-A1AL01"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A4WE02",
+    "SKU": 50322420,
+    "Peças": 112,
+    "Peças por Caixa": 112,
+    "Caixas": 1.0,
+    "SKU-LOT": "50322420-A4WE02"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40002",
+    "SKU": 50322532,
+    "Peças": 286,
+    "Peças por Caixa": 286,
+    "Caixas": 1.0,
+    "SKU-LOT": "50322532-A40002"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "ZAFB01",
+    "SKU": 50322585,
+    "Peças": 208,
+    "Peças por Caixa": 208,
+    "Caixas": 1.0,
+    "SKU-LOT": "50322585-ZAFB01"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A2FB01",
+    "SKU": 50322589,
+    "Peças": 208,
+    "Peças por Caixa": 208,
+    "Caixas": 1.0,
+    "SKU-LOT": "50322589-A2FB01"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "Z1FB01",
+    "SKU": 50322630,
+    "Peças": 208,
+    "Peças por Caixa": 208,
+    "Caixas": 1.0,
+    "SKU-LOT": "50322630-Z1FB01"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "ZAFB01",
+    "SKU": 50322636,
+    "Peças": 208,
+    "Peças por Caixa": 208,
+    "Caixas": 1.0,
+    "SKU-LOT": "50322636-ZAFB01"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "Z2FB01",
+    "SKU": 50322637,
+    "Peças": 208,
+    "Peças por Caixa": 208,
+    "Caixas": 1.0,
+    "SKU-LOT": "50322637-Z2FB01"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "ZAAL01",
+    "SKU": 50322781,
+    "Peças": 162,
+    "Peças por Caixa": 162,
+    "Caixas": 1.0,
+    "SKU-LOT": "50322781-ZAAL01"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A20001",
+    "SKU": 50324022,
+    "Peças": 16,
+    "Peças por Caixa": 8,
+    "Caixas": 2.0,
+    "SKU-LOT": "50324022-A20001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40001",
+    "SKU": 50326564,
+    "Peças": 396,
+    "Peças por Caixa": 99,
+    "Caixas": 4.0,
+    "SKU-LOT": "50326564-A40001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40022",
+    "SKU": 50328772,
+    "Peças": 35,
+    "Peças por Caixa": 35,
+    "Caixas": 1.0,
+    "SKU-LOT": "50328772-A40022"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40021",
+    "SKU": 50328772,
+    "Peças": 175,
+    "Peças por Caixa": 35,
+    "Caixas": 5.0,
+    "SKU-LOT": "50328772-A40021"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A3FC01",
+    "SKU": 50334845,
+    "Peças": 888,
+    "Peças por Caixa": 888,
+    "Caixas": 1.0,
+    "SKU-LOT": "50334845-A3FC01"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A30003",
+    "SKU": 50335270,
+    "Peças": 286,
+    "Peças por Caixa": 286,
+    "Caixas": 1.0,
+    "SKU-LOT": "50335270-A30003"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A3W001",
+    "SKU": 50336951,
+    "Peças": 608,
+    "Peças por Caixa": 608,
+    "Caixas": 1.0,
+    "SKU-LOT": "50336951-A3W001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "Z8GK03",
+    "SKU": 50352595,
+    "Peças": 115,
+    "Peças por Caixa": 115,
+    "Caixas": 1.0,
+    "SKU-LOT": "50352595-Z8GK03"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40003",
+    "SKU": 50368508,
+    "Peças": 36,
+    "Peças por Caixa": 18,
+    "Caixas": 2.0,
+    "SKU-LOT": "50368508-A40003"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50008",
+    "SKU": 50368996,
+    "Peças": 72,
+    "Peças por Caixa": 36,
+    "Caixas": 2.0,
+    "SKU-LOT": "50368996-A50008"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40007",
+    "SKU": 50368996,
+    "Peças": 144,
+    "Peças por Caixa": 36,
+    "Caixas": 4.0,
+    "SKU-LOT": "50368996-A40007"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A20001",
+    "SKU": 50369143,
+    "Peças": 159,
+    "Peças por Caixa": 159,
+    "Caixas": 1.0,
+    "SKU-LOT": "50369143-A20001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40006",
+    "SKU": 50369162,
+    "Peças": 99,
+    "Peças por Caixa": 99,
+    "Caixas": 1.0,
+    "SKU-LOT": "50369162-A40006"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "Z50003",
+    "SKU": 50369163,
+    "Peças": 99,
+    "Peças por Caixa": 99,
+    "Caixas": 1.0,
+    "SKU-LOT": "50369163-Z50003"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A1L001",
+    "SKU": 50369192,
+    "Peças": 1120,
+    "Peças por Caixa": 280,
+    "Caixas": 4.0,
+    "SKU-LOT": "50369192-A1L001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "Z8L001",
+    "SKU": 50369204,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50369204-Z8L001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40010",
+    "SKU": 50372609,
+    "Peças": 75,
+    "Peças por Caixa": 25,
+    "Caixas": 3.0,
+    "SKU-LOT": "50372609-A40010"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A30007",
+    "SKU": 50372609,
+    "Peças": 100,
+    "Peças por Caixa": 25,
+    "Caixas": 4.0,
+    "SKU-LOT": "50372609-A30007"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A10001",
+    "SKU": 50374139,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50374139-A10001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40003",
+    "SKU": 50379926,
+    "Peças": 192,
+    "Peças por Caixa": 32,
+    "Caixas": 6.0,
+    "SKU-LOT": "50379926-A40003"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A4L006",
+    "SKU": 50390066,
+    "Peças": 9800,
+    "Peças por Caixa": 280,
+    "Caixas": 35.0,
+    "SKU-LOT": "50390066-A4L006"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A4L005",
+    "SKU": 50390066,
+    "Peças": 1120,
+    "Peças por Caixa": 280,
+    "Caixas": 4.0,
+    "SKU-LOT": "50390066-A4L005"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A30001",
+    "SKU": 50395212,
+    "Peças": 81,
+    "Peças por Caixa": 81,
+    "Caixas": 1.0,
+    "SKU-LOT": "50395212-A30001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50005",
+    "SKU": 50395224,
+    "Peças": 60,
+    "Peças por Caixa": 30,
+    "Caixas": 2.0,
+    "SKU-LOT": "50395224-A50005"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40007",
+    "SKU": 50395857,
+    "Peças": 294,
+    "Peças por Caixa": 294,
+    "Caixas": 1.0,
+    "SKU-LOT": "50395857-A40007"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40010",
+    "SKU": 50396098,
+    "Peças": 30,
+    "Peças por Caixa": 30,
+    "Caixas": 1.0,
+    "SKU-LOT": "50396098-A40010"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50103",
+    "SKU": 50396157,
+    "Peças": 42,
+    "Peças por Caixa": 21,
+    "Caixas": 2.0,
+    "SKU-LOT": "50396157-A50103"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50102",
+    "SKU": 50396157,
+    "Peças": 42,
+    "Peças por Caixa": 21,
+    "Caixas": 2.0,
+    "SKU-LOT": "50396157-A50102"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "ZBCE01",
+    "SKU": 50396296,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50396296-ZBCE01"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40005",
+    "SKU": 50396318,
+    "Peças": 63,
+    "Peças por Caixa": 63,
+    "Caixas": 1.0,
+    "SKU-LOT": "50396318-A40005"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40006",
+    "SKU": 50396764,
+    "Peças": 420,
+    "Peças por Caixa": 30,
+    "Caixas": 14.0,
+    "SKU-LOT": "50396764-A40006"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "Z30001",
+    "SKU": 50410504,
+    "Peças": 306,
+    "Peças por Caixa": 306,
+    "Caixas": 1.0,
+    "SKU-LOT": "50410504-Z30001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50001",
+    "SKU": 50410506,
+    "Peças": 306,
+    "Peças por Caixa": 306,
+    "Caixas": 1.0,
+    "SKU-LOT": "50410506-A50001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50001",
+    "SKU": 50410525,
+    "Peças": 306,
+    "Peças por Caixa": 306,
+    "Caixas": 1.0,
+    "SKU-LOT": "50410525-A50001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "ZC0004",
+    "SKU": 50410530,
+    "Peças": 306,
+    "Peças por Caixa": 306,
+    "Caixas": 1.0,
+    "SKU-LOT": "50410530-ZC0004"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "ZB0007",
+    "SKU": 50410534,
+    "Peças": 306,
+    "Peças por Caixa": 306,
+    "Caixas": 1.0,
+    "SKU-LOT": "50410534-ZB0007"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40002",
+    "SKU": 50410550,
+    "Peças": 306,
+    "Peças por Caixa": 306,
+    "Caixas": 1.0,
+    "SKU-LOT": "50410550-A40002"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A30003",
+    "SKU": 50410555,
+    "Peças": 612,
+    "Peças por Caixa": 306,
+    "Caixas": 2.0,
+    "SKU-LOT": "50410555-A30003"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40002",
+    "SKU": 50410558,
+    "Peças": 306,
+    "Peças por Caixa": 306,
+    "Caixas": 1.0,
+    "SKU-LOT": "50410558-A40002"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40003",
+    "SKU": 50412598,
+    "Peças": 72,
+    "Peças por Caixa": 36,
+    "Caixas": 2.0,
+    "SKU-LOT": "50412598-A40003"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A10001",
+    "SKU": 50412600,
+    "Peças": 36,
+    "Peças por Caixa": 36,
+    "Caixas": 1.0,
+    "SKU-LOT": "50412600-A10001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40015",
+    "SKU": 50412621,
+    "Peças": 627,
+    "Peças por Caixa": 627,
+    "Caixas": 1.0,
+    "SKU-LOT": "50412621-A40015"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40006",
+    "SKU": 50412638,
+    "Peças": 627,
+    "Peças por Caixa": 627,
+    "Caixas": 1.0,
+    "SKU-LOT": "50412638-A40006"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40003",
+    "SKU": 50413536,
+    "Peças": 99,
+    "Peças por Caixa": 99,
+    "Caixas": 1.0,
+    "SKU-LOT": "50413536-A40003"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40001",
+    "SKU": 50414237,
+    "Peças": 40,
+    "Peças por Caixa": 8,
+    "Caixas": 5.0,
+    "SKU-LOT": "50414237-A40001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40009",
+    "SKU": 50419960,
+    "Peças": 432,
+    "Peças por Caixa": 48,
+    "Caixas": 9.0,
+    "SKU-LOT": "50419960-A40009"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A20006",
+    "SKU": 50419963,
+    "Peças": 96,
+    "Peças por Caixa": 96,
+    "Caixas": 1.0,
+    "SKU-LOT": "50419963-A20006"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50017",
+    "SKU": 50420231,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50420231-A50017"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "Z30004",
+    "SKU": 50420232,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50420232-Z30004"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40006",
+    "SKU": 50420446,
+    "Peças": 528,
+    "Peças por Caixa": 48,
+    "Caixas": 11.0,
+    "SKU-LOT": "50420446-A40006"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40014",
+    "SKU": 50420448,
+    "Peças": 4128,
+    "Peças por Caixa": 96,
+    "Caixas": 43.0,
+    "SKU-LOT": "50420448-A40014"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "Z70012",
+    "SKU": 50420571,
+    "Peças": 96,
+    "Peças por Caixa": 96,
+    "Caixas": 1.0,
+    "SKU-LOT": "50420571-Z70012"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50008",
+    "SKU": 50449733,
+    "Peças": 36,
+    "Peças por Caixa": 36,
+    "Caixas": 1.0,
+    "SKU-LOT": "50449733-A50008"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40001",
+    "SKU": 50458588,
+    "Peças": 99,
+    "Peças por Caixa": 99,
+    "Caixas": 1.0,
+    "SKU-LOT": "50458588-A40001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40004",
+    "SKU": 50462181,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462181-A40004"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A50001",
+    "SKU": 50474201,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50474201-A50001"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A3FV04",
+    "SKU": 50483884,
+    "Peças": 150,
+    "Peças por Caixa": 30,
+    "Caixas": 5.0,
+    "SKU-LOT": "50483884-A3FV04"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A3FV01",
+    "SKU": 50483884,
+    "Peças": 30,
+    "Peças por Caixa": 30,
+    "Caixas": 1.0,
+    "SKU-LOT": "50483884-A3FV01"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A20013",
+    "SKU": 50487849,
+    "Peças": 90,
+    "Peças por Caixa": 30,
+    "Caixas": 3.0,
+    "SKU-LOT": "50487849-A20013"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A40007",
+    "SKU": 50487855,
+    "Peças": 60,
+    "Peças por Caixa": 30,
+    "Caixas": 2.0,
+    "SKU-LOT": "50487855-A40007"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A30005",
+    "SKU": 50487855,
+    "Peças": 30,
+    "Peças por Caixa": 30,
+    "Caixas": 1.0,
+    "SKU-LOT": "50487855-A30005"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A5FV05",
+    "SKU": 50531337,
+    "Peças": 60,
+    "Peças por Caixa": 30,
+    "Caixas": 2.0,
+    "SKU-LOT": "50531337-A5FV05"
+  },
+  {
+    "ID_SAP": 180831683,
+    "NF": 6802,
+    "Carreta": 1,
+    "Remessa": 445836,
+    "Lote": "A30002",
+    "SKU": 50537257,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50537257-A30002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40006",
+    "SKU": 50264611,
+    "Peças": 320,
+    "Peças por Caixa": 320,
+    "Caixas": 1.0,
+    "SKU-LOT": "50264611-A40006"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40002",
+    "SKU": 50264917,
+    "Peças": 20,
+    "Peças por Caixa": 20,
+    "Caixas": 1.0,
+    "SKU-LOT": "50264917-A40002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A20001",
+    "SKU": 50265207,
+    "Peças": 60,
+    "Peças por Caixa": 20,
+    "Caixas": 3.0,
+    "SKU-LOT": "50265207-A20001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A50029",
+    "SKU": 50286229,
+    "Peças": 60,
+    "Peças por Caixa": 20,
+    "Caixas": 3.0,
+    "SKU-LOT": "50286229-A50029"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40004",
+    "SKU": 50301341,
+    "Peças": 960,
+    "Peças por Caixa": 64,
+    "Caixas": 15.0,
+    "SKU-LOT": "50301341-A40004"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A50006",
+    "SKU": 50302786,
+    "Peças": 30,
+    "Peças por Caixa": 30,
+    "Caixas": 1.0,
+    "SKU-LOT": "50302786-A50006"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A20002",
+    "SKU": 50303021,
+    "Peças": 36,
+    "Peças por Caixa": 36,
+    "Caixas": 1.0,
+    "SKU-LOT": "50303021-A20002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A20002",
+    "SKU": 50303022,
+    "Peças": 30,
+    "Peças por Caixa": 30,
+    "Caixas": 1.0,
+    "SKU-LOT": "50303022-A20002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z7NP03",
+    "SKU": 50315466,
+    "Peças": 60,
+    "Peças por Caixa": 60,
+    "Caixas": 1.0,
+    "SKU-LOT": "50315466-Z7NP03"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A1DV12",
+    "SKU": 50316671,
+    "Peças": 120,
+    "Peças por Caixa": 20,
+    "Caixas": 6.0,
+    "SKU-LOT": "50316671-A1DV12"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "ZBCM05",
+    "SKU": 50325341,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50325341-ZBCM05"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z5CM06",
+    "SKU": 50325342,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50325342-Z5CM06"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40002",
+    "SKU": 50329631,
+    "Peças": 360,
+    "Peças por Caixa": 18,
+    "Caixas": 20.0,
+    "SKU-LOT": "50329631-A40002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A20001",
+    "SKU": 50329634,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50329634-A20001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40001",
+    "SKU": 50329635,
+    "Peças": 8,
+    "Peças por Caixa": 8,
+    "Caixas": 1.0,
+    "SKU-LOT": "50329635-A40001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z80001",
+    "SKU": 50329636,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50329636-Z80001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A30006",
+    "SKU": 50330178,
+    "Peças": 42,
+    "Peças por Caixa": 42,
+    "Caixas": 1.0,
+    "SKU-LOT": "50330178-A30006"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z90004",
+    "SKU": 50330179,
+    "Peças": 42,
+    "Peças por Caixa": 42,
+    "Caixas": 1.0,
+    "SKU-LOT": "50330179-Z90004"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40001",
+    "SKU": 50331193,
+    "Peças": 216,
+    "Peças por Caixa": 216,
+    "Caixas": 1.0,
+    "SKU-LOT": "50331193-A40001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A30001",
+    "SKU": 50331194,
+    "Peças": 216,
+    "Peças por Caixa": 216,
+    "Caixas": 1.0,
+    "SKU-LOT": "50331194-A30001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z70002",
+    "SKU": 50331196,
+    "Peças": 216,
+    "Peças por Caixa": 216,
+    "Caixas": 1.0,
+    "SKU-LOT": "50331196-Z70002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "ZC0001",
+    "SKU": 50334009,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50334009-ZC0001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A20003",
+    "SKU": 50334986,
+    "Peças": 98,
+    "Peças por Caixa": 98,
+    "Caixas": 1.0,
+    "SKU-LOT": "50334986-A20003"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A3CA02",
+    "SKU": 50335139,
+    "Peças": 80,
+    "Peças por Caixa": 20,
+    "Caixas": 4.0,
+    "SKU-LOT": "50335139-A3CA02"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z6DV02",
+    "SKU": 50335141,
+    "Peças": 120,
+    "Peças por Caixa": 20,
+    "Caixas": 6.0,
+    "SKU-LOT": "50335141-Z6DV02"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A50001",
+    "SKU": 50336225,
+    "Peças": 30,
+    "Peças por Caixa": 30,
+    "Caixas": 1.0,
+    "SKU-LOT": "50336225-A50001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z20002",
+    "SKU": 50336226,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50336226-Z20002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A10002",
+    "SKU": 50341930,
+    "Peças": 45,
+    "Peças por Caixa": 45,
+    "Caixas": 1.0,
+    "SKU-LOT": "50341930-A10002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A30004",
+    "SKU": 50342043,
+    "Peças": 90,
+    "Peças por Caixa": 45,
+    "Caixas": 2.0,
+    "SKU-LOT": "50342043-A30004"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40003",
+    "SKU": 50342239,
+    "Peças": 45,
+    "Peças por Caixa": 45,
+    "Caixas": 1.0,
+    "SKU-LOT": "50342239-A40003"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A10001",
+    "SKU": 50342241,
+    "Peças": 90,
+    "Peças por Caixa": 45,
+    "Caixas": 2.0,
+    "SKU-LOT": "50342241-A10001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z90004",
+    "SKU": 50342341,
+    "Peças": 32,
+    "Peças por Caixa": 32,
+    "Caixas": 1.0,
+    "SKU-LOT": "50342341-Z90004"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A20001",
+    "SKU": 50342547,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50342547-A20001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "ZAW001",
+    "SKU": 50343902,
+    "Peças": 540,
+    "Peças por Caixa": 540,
+    "Caixas": 1.0,
+    "SKU-LOT": "50343902-ZAW001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "ZA0001",
+    "SKU": 50344250,
+    "Peças": 216,
+    "Peças por Caixa": 216,
+    "Caixas": 1.0,
+    "SKU-LOT": "50344250-ZA0001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "ZB0003",
+    "SKU": 50344527,
+    "Peças": 216,
+    "Peças por Caixa": 216,
+    "Caixas": 1.0,
+    "SKU-LOT": "50344527-ZB0003"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z90003",
+    "SKU": 50345563,
+    "Peças": 128,
+    "Peças por Caixa": 128,
+    "Caixas": 1.0,
+    "SKU-LOT": "50345563-Z90003"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A30004",
+    "SKU": 50345565,
+    "Peças": 640,
+    "Peças por Caixa": 128,
+    "Caixas": 5.0,
+    "SKU-LOT": "50345565-A30004"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A1GK01",
+    "SKU": 50352603,
+    "Peças": 506,
+    "Peças por Caixa": 506,
+    "Caixas": 1.0,
+    "SKU-LOT": "50352603-A1GK01"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "ZCGK04",
+    "SKU": 50352604,
+    "Peças": 385,
+    "Peças por Caixa": 506,
+    "Caixas": 0.7608695652173914,
+    "SKU-LOT": "50352604-ZCGK04"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z3GK02",
+    "SKU": 50352604,
+    "Peças": 386,
+    "Peças por Caixa": 506,
+    "Caixas": 0.7628458498023716,
+    "SKU-LOT": "50352604-Z3GK02"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "ZAFC11",
+    "SKU": 50353068,
+    "Peças": 286,
+    "Peças por Caixa": 286,
+    "Caixas": 1.0,
+    "SKU-LOT": "50353068-ZAFC11"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A2FC10",
+    "SKU": 50353070,
+    "Peças": 286,
+    "Peças por Caixa": 286,
+    "Caixas": 1.0,
+    "SKU-LOT": "50353070-A2FC10"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "ZAFC08",
+    "SKU": 50353282,
+    "Peças": 286,
+    "Peças por Caixa": 286,
+    "Caixas": 1.0,
+    "SKU-LOT": "50353282-ZAFC08"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Y6CM04",
+    "SKU": 50353286,
+    "Peças": 600,
+    "Peças por Caixa": 600,
+    "Caixas": 1.0,
+    "SKU-LOT": "50353286-Y6CM04"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z3FB01",
+    "SKU": 50354597,
+    "Peças": 374,
+    "Peças por Caixa": 374,
+    "Caixas": 1.0,
+    "SKU-LOT": "50354597-Z3FB01"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z2FB01",
+    "SKU": 50354616,
+    "Peças": 374,
+    "Peças por Caixa": 374,
+    "Caixas": 1.0,
+    "SKU-LOT": "50354616-Z2FB01"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z2FB01",
+    "SKU": 50354619,
+    "Peças": 374,
+    "Peças por Caixa": 374,
+    "Caixas": 1.0,
+    "SKU-LOT": "50354619-Z2FB01"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z1FB01",
+    "SKU": 50354625,
+    "Peças": 374,
+    "Peças por Caixa": 374,
+    "Caixas": 1.0,
+    "SKU-LOT": "50354625-Z1FB01"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A20002",
+    "SKU": 50358268,
+    "Peças": 172,
+    "Peças por Caixa": 172,
+    "Caixas": 1.0,
+    "SKU-LOT": "50358268-A20002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40023",
+    "SKU": 50359435,
+    "Peças": 1674,
+    "Peças por Caixa": 27,
+    "Caixas": 62.0,
+    "SKU-LOT": "50359435-A40023"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A10001",
+    "SKU": 50359437,
+    "Peças": 27,
+    "Peças por Caixa": 27,
+    "Caixas": 1.0,
+    "SKU-LOT": "50359437-A10001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40017",
+    "SKU": 50359441,
+    "Peças": 36,
+    "Peças por Caixa": 36,
+    "Caixas": 1.0,
+    "SKU-LOT": "50359441-A40017"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A30004",
+    "SKU": 50359442,
+    "Peças": 36,
+    "Peças por Caixa": 36,
+    "Caixas": 1.0,
+    "SKU-LOT": "50359442-A30004"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40003",
+    "SKU": 50360422,
+    "Peças": 30,
+    "Peças por Caixa": 30,
+    "Caixas": 1.0,
+    "SKU-LOT": "50360422-A40003"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "ZC0016",
+    "SKU": 50360475,
+    "Peças": 77,
+    "Peças por Caixa": 77,
+    "Caixas": 1.0,
+    "SKU-LOT": "50360475-ZC0016"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A20001",
+    "SKU": 50360954,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50360954-A20001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A50014",
+    "SKU": 50360956,
+    "Peças": 120,
+    "Peças por Caixa": 60,
+    "Caixas": 2.0,
+    "SKU-LOT": "50360956-A50014"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Y7WN01",
+    "SKU": 50361871,
+    "Peças": 360,
+    "Peças por Caixa": 360,
+    "Caixas": 1.0,
+    "SKU-LOT": "50361871-Y7WN01"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40011",
+    "SKU": 50361927,
+    "Peças": 25,
+    "Peças por Caixa": 25,
+    "Caixas": 1.0,
+    "SKU-LOT": "50361927-A40011"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A30010",
+    "SKU": 50361927,
+    "Peças": 50,
+    "Peças por Caixa": 25,
+    "Caixas": 2.0,
+    "SKU-LOT": "50361927-A30010"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A30007",
+    "SKU": 50361927,
+    "Peças": 275,
+    "Peças por Caixa": 25,
+    "Caixas": 11.0,
+    "SKU-LOT": "50361927-A30007"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z1FB01",
+    "SKU": 50362999,
+    "Peças": 208,
+    "Peças por Caixa": 208,
+    "Caixas": 1.0,
+    "SKU-LOT": "50362999-Z1FB01"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z4FB01",
+    "SKU": 50363000,
+    "Peças": 208,
+    "Peças por Caixa": 208,
+    "Caixas": 1.0,
+    "SKU-LOT": "50363000-Z4FB01"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "ZB0010",
+    "SKU": 50363402,
+    "Peças": 360,
+    "Peças por Caixa": 45,
+    "Caixas": 8.0,
+    "SKU-LOT": "50363402-ZB0010"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A50011",
+    "SKU": 50368439,
+    "Peças": 1320,
+    "Peças por Caixa": 40,
+    "Caixas": 33.0,
+    "SKU-LOT": "50368439-A50011"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A50010",
+    "SKU": 50368439,
+    "Peças": 240,
+    "Peças por Caixa": 40,
+    "Caixas": 6.0,
+    "SKU-LOT": "50368439-A50010"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40006",
+    "SKU": 50368441,
+    "Peças": 120,
+    "Peças por Caixa": 40,
+    "Caixas": 3.0,
+    "SKU-LOT": "50368441-A40006"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A30003",
+    "SKU": 50394891,
+    "Peças": 96,
+    "Peças por Caixa": 32,
+    "Caixas": 3.0,
+    "SKU-LOT": "50394891-A30003"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A30002",
+    "SKU": 50394891,
+    "Peças": 32,
+    "Peças por Caixa": 32,
+    "Caixas": 1.0,
+    "SKU-LOT": "50394891-A30002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A20003",
+    "SKU": 50394919,
+    "Peças": 288,
+    "Peças por Caixa": 96,
+    "Caixas": 3.0,
+    "SKU-LOT": "50394919-A20003"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40002",
+    "SKU": 50394927,
+    "Peças": 64,
+    "Peças por Caixa": 32,
+    "Caixas": 2.0,
+    "SKU-LOT": "50394927-A40002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A3W002",
+    "SKU": 50395161,
+    "Peças": 77,
+    "Peças por Caixa": 77,
+    "Caixas": 1.0,
+    "SKU-LOT": "50395161-A3W002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A3W002",
+    "SKU": 50395185,
+    "Peças": 77,
+    "Peças por Caixa": 77,
+    "Caixas": 1.0,
+    "SKU-LOT": "50395185-A3W002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A20001",
+    "SKU": 50398685,
+    "Peças": 105,
+    "Peças por Caixa": 21,
+    "Caixas": 5.0,
+    "SKU-LOT": "50398685-A20001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "ZAWN02",
+    "SKU": 50400615,
+    "Peças": 192,
+    "Peças por Caixa": 192,
+    "Caixas": 1.0,
+    "SKU-LOT": "50400615-ZAWN02"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z6WN04",
+    "SKU": 50400633,
+    "Peças": 192,
+    "Peças por Caixa": 192,
+    "Caixas": 1.0,
+    "SKU-LOT": "50400633-Z6WN04"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40002",
+    "SKU": 50410526,
+    "Peças": 306,
+    "Peças por Caixa": 306,
+    "Caixas": 1.0,
+    "SKU-LOT": "50410526-A40002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A30002",
+    "SKU": 50412615,
+    "Peças": 627,
+    "Peças por Caixa": 627,
+    "Caixas": 1.0,
+    "SKU-LOT": "50412615-A30002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40003",
+    "SKU": 50412624,
+    "Peças": 627,
+    "Peças por Caixa": 627,
+    "Caixas": 1.0,
+    "SKU-LOT": "50412624-A40003"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40008",
+    "SKU": 50412643,
+    "Peças": 627,
+    "Peças por Caixa": 627,
+    "Caixas": 1.0,
+    "SKU-LOT": "50412643-A40008"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A30003",
+    "SKU": 50413532,
+    "Peças": 99,
+    "Peças por Caixa": 99,
+    "Caixas": 1.0,
+    "SKU-LOT": "50413532-A30003"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40006",
+    "SKU": 50413534,
+    "Peças": 96,
+    "Peças por Caixa": 48,
+    "Caixas": 2.0,
+    "SKU-LOT": "50413534-A40006"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A30004",
+    "SKU": 50413535,
+    "Peças": 99,
+    "Peças por Caixa": 99,
+    "Caixas": 1.0,
+    "SKU-LOT": "50413535-A30004"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "ZC0001",
+    "SKU": 50418369,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50418369-ZC0001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A50001",
+    "SKU": 50418376,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50418376-A50001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A20002",
+    "SKU": 50420019,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50420019-A20002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z30010",
+    "SKU": 50420100,
+    "Peças": 96,
+    "Peças por Caixa": 96,
+    "Caixas": 1.0,
+    "SKU-LOT": "50420100-Z30010"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A30004",
+    "SKU": 50431815,
+    "Peças": 322,
+    "Peças por Caixa": 322,
+    "Caixas": 1.0,
+    "SKU-LOT": "50431815-A30004"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A30003",
+    "SKU": 50431827,
+    "Peças": 322,
+    "Peças por Caixa": 322,
+    "Caixas": 1.0,
+    "SKU-LOT": "50431827-A30003"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z10001",
+    "SKU": 50458575,
+    "Peças": 45,
+    "Peças por Caixa": 45,
+    "Caixas": 1.0,
+    "SKU-LOT": "50458575-Z10001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40046",
+    "SKU": 50462186,
+    "Peças": 42,
+    "Peças por Caixa": 21,
+    "Caixas": 2.0,
+    "SKU-LOT": "50462186-A40046"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40029",
+    "SKU": 50462186,
+    "Peças": 21,
+    "Peças por Caixa": 21,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462186-A40029"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40028",
+    "SKU": 50462186,
+    "Peças": 315,
+    "Peças por Caixa": 21,
+    "Caixas": 15.0,
+    "SKU-LOT": "50462186-A40028"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40025",
+    "SKU": 50462186,
+    "Peças": 399,
+    "Peças por Caixa": 21,
+    "Caixas": 19.0,
+    "SKU-LOT": "50462186-A40025"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A50003",
+    "SKU": 50462187,
+    "Peças": 1100,
+    "Peças por Caixa": 25,
+    "Caixas": 44.0,
+    "SKU-LOT": "50462187-A50003"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A10001",
+    "SKU": 50462187,
+    "Peças": 225,
+    "Peças por Caixa": 25,
+    "Caixas": 9.0,
+    "SKU-LOT": "50462187-A10001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z70032",
+    "SKU": 50462191,
+    "Peças": 210,
+    "Peças por Caixa": 30,
+    "Caixas": 7.0,
+    "SKU-LOT": "50462191-Z70032"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40018",
+    "SKU": 50462199,
+    "Peças": 525,
+    "Peças por Caixa": 25,
+    "Caixas": 21.0,
+    "SKU-LOT": "50462199-A40018"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40017",
+    "SKU": 50462199,
+    "Peças": 125,
+    "Peças por Caixa": 25,
+    "Caixas": 5.0,
+    "SKU-LOT": "50462199-A40017"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A4MD05",
+    "SKU": 50462201,
+    "Peças": 900,
+    "Peças por Caixa": 900,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462201-A4MD05"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A10002",
+    "SKU": 50474207,
+    "Peças": 240,
+    "Peças por Caixa": 48,
+    "Caixas": 5.0,
+    "SKU-LOT": "50474207-A10002"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A10001",
+    "SKU": 50474207,
+    "Peças": 144,
+    "Peças por Caixa": 48,
+    "Caixas": 3.0,
+    "SKU-LOT": "50474207-A10001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A10001",
+    "SKU": 50481361,
+    "Peças": 294,
+    "Peças por Caixa": 294,
+    "Caixas": 1.0,
+    "SKU-LOT": "50481361-A10001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A30001",
+    "SKU": 50481978,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50481978-A30001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40003",
+    "SKU": 50487862,
+    "Peças": 90,
+    "Peças por Caixa": 30,
+    "Caixas": 3.0,
+    "SKU-LOT": "50487862-A40003"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "Z50001",
+    "SKU": 50489599,
+    "Peças": 20,
+    "Peças por Caixa": 20,
+    "Caixas": 1.0,
+    "SKU-LOT": "50489599-Z50001"
+  },
+  {
+    "ID_SAP": 180831691,
+    "NF": 6803,
+    "Carreta": 1,
+    "Remessa": 445842,
+    "Lote": "A40003",
+    "SKU": 50510535,
+    "Peças": 84,
+    "Peças por Caixa": 84,
+    "Caixas": 1.0,
+    "SKU-LOT": "50510535-A40003"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "ZCWN04",
+    "SKU": 50448417,
+    "Peças": 270,
+    "Peças por Caixa": 270,
+    "Caixas": 1.0,
+    "SKU-LOT": "50448417-ZCWN04"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40005",
+    "SKU": 50453831,
+    "Peças": 90,
+    "Peças por Caixa": 45,
+    "Caixas": 2.0,
+    "SKU-LOT": "50453831-A40005"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z7FC01",
+    "SKU": 50458759,
+    "Peças": 486,
+    "Peças por Caixa": 486,
+    "Caixas": 1.0,
+    "SKU-LOT": "50458759-Z7FC01"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40002",
+    "SKU": 50459920,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50459920-A40002"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A50002",
+    "SKU": 50460702,
+    "Peças": 35,
+    "Peças por Caixa": 35,
+    "Caixas": 1.0,
+    "SKU-LOT": "50460702-A50002"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A10004",
+    "SKU": 50460706,
+    "Peças": 105,
+    "Peças por Caixa": 35,
+    "Caixas": 3.0,
+    "SKU-LOT": "50460706-A10004"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A10003",
+    "SKU": 50460706,
+    "Peças": 35,
+    "Peças por Caixa": 35,
+    "Caixas": 1.0,
+    "SKU-LOT": "50460706-A10003"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A30005",
+    "SKU": 50460792,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50460792-A30005"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A50007",
+    "SKU": 50460794,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50460794-A50007"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40002",
+    "SKU": 50460796,
+    "Peças": 80,
+    "Peças por Caixa": 40,
+    "Caixas": 2.0,
+    "SKU-LOT": "50460796-A40002"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40004",
+    "SKU": 50460800,
+    "Peças": 45,
+    "Peças por Caixa": 45,
+    "Caixas": 1.0,
+    "SKU-LOT": "50460800-A40004"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z4MD04",
+    "SKU": 50460815,
+    "Peças": 350,
+    "Peças por Caixa": 350,
+    "Caixas": 1.0,
+    "SKU-LOT": "50460815-Z4MD04"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "ZBF002",
+    "SKU": 50460816,
+    "Peças": 60,
+    "Peças por Caixa": 60,
+    "Caixas": 1.0,
+    "SKU-LOT": "50460816-ZBF002"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A4F018",
+    "SKU": 50460821,
+    "Peças": 60,
+    "Peças por Caixa": 60,
+    "Caixas": 1.0,
+    "SKU-LOT": "50460821-A4F018"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A1MD04",
+    "SKU": 50460896,
+    "Peças": 790,
+    "Peças por Caixa": 790,
+    "Caixas": 1.0,
+    "SKU-LOT": "50460896-A1MD04"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z4MD03",
+    "SKU": 50460898,
+    "Peças": 790,
+    "Peças por Caixa": 790,
+    "Caixas": 1.0,
+    "SKU-LOT": "50460898-Z4MD03"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "ZCMD04",
+    "SKU": 50460901,
+    "Peças": 790,
+    "Peças por Caixa": 790,
+    "Caixas": 1.0,
+    "SKU-LOT": "50460901-ZCMD04"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A1MD03",
+    "SKU": 50460904,
+    "Peças": 790,
+    "Peças por Caixa": 790,
+    "Caixas": 1.0,
+    "SKU-LOT": "50460904-A1MD03"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z8L007",
+    "SKU": 50460906,
+    "Peças": 912,
+    "Peças por Caixa": 456,
+    "Caixas": 2.0,
+    "SKU-LOT": "50460906-Z8L007"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z8L004",
+    "SKU": 50460906,
+    "Peças": 456,
+    "Peças por Caixa": 456,
+    "Caixas": 1.0,
+    "SKU-LOT": "50460906-Z8L004"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z7L012",
+    "SKU": 50460906,
+    "Peças": 912,
+    "Peças por Caixa": 456,
+    "Caixas": 2.0,
+    "SKU-LOT": "50460906-Z7L012"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z7L009",
+    "SKU": 50460906,
+    "Peças": 456,
+    "Peças por Caixa": 456,
+    "Caixas": 1.0,
+    "SKU-LOT": "50460906-Z7L009"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z7L007",
+    "SKU": 50460906,
+    "Peças": 912,
+    "Peças por Caixa": 456,
+    "Caixas": 2.0,
+    "SKU-LOT": "50460906-Z7L007"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z4MD03",
+    "SKU": 50460907,
+    "Peças": 790,
+    "Peças por Caixa": 790,
+    "Caixas": 1.0,
+    "SKU-LOT": "50460907-Z4MD03"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40003",
+    "SKU": 50462179,
+    "Peças": 64,
+    "Peças por Caixa": 64,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462179-A40003"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40005",
+    "SKU": 50462195,
+    "Peças": 99,
+    "Peças por Caixa": 99,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462195-A40005"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A2AH05",
+    "SKU": 50462231,
+    "Peças": 6,
+    "Peças por Caixa": 6,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462231-A2AH05"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A2OX03",
+    "SKU": 50462264,
+    "Peças": 48,
+    "Peças por Caixa": 12,
+    "Caixas": 4.0,
+    "SKU-LOT": "50462264-A2OX03"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z90005",
+    "SKU": 50462340,
+    "Peças": 160,
+    "Peças por Caixa": 40,
+    "Caixas": 4.0,
+    "SKU-LOT": "50462340-Z90005"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z60002",
+    "SKU": 50462341,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462341-Z60002"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40008",
+    "SKU": 50462344,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462344-A40008"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A50002",
+    "SKU": 50462345,
+    "Peças": 35,
+    "Peças por Caixa": 35,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462345-A50002"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40005",
+    "SKU": 50462346,
+    "Peças": 140,
+    "Peças por Caixa": 35,
+    "Caixas": 4.0,
+    "SKU-LOT": "50462346-A40005"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A30002",
+    "SKU": 50462347,
+    "Peças": 50,
+    "Peças por Caixa": 50,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462347-A30002"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40002",
+    "SKU": 50462364,
+    "Peças": 35,
+    "Peças por Caixa": 35,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462364-A40002"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40003",
+    "SKU": 50462366,
+    "Peças": 35,
+    "Peças por Caixa": 35,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462366-A40003"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A30003",
+    "SKU": 50462367,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462367-A30003"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A30003",
+    "SKU": 50462369,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462369-A30003"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z50003",
+    "SKU": 50462372,
+    "Peças": 35,
+    "Peças por Caixa": 35,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462372-Z50003"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z6F011",
+    "SKU": 50462460,
+    "Peças": 60,
+    "Peças por Caixa": 60,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462460-Z6F011"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40006",
+    "SKU": 50462471,
+    "Peças": 70,
+    "Peças por Caixa": 70,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462471-A40006"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A30001",
+    "SKU": 50462473,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462473-A30001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z50001",
+    "SKU": 50462474,
+    "Peças": 80,
+    "Peças por Caixa": 40,
+    "Caixas": 2.0,
+    "SKU-LOT": "50462474-Z50001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "ZB0003",
+    "SKU": 50462478,
+    "Peças": 140,
+    "Peças por Caixa": 35,
+    "Caixas": 4.0,
+    "SKU-LOT": "50462478-ZB0003"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A50006",
+    "SKU": 50462479,
+    "Peças": 35,
+    "Peças por Caixa": 35,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462479-A50006"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z60001",
+    "SKU": 50462484,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462484-Z60001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40003",
+    "SKU": 50462486,
+    "Peças": 45,
+    "Peças por Caixa": 45,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462486-A40003"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z50001",
+    "SKU": 50462488,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462488-Z50001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z90001",
+    "SKU": 50462494,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50462494-Z90001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A20001",
+    "SKU": 50463365,
+    "Peças": 294,
+    "Peças por Caixa": 294,
+    "Caixas": 1.0,
+    "SKU-LOT": "50463365-A20001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A3FV01",
+    "SKU": 50463372,
+    "Peças": 50,
+    "Peças por Caixa": 25,
+    "Caixas": 2.0,
+    "SKU-LOT": "50463372-A3FV01"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A5FV01",
+    "SKU": 50463373,
+    "Peças": 25,
+    "Peças por Caixa": 25,
+    "Caixas": 1.0,
+    "SKU-LOT": "50463373-A5FV01"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A1FV04",
+    "SKU": 50463374,
+    "Peças": 25,
+    "Peças por Caixa": 25,
+    "Caixas": 1.0,
+    "SKU-LOT": "50463374-A1FV04"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A1FV03",
+    "SKU": 50463374,
+    "Peças": 25,
+    "Peças por Caixa": 25,
+    "Caixas": 1.0,
+    "SKU-LOT": "50463374-A1FV03"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z9L003",
+    "SKU": 50469335,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50469335-Z9L003"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "ZBCE08",
+    "SKU": 50471316,
+    "Peças": 308,
+    "Peças por Caixa": 14,
+    "Caixas": 22.0,
+    "SKU-LOT": "50471316-ZBCE08"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A50005",
+    "SKU": 50472319,
+    "Peças": 42,
+    "Peças por Caixa": 42,
+    "Caixas": 1.0,
+    "SKU-LOT": "50472319-A50005"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A30001",
+    "SKU": 50472323,
+    "Peças": 45,
+    "Peças por Caixa": 45,
+    "Caixas": 1.0,
+    "SKU-LOT": "50472323-A30001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A20001",
+    "SKU": 50472325,
+    "Peças": 135,
+    "Peças por Caixa": 45,
+    "Caixas": 3.0,
+    "SKU-LOT": "50472325-A20001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A50006",
+    "SKU": 50472328,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50472328-A50006"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z40005",
+    "SKU": 50473959,
+    "Peças": 684,
+    "Peças por Caixa": 36,
+    "Caixas": 19.0,
+    "SKU-LOT": "50473959-Z40005"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A10004",
+    "SKU": 50474203,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50474203-A10004"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40002",
+    "SKU": 50474205,
+    "Peças": 224,
+    "Peças por Caixa": 112,
+    "Caixas": 2.0,
+    "SKU-LOT": "50474205-A40002"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A20001",
+    "SKU": 50474212,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50474212-A20001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A10008",
+    "SKU": 50475256,
+    "Peças": 28,
+    "Peças por Caixa": 28,
+    "Caixas": 1.0,
+    "SKU-LOT": "50475256-A10008"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z80006",
+    "SKU": 50476363,
+    "Peças": 90,
+    "Peças por Caixa": 45,
+    "Caixas": 2.0,
+    "SKU-LOT": "50476363-Z80006"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A30009",
+    "SKU": 50476420,
+    "Peças": 50,
+    "Peças por Caixa": 25,
+    "Caixas": 2.0,
+    "SKU-LOT": "50476420-A30009"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A50026",
+    "SKU": 50481921,
+    "Peças": 72,
+    "Peças por Caixa": 36,
+    "Caixas": 2.0,
+    "SKU-LOT": "50481921-A50026"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40007",
+    "SKU": 50481926,
+    "Peças": 80,
+    "Peças por Caixa": 40,
+    "Caixas": 2.0,
+    "SKU-LOT": "50481926-A40007"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40006",
+    "SKU": 50481926,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50481926-A40006"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40011",
+    "SKU": 50481929,
+    "Peças": 120,
+    "Peças por Caixa": 40,
+    "Caixas": 3.0,
+    "SKU-LOT": "50481929-A40011"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A50015",
+    "SKU": 50481932,
+    "Peças": 120,
+    "Peças por Caixa": 40,
+    "Caixas": 3.0,
+    "SKU-LOT": "50481932-A50015"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A50014",
+    "SKU": 50481932,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50481932-A50014"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A50019",
+    "SKU": 50481934,
+    "Peças": 144,
+    "Peças por Caixa": 36,
+    "Caixas": 4.0,
+    "SKU-LOT": "50481934-A50019"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A30007",
+    "SKU": 50481937,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50481937-A30007"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A50004",
+    "SKU": 50481939,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50481939-A50004"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A3MD02",
+    "SKU": 50481940,
+    "Peças": 350,
+    "Peças por Caixa": 350,
+    "Caixas": 1.0,
+    "SKU-LOT": "50481940-A3MD02"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A4FV02",
+    "SKU": 50481954,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50481954-A4FV02"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "ZAH993",
+    "SKU": 50482010,
+    "Peças": 570,
+    "Peças por Caixa": 30,
+    "Caixas": 19.0,
+    "SKU-LOT": "50482010-ZAH993"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40008",
+    "SKU": 50483031,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50483031-A40008"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A50001",
+    "SKU": 50483032,
+    "Peças": 96,
+    "Peças por Caixa": 96,
+    "Caixas": 1.0,
+    "SKU-LOT": "50483032-A50001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z40001",
+    "SKU": 50483544,
+    "Peças": 27,
+    "Peças por Caixa": 27,
+    "Caixas": 1.0,
+    "SKU-LOT": "50483544-Z40001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40004",
+    "SKU": 50483544,
+    "Peças": 162,
+    "Peças por Caixa": 27,
+    "Caixas": 6.0,
+    "SKU-LOT": "50483544-A40004"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z70001",
+    "SKU": 50484049,
+    "Peças": 112,
+    "Peças por Caixa": 56,
+    "Caixas": 2.0,
+    "SKU-LOT": "50484049-Z70001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40003",
+    "SKU": 50485654,
+    "Peças": 752,
+    "Peças por Caixa": 752,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485654-A40003"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A50004",
+    "SKU": 50485655,
+    "Peças": 752,
+    "Peças por Caixa": 752,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485655-A50004"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40004",
+    "SKU": 50485656,
+    "Peças": 752,
+    "Peças por Caixa": 752,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485656-A40004"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40003",
+    "SKU": 50485664,
+    "Peças": 752,
+    "Peças por Caixa": 752,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485664-A40003"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A20001",
+    "SKU": 50485686,
+    "Peças": 630,
+    "Peças por Caixa": 630,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485686-A20001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40004",
+    "SKU": 50485697,
+    "Peças": 630,
+    "Peças por Caixa": 630,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485697-A40004"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40003",
+    "SKU": 50485709,
+    "Peças": 630,
+    "Peças por Caixa": 630,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485709-A40003"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A30001",
+    "SKU": 50485710,
+    "Peças": 630,
+    "Peças por Caixa": 630,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485710-A30001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40002",
+    "SKU": 50485711,
+    "Peças": 630,
+    "Peças por Caixa": 630,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485711-A40002"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A20001",
+    "SKU": 50485712,
+    "Peças": 630,
+    "Peças por Caixa": 630,
+    "Caixas": 1.0,
+    "SKU-LOT": "50485712-A20001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A50004",
+    "SKU": 50492293,
+    "Peças": 546,
+    "Peças por Caixa": 546,
+    "Caixas": 1.0,
+    "SKU-LOT": "50492293-A50004"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A10001",
+    "SKU": 50499995,
+    "Peças": 800,
+    "Peças por Caixa": 800,
+    "Caixas": 1.0,
+    "SKU-LOT": "50499995-A10001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A20002",
+    "SKU": 50499997,
+    "Peças": 800,
+    "Peças por Caixa": 800,
+    "Caixas": 1.0,
+    "SKU-LOT": "50499997-A20002"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A50001",
+    "SKU": 50500630,
+    "Peças": 800,
+    "Peças por Caixa": 800,
+    "Caixas": 1.0,
+    "SKU-LOT": "50500630-A50001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40001",
+    "SKU": 50512473,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50512473-A40001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40006",
+    "SKU": 50512480,
+    "Peças": 80,
+    "Peças por Caixa": 40,
+    "Caixas": 2.0,
+    "SKU-LOT": "50512480-A40006"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A50005",
+    "SKU": 50512498,
+    "Peças": 240,
+    "Peças por Caixa": 240,
+    "Caixas": 1.0,
+    "SKU-LOT": "50512498-A50005"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40001",
+    "SKU": 50512524,
+    "Peças": 400,
+    "Peças por Caixa": 100,
+    "Caixas": 4.0,
+    "SKU-LOT": "50512524-A40001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40012",
+    "SKU": 50512556,
+    "Peças": 80,
+    "Peças por Caixa": 40,
+    "Caixas": 2.0,
+    "SKU-LOT": "50512556-A40012"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40011",
+    "SKU": 50512556,
+    "Peças": 80,
+    "Peças por Caixa": 40,
+    "Caixas": 2.0,
+    "SKU-LOT": "50512556-A40011"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40004",
+    "SKU": 50512558,
+    "Peças": 120,
+    "Peças por Caixa": 40,
+    "Caixas": 3.0,
+    "SKU-LOT": "50512558-A40004"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "A40001",
+    "SKU": 50512597,
+    "Peças": 80,
+    "Peças por Caixa": 80,
+    "Caixas": 1.0,
+    "SKU-LOT": "50512597-A40001"
+  },
+  {
+    "ID_SAP": 180831686,
+    "NF": 6804,
+    "Carreta": 1,
+    "Remessa": 445839,
+    "Lote": "Z40001",
+    "SKU": 50514165,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50514165-Z40001"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A50003",
+    "SKU": 50355897,
+    "Peças": 144,
+    "Peças por Caixa": 18,
+    "Caixas": 8.0,
+    "SKU-LOT": "50355897-A50003"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A40001",
+    "SKU": 50369546,
+    "Peças": 144,
+    "Peças por Caixa": 72,
+    "Caixas": 2.0,
+    "SKU-LOT": "50369546-A40001"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "Z70010",
+    "SKU": 50378696,
+    "Peças": 264,
+    "Peças por Caixa": 264,
+    "Caixas": 1.0,
+    "SKU-LOT": "50378696-Z70010"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A40002",
+    "SKU": 50398973,
+    "Peças": 84,
+    "Peças por Caixa": 28,
+    "Caixas": 3.0,
+    "SKU-LOT": "50398973-A40002"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "ZA0010",
+    "SKU": 50404307,
+    "Peças": 56,
+    "Peças por Caixa": 56,
+    "Caixas": 1.0,
+    "SKU-LOT": "50404307-ZA0010"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A10001",
+    "SKU": 50418109,
+    "Peças": 32,
+    "Peças por Caixa": 32,
+    "Caixas": 1.0,
+    "SKU-LOT": "50418109-A10001"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A10003",
+    "SKU": 50420233,
+    "Peças": 288,
+    "Peças por Caixa": 48,
+    "Caixas": 6.0,
+    "SKU-LOT": "50420233-A10003"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "Z70005",
+    "SKU": 50444843,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50444843-Z70005"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A40002",
+    "SKU": 50470199,
+    "Peças": 84,
+    "Peças por Caixa": 84,
+    "Caixas": 1.0,
+    "SKU-LOT": "50470199-A40002"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A20004",
+    "SKU": 50476346,
+    "Peças": 125,
+    "Peças por Caixa": 25,
+    "Caixas": 5.0,
+    "SKU-LOT": "50476346-A20004"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A2MD03",
+    "SKU": 50481944,
+    "Peças": 350,
+    "Peças por Caixa": 350,
+    "Caixas": 1.0,
+    "SKU-LOT": "50481944-A2MD03"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "ZB0005",
+    "SKU": 50483839,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50483839-ZB0005"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "ZC0008",
+    "SKU": 50483869,
+    "Peças": 12,
+    "Peças por Caixa": 12,
+    "Caixas": 1.0,
+    "SKU-LOT": "50483869-ZC0008"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "Z90014",
+    "SKU": 50484920,
+    "Peças": 34,
+    "Peças por Caixa": 34,
+    "Caixas": 1.0,
+    "SKU-LOT": "50484920-Z90014"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A30001",
+    "SKU": 50491092,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50491092-A30001"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A2AA03",
+    "SKU": 50491479,
+    "Peças": 216,
+    "Peças por Caixa": 18,
+    "Caixas": 12.0,
+    "SKU-LOT": "50491479-A2AA03"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "Z90010",
+    "SKU": 50491830,
+    "Peças": 96,
+    "Peças por Caixa": 48,
+    "Caixas": 2.0,
+    "SKU-LOT": "50491830-Z90010"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "ZA0005",
+    "SKU": 50491873,
+    "Peças": 78,
+    "Peças por Caixa": 39,
+    "Caixas": 2.0,
+    "SKU-LOT": "50491873-ZA0005"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "Z80002",
+    "SKU": 50491873,
+    "Peças": 39,
+    "Peças por Caixa": 39,
+    "Caixas": 1.0,
+    "SKU-LOT": "50491873-Z80002"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A40005",
+    "SKU": 50491974,
+    "Peças": 240,
+    "Peças por Caixa": 80,
+    "Caixas": 3.0,
+    "SKU-LOT": "50491974-A40005"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A3NP29",
+    "SKU": 50495225,
+    "Peças": 450,
+    "Peças por Caixa": 150,
+    "Caixas": 3.0,
+    "SKU-LOT": "50495225-A3NP29"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A3NP34",
+    "SKU": 50495228,
+    "Peças": 1800,
+    "Peças por Caixa": 45,
+    "Caixas": 40.0,
+    "SKU-LOT": "50495228-A3NP34"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A1H134",
+    "SKU": 50495228,
+    "Peças": 765,
+    "Peças por Caixa": 45,
+    "Caixas": 17.0,
+    "SKU-LOT": "50495228-A1H134"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A4NP37",
+    "SKU": 50495344,
+    "Peças": 4,
+    "Peças por Caixa": 4,
+    "Caixas": 1.0,
+    "SKU-LOT": "50495344-A4NP37"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A1H138",
+    "SKU": 50495344,
+    "Peças": 68,
+    "Peças por Caixa": 4,
+    "Caixas": 17.0,
+    "SKU-LOT": "50495344-A1H138"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A4GQ12",
+    "SKU": 50495347,
+    "Peças": 450,
+    "Peças por Caixa": 50,
+    "Caixas": 9.0,
+    "SKU-LOT": "50495347-A4GQ12"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A4GQ09",
+    "SKU": 50495347,
+    "Peças": 100,
+    "Peças por Caixa": 50,
+    "Caixas": 2.0,
+    "SKU-LOT": "50495347-A4GQ09"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "ZANP08",
+    "SKU": 50495348,
+    "Peças": 13,
+    "Peças por Caixa": 13,
+    "Caixas": 1.0,
+    "SKU-LOT": "50495348-ZANP08"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A3NP32",
+    "SKU": 50495348,
+    "Peças": 325,
+    "Peças por Caixa": 13,
+    "Caixas": 25.0,
+    "SKU-LOT": "50495348-A3NP32"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A3NP09",
+    "SKU": 50495348,
+    "Peças": 13,
+    "Peças por Caixa": 13,
+    "Caixas": 1.0,
+    "SKU-LOT": "50495348-A3NP09"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A20001",
+    "SKU": 50497746,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50497746-A20001"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "Z8BU01",
+    "SKU": 50498698,
+    "Peças": 6,
+    "Peças por Caixa": 6,
+    "Caixas": 1.0,
+    "SKU-LOT": "50498698-Z8BU01"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "Z90011",
+    "SKU": 50500438,
+    "Peças": 54,
+    "Peças por Caixa": 18,
+    "Caixas": 3.0,
+    "SKU-LOT": "50500438-Z90011"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A10002",
+    "SKU": 50500438,
+    "Peças": 36,
+    "Peças por Caixa": 18,
+    "Caixas": 2.0,
+    "SKU-LOT": "50500438-A10002"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A10001",
+    "SKU": 50501449,
+    "Peças": 560,
+    "Peças por Caixa": 40,
+    "Caixas": 14.0,
+    "SKU-LOT": "50501449-A10001"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A3MD02",
+    "SKU": 50501455,
+    "Peças": 450,
+    "Peças por Caixa": 450,
+    "Caixas": 1.0,
+    "SKU-LOT": "50501455-A3MD02"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A3L008",
+    "SKU": 50502181,
+    "Peças": 280,
+    "Peças por Caixa": 280,
+    "Caixas": 1.0,
+    "SKU-LOT": "50502181-A3L008"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A30002",
+    "SKU": 50504566,
+    "Peças": 40,
+    "Peças por Caixa": 20,
+    "Caixas": 2.0,
+    "SKU-LOT": "50504566-A30002"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A10005",
+    "SKU": 50504588,
+    "Peças": 36,
+    "Peças por Caixa": 18,
+    "Caixas": 2.0,
+    "SKU-LOT": "50504588-A10005"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A40001",
+    "SKU": 50505968,
+    "Peças": 627,
+    "Peças por Caixa": 627,
+    "Caixas": 1.0,
+    "SKU-LOT": "50505968-A40001"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A30001",
+    "SKU": 50505972,
+    "Peças": 627,
+    "Peças por Caixa": 627,
+    "Caixas": 1.0,
+    "SKU-LOT": "50505972-A30001"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A3NP24",
+    "SKU": 50507347,
+    "Peças": 35,
+    "Peças por Caixa": 35,
+    "Caixas": 1.0,
+    "SKU-LOT": "50507347-A3NP24"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A40003",
+    "SKU": 50507497,
+    "Peças": 288,
+    "Peças por Caixa": 48,
+    "Caixas": 6.0,
+    "SKU-LOT": "50507497-A40003"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A30001",
+    "SKU": 50508869,
+    "Peças": 60,
+    "Peças por Caixa": 60,
+    "Caixas": 1.0,
+    "SKU-LOT": "50508869-A30001"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A2L001",
+    "SKU": 50509424,
+    "Peças": 840,
+    "Peças por Caixa": 280,
+    "Caixas": 3.0,
+    "SKU-LOT": "50509424-A2L001"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A40001",
+    "SKU": 50510466,
+    "Peças": 828,
+    "Peças por Caixa": 36,
+    "Caixas": 23.0,
+    "SKU-LOT": "50510466-A40001"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A40002",
+    "SKU": 50511199,
+    "Peças": 2160,
+    "Peças por Caixa": 27,
+    "Caixas": 80.0,
+    "SKU-LOT": "50511199-A40002"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A1WN02",
+    "SKU": 50511367,
+    "Peças": 320,
+    "Peças por Caixa": 320,
+    "Caixas": 1.0,
+    "SKU-LOT": "50511367-A1WN02"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A40001",
+    "SKU": 50512508,
+    "Peças": 100,
+    "Peças por Caixa": 100,
+    "Caixas": 1.0,
+    "SKU-LOT": "50512508-A40001"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A50002",
+    "SKU": 50512567,
+    "Peças": 40,
+    "Peças por Caixa": 40,
+    "Caixas": 1.0,
+    "SKU-LOT": "50512567-A50002"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A3SC01",
+    "SKU": 50513460,
+    "Peças": 80,
+    "Peças por Caixa": 16,
+    "Caixas": 5.0,
+    "SKU-LOT": "50513460-A3SC01"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A2EX03",
+    "SKU": 50513461,
+    "Peças": 30,
+    "Peças por Caixa": 30,
+    "Caixas": 1.0,
+    "SKU-LOT": "50513461-A2EX03"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A20002",
+    "SKU": 50513961,
+    "Peças": 24,
+    "Peças por Caixa": 24,
+    "Caixas": 1.0,
+    "SKU-LOT": "50513961-A20002"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A30008",
+    "SKU": 50513990,
+    "Peças": 36,
+    "Peças por Caixa": 36,
+    "Caixas": 1.0,
+    "SKU-LOT": "50513990-A30008"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A30002",
+    "SKU": 50514094,
+    "Peças": 24,
+    "Peças por Caixa": 24,
+    "Caixas": 1.0,
+    "SKU-LOT": "50514094-A30002"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A20001",
+    "SKU": 50514744,
+    "Peças": 288,
+    "Peças por Caixa": 96,
+    "Caixas": 3.0,
+    "SKU-LOT": "50514744-A20001"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A30003",
+    "SKU": 50514796,
+    "Peças": 36,
+    "Peças por Caixa": 36,
+    "Caixas": 1.0,
+    "SKU-LOT": "50514796-A30003"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "ZB0001",
+    "SKU": 50514802,
+    "Peças": 84,
+    "Peças por Caixa": 42,
+    "Caixas": 2.0,
+    "SKU-LOT": "50514802-ZB0001"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A30022",
+    "SKU": 50514870,
+    "Peças": 84,
+    "Peças por Caixa": 21,
+    "Caixas": 4.0,
+    "SKU-LOT": "50514870-A30022"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A30013",
+    "SKU": 50514870,
+    "Peças": 21,
+    "Peças por Caixa": 21,
+    "Caixas": 1.0,
+    "SKU-LOT": "50514870-A30013"
+  },
+  {
+    "ID_SAP": 180831687,
+    "NF": 6805,
+    "Carreta": 1,
+    "Remessa": 445837,
+    "Lote": "A40003",
+    "SKU": 50514875,
+    "Peças": 48,
+    "Peças por Caixa": 48,
+    "Caixas": 1.0,
+    "SKU-LOT": "50514875-A40003"
+  }
+];
+
+        // Set up the input listener when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeInput = document.getElementById('codeInput');
+            codeInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    processCode(this.value);
+                }
+            });
+            codeInput.addEventListener('input', function(event) {
+                if (this.value.length === 27) {
+                    processCode(this.value);
+                }
+            });
+        });
+
+        function processCode(code) {
+            document.getElementById('codeInput').value = "";
+            const errorElement = document.getElementById('error');
+            const resultContainer = document.getElementById('resultContainer');
+            const resultsElement = document.getElementById('results');
+
+            // Clear previous results
+            resultsElement.innerHTML = '';
+
+            // Validate and parse the code
+            if (code.length !== 27) {
+                errorElement.textContent = 'O código deve ter 27 caracteres.';
+                errorElement.style.display = 'block';
+                resultContainer.style.display = 'none';
+                return;
+            }
+
+            // Parse the code
+            const idStart = code.substring(0, 2);
+            const expirationDate = code.substring(2, 8);
+            const idMiddle = code.substring(8, 10);
+            const lot = code.substring(10, 16);
+            const idEnd = code.substring(16, 18);
+            const sku = code.substring(18).replace(/^0/, '');
+
+            // Format date from YYMMDD to DD/MM/YY
+            const year = expirationDate.substring(0, 2);
+            const month = expirationDate.substring(2, 4);
+            const day = expirationDate.substring(4, 6);
+            const formattedDate = `${day}/${month}/${year}`;
+
+            // Create SKU-LOT string for search
+            const skuLot = `${sku}-${lot}`;
+
+            // Search for the SKU-LOT in the JSON data
+            let found = false;
+
+            // Search in all loaded JSON data
+            for (const fileName in jsonData) {
+                const fileData = jsonData[fileName];
+                
+                for (const item of fileData) {
+                    if (item['SKU-LOT'] === skuLot) {
+                        found = true;
+                        
+                        // Create a card for each match
+                        const card = document.createElement('div');
+                        card.className = 'result-card';
+                        
+                        // Primary info (NF and Remessa)
+                        const primaryInfo = document.createElement('div');
+                        primaryInfo.className = 'primary-info';
+                        
+                        const nfBox = document.createElement('div');
+                        nfBox.className = 'info-box primary';
+                        nfBox.innerHTML = `
+                            <div class="info-label">NF</div>
+                            <div class="info-value primary">${item.NF || '-'}</div>
+                        `;
+                        
+                        const remessaBox = document.createElement('div');
+                        remessaBox.className = 'info-box primary';
+                        remessaBox.innerHTML = `
+                            <div class="info-label">REMESSA</div>
+                            <div class="info-value primary">${item.Remessa || '-'}</div>
+                        `;
+                        
+                        primaryInfo.appendChild(nfBox);
+                        primaryInfo.appendChild(remessaBox);
+                        
+                        // Secondary info (Caixas)
+                        const secondaryInfo = document.createElement('div');
+                        secondaryInfo.className = 'secondary-info';
+                        
+                        const caixasBox = document.createElement('div');
+                        caixasBox.className = 'info-box secondary';
+                        caixasBox.innerHTML = `
+                            <div class="info-label">CAIXAS</div>
+                            <div class="info-value secondary">${item.Caixas || '-'}</div>
+                        `;
+                        
+                        secondaryInfo.appendChild(caixasBox);
+                        
+                        // Tertiary info (SKU and Lote)
+                        const tertiaryInfo = document.createElement('div');
+                        tertiaryInfo.className = 'tertiary-info';
+                        
+                        const skuBox = document.createElement('div');
+                        skuBox.className = 'info-box tertiary';
+                        skuBox.innerHTML = `
+                            <div class="info-label">SKU</div>
+                            <div class="info-value tertiary">${item.SKU || '-'}</div>
+                        `;
+                        
+                        const loteBox = document.createElement('div');
+                        loteBox.className = 'info-box tertiary';
+                        loteBox.innerHTML = `
+                            <div class="info-label">LOTE</div>
+                            <div class="info-value tertiary">${item.Lote || '-'}</div>
+                        `;
+                        
+                        tertiaryInfo.appendChild(skuBox);
+                        tertiaryInfo.appendChild(loteBox);
+                        
+                        // Append all sections to the card
+                        card.appendChild(primaryInfo);
+                        card.appendChild(secondaryInfo);
+                        card.appendChild(tertiaryInfo);
+                        
+                        // Add the card to results
+                        resultsElement.appendChild(card);
+                    }
+                }
+            }
+
+            if (!found) {
+                // Create a message for no results
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = 'Nenhum resultado encontrado para este SKU-Lote.';
+                resultsElement.appendChild(noResults);
+            }
+
+            // Show the results
+            errorElement.style.display = 'none';
+            resultContainer.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

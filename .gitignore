@@ -144,3 +144,7 @@ peca_operador_report.xlsx
 peso_valor_pedido_report.xlsx
 
 picker_livre.py
+export_to_excel.py
+export_to_excel_sla_embu.py
+export_to_excel_sla_extrema.py
+

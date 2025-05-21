@@ -439,10 +439,15 @@ def bonus_projetor():
 def ops():
     return render_template('ops.html')
 
-@app.route('/toteLivre')
+@app.route('/zica_abastecimento_curintia')
 @login_required
-def toteLivre():
-    return render_template('toteLivre.html')
+def zica_abastecimento_curintia():
+    return render_template('zica_abastecimento_curintia.html')
+
+@app.route('/zica_abastecimento')
+@login_required
+def zica_abastecimento():
+    return render_template('zica_abastecimento.html')
 
 @app.route('/atrasos')
 @login_required
