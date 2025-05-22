@@ -8,7 +8,7 @@ from google.oauth2.credentials import Credentials
 from google_auth import authenticate_google
 from redis_connection import get_redis_connection
 # Import the metabase functions
-from metabase import create_metabase_token, get_dataset, process_data
+from metabase import get_dataset, process_data
 
 # Get the Redis client from the shared connection
 redis_client = get_redis_connection()
@@ -460,7 +460,7 @@ def generate_csv(data, google_sheet_data, sheet_url, only_process_today=True):
 
 if __name__ == "__main__":
     # Default: only process today's data
-    only_process_today = True
+    only_process_today = False
     
     # Process full history if an argument is passed
     # You can enable this through command line arguments if needed
