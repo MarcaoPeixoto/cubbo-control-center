@@ -449,6 +449,11 @@ def zica_abastecimento_curintia():
 def zica_abastecimento():
     return render_template('zica_abastecimento.html')
 
+@app.route('/zica_abastecimento_4')
+@login_required
+def zica_abastecimento_4():
+    return render_template('zica_abastecimento_4.html')
+
 @app.route('/atrasos')
 @login_required
 def atrasos():

@@ -1,0 +1,7411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZICA Abastecimento</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            width: 95%;
+            max-width: 900px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+        .input-container {
+            margin-bottom: 30px;
+        }
+        #codeInput {
+            width: 100%;
+            padding: 20px;
+            font-size: 24px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+        }
+        #resultContainer {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            width: 100%;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        .error {
+            color: red;
+            margin-top: 15px;
+            font-size: 20px;
+            display: none;
+        }
+        .parsed-info {
+            text-align: left;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f2f2f2;
+            border-radius: 5px;
+        }
+        .results-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .result-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+        .primary-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .info-box {
+            text-align: center;
+        }
+        .info-box.primary {
+            flex: 1;
+            padding: 15px;
+            background-color: #f0f8ff;
+            border-radius: 8px;
+            margin: 0 5px;
+        }
+        .info-box.secondary {
+            flex: 1;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            margin: 0 5px;
+        }
+        .info-box.tertiary {
+            flex: 1;
+            padding: 8px;
+            background-color: #f2f2f2;
+            border-radius: 5px;
+            margin: 0 5px;
+        }
+        .info-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .info-value.primary {
+            font-size: 32px;
+            font-weight: bold;
+            color: #000;
+        }
+        .info-value.secondary {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        .info-value.tertiary {
+            font-size: 16px;
+            color: #555;
+        }
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            font-size: 20px;
+            color: #666;
+        }
+        .secondary-info {
+            display: flex;
+            justify-content: space-between;
+        }
+        .tertiary-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ZICA Abastecimento</h1>
+        <div class="input-container">
+            <input type="text" id="codeInput" placeholder="Digite o código (ex: 1727050910A5000692050472328)" autocomplete="off">
+            <div id="error" class="error">Código inválido, por favor verifique.</div>
+        </div>
+        <div id="resultContainer">
+            <div id="results" class="results-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global variable to store the loaded JSON data
+        let jsonData = {};
+
+        // Embed the JSON data directly to avoid CORS issues
+        // Paste the contents of remessa_20250520.json here
+        jsonData['remessa_20250520'] = [
+  {
+    "ID_SAP": 180831793,
+    "Remessa": 448900,
+    "Peças": 24,
+    "NF": 78750,
+    "Lote": "Q65104",
+    "SKU": 50579873,
+    "Expected Replenishment Product Quantities → Expected Quantity": 24,
+    "Caixas": 30,
+    "SKU-LOT": "50579873-Q65104"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 150,
+    "NF": 78753,
+    "Lote": "Y84095",
+    "SKU": 50448158,
+    "Expected Replenishment Product Quantities → Expected Quantity": 150,
+    "Caixas": 150,
+    "SKU-LOT": "50448158-Y84095"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 40,
+    "NF": 78753,
+    "Lote": "883055",
+    "SKU": 50448174,
+    "Expected Replenishment Product Quantities → Expected Quantity": 40,
+    "Caixas": 20,
+    "SKU-LOT": "50448174-883055"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 550,
+    "NF": 78753,
+    "Lote": "565013",
+    "SKU": 50460408,
+    "Expected Replenishment Product Quantities → Expected Quantity": 550,
+    "Caixas": 550,
+    "SKU-LOT": "50460408-565013"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1120,
+    "NF": 78753,
+    "Lote": "994131",
+    "SKU": 50460422,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1120,
+    "Caixas": 1120,
+    "SKU-LOT": "50460422-994131"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1120,
+    "NF": 78753,
+    "Lote": "DU2063",
+    "SKU": 50460423,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1120,
+    "Caixas": 1120,
+    "SKU-LOT": "50460423-DU2063"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 810,
+    "NF": 78753,
+    "Lote": "040242",
+    "SKU": 50463099,
+    "Expected Replenishment Product Quantities → Expected Quantity": 810,
+    "Caixas": 810,
+    "SKU-LOT": "50463099-040242"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 500,
+    "NF": 78753,
+    "Lote": "565067",
+    "SKU": 50463459,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50463459-565067"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 500,
+    "NF": 78753,
+    "Lote": "564339",
+    "SKU": 50463461,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50463461-564339"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 500,
+    "NF": 78753,
+    "Lote": "565066",
+    "SKU": 50463462,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50463462-565066"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 600,
+    "NF": 78753,
+    "Lote": "C85052",
+    "SKU": 50463485,
+    "Expected Replenishment Product Quantities → Expected Quantity": 300,
+    "Caixas": 300,
+    "SKU-LOT": "50463485-C85052"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 600,
+    "NF": 78753,
+    "Lote": "C84362",
+    "SKU": 50463485,
+    "Expected Replenishment Product Quantities → Expected Quantity": 300,
+    "Caixas": 300,
+    "SKU-LOT": "50463485-C84362"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 600,
+    "NF": 78753,
+    "Lote": "C85075",
+    "SKU": 50463487,
+    "Expected Replenishment Product Quantities → Expected Quantity": 600,
+    "Caixas": 300,
+    "SKU-LOT": "50463487-C85075"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 300,
+    "NF": 78753,
+    "Lote": "564304",
+    "SKU": 50463571,
+    "Expected Replenishment Product Quantities → Expected Quantity": 300,
+    "Caixas": 300,
+    "SKU-LOT": "50463571-564304"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 540,
+    "NF": 78753,
+    "Lote": "564136",
+    "SKU": 50463572,
+    "Expected Replenishment Product Quantities → Expected Quantity": 540,
+    "Caixas": 540,
+    "SKU-LOT": "50463572-564136"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 540,
+    "NF": 78753,
+    "Lote": "564137",
+    "SKU": 50463573,
+    "Expected Replenishment Product Quantities → Expected Quantity": 540,
+    "Caixas": 540,
+    "SKU-LOT": "50463573-564137"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 338,
+    "NF": 78753,
+    "Lote": "564254",
+    "SKU": 50463574,
+    "Expected Replenishment Product Quantities → Expected Quantity": 338,
+    "Caixas": 338,
+    "SKU-LOT": "50463574-564254"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1680,
+    "NF": 78753,
+    "Lote": "565134",
+    "SKU": 50463576,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1008,
+    "Caixas": 112,
+    "SKU-LOT": "50463576-565134"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1680,
+    "NF": 78753,
+    "Lote": "564277",
+    "SKU": 50463576,
+    "Expected Replenishment Product Quantities → Expected Quantity": 672,
+    "Caixas": 112,
+    "SKU-LOT": "50463576-564277"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 896,
+    "NF": 78753,
+    "Lote": "565094",
+    "SKU": 50463577,
+    "Expected Replenishment Product Quantities → Expected Quantity": 336,
+    "Caixas": 112,
+    "SKU-LOT": "50463577-565094"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 896,
+    "NF": 78753,
+    "Lote": "564316",
+    "SKU": 50463577,
+    "Expected Replenishment Product Quantities → Expected Quantity": 560,
+    "Caixas": 112,
+    "SKU-LOT": "50463577-564316"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1008,
+    "NF": 78753,
+    "Lote": "564262",
+    "SKU": 50463578,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1008,
+    "Caixas": 112,
+    "SKU-LOT": "50463578-564262"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1568,
+    "NF": 78753,
+    "Lote": "565133",
+    "SKU": 50463579,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1568,
+    "Caixas": 112,
+    "SKU-LOT": "50463579-565133"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 560,
+    "NF": 78753,
+    "Lote": "564291",
+    "SKU": 50463582,
+    "Expected Replenishment Product Quantities → Expected Quantity": 560,
+    "Caixas": 112,
+    "SKU-LOT": "50463582-564291"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 784,
+    "NF": 78753,
+    "Lote": "564172",
+    "SKU": 50463583,
+    "Expected Replenishment Product Quantities → Expected Quantity": 784,
+    "Caixas": 112,
+    "SKU-LOT": "50463583-564172"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 28,
+    "NF": 78753,
+    "Lote": "O73312",
+    "SKU": 50463598,
+    "Expected Replenishment Product Quantities → Expected Quantity": 28,
+    "Caixas": 28,
+    "SKU-LOT": "50463598-O73312"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 45,
+    "NF": 78753,
+    "Lote": "565132",
+    "SKU": 50470265,
+    "Expected Replenishment Product Quantities → Expected Quantity": 45,
+    "Caixas": 45,
+    "SKU-LOT": "50470265-565132"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 126,
+    "NF": 78753,
+    "Lote": "565043",
+    "SKU": 50470266,
+    "Expected Replenishment Product Quantities → Expected Quantity": 126,
+    "Caixas": 42,
+    "SKU-LOT": "50470266-565043"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1440,
+    "NF": 78753,
+    "Lote": "564325",
+    "SKU": 50472189,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1440,
+    "Caixas": 1440,
+    "SKU-LOT": "50472189-564325"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1008,
+    "NF": 78753,
+    "Lote": "565088",
+    "SKU": 50472476,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1008,
+    "Caixas": 112,
+    "SKU-LOT": "50472476-565088"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1440,
+    "NF": 78753,
+    "Lote": "564352",
+    "SKU": 50472478,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1440,
+    "Caixas": 1440,
+    "SKU-LOT": "50472478-564352"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1440,
+    "NF": 78753,
+    "Lote": "564267",
+    "SKU": 50472601,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1440,
+    "Caixas": 1440,
+    "SKU-LOT": "50472601-564267"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1440,
+    "NF": 78753,
+    "Lote": "565076",
+    "SKU": 50472603,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1440,
+    "Caixas": 1440,
+    "SKU-LOT": "50472603-565076"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 300,
+    "NF": 78753,
+    "Lote": "563262",
+    "SKU": 50472604,
+    "Expected Replenishment Product Quantities → Expected Quantity": 300,
+    "Caixas": 300,
+    "SKU-LOT": "50472604-563262"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 35,
+    "NF": 78753,
+    "Lote": "744022",
+    "SKU": 50476355,
+    "Expected Replenishment Product Quantities → Expected Quantity": 35,
+    "Caixas": 35,
+    "SKU-LOT": "50476355-744022"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 120,
+    "NF": 78753,
+    "Lote": "565090",
+    "SKU": 50476374,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50476374-565090"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 120,
+    "NF": 78753,
+    "Lote": "565127",
+    "SKU": 50476380,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50476380-565127"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 120,
+    "NF": 78753,
+    "Lote": "565069",
+    "SKU": 50476381,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50476381-565069"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 110,
+    "NF": 78753,
+    "Lote": "565056",
+    "SKU": 50476383,
+    "Expected Replenishment Product Quantities → Expected Quantity": 110,
+    "Caixas": 110,
+    "SKU-LOT": "50476383-565056"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 120,
+    "NF": 78753,
+    "Lote": "565119",
+    "SKU": 50476384,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50476384-565119"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 42,
+    "NF": 78753,
+    "Lote": "565083",
+    "SKU": 50476608,
+    "Expected Replenishment Product Quantities → Expected Quantity": 42,
+    "Caixas": 42,
+    "SKU-LOT": "50476608-565083"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 42,
+    "NF": 78753,
+    "Lote": "565118",
+    "SKU": 50476610,
+    "Expected Replenishment Product Quantities → Expected Quantity": 42,
+    "Caixas": 42,
+    "SKU-LOT": "50476610-565118"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 42,
+    "NF": 78753,
+    "Lote": "565024",
+    "SKU": 50476611,
+    "Expected Replenishment Product Quantities → Expected Quantity": 42,
+    "Caixas": 42,
+    "SKU-LOT": "50476611-565024"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 42,
+    "NF": 78753,
+    "Lote": "565042",
+    "SKU": 50476612,
+    "Expected Replenishment Product Quantities → Expected Quantity": 42,
+    "Caixas": 42,
+    "SKU-LOT": "50476612-565042"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 42,
+    "NF": 78753,
+    "Lote": "565113",
+    "SKU": 50476613,
+    "Expected Replenishment Product Quantities → Expected Quantity": 42,
+    "Caixas": 42,
+    "SKU-LOT": "50476613-565113"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 400,
+    "NF": 78753,
+    "Lote": "565030",
+    "SKU": 50477238,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50477238-565030"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 300,
+    "NF": 78753,
+    "Lote": "564334",
+    "SKU": 50477240,
+    "Expected Replenishment Product Quantities → Expected Quantity": 300,
+    "Caixas": 300,
+    "SKU-LOT": "50477240-564334"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 180,
+    "NF": 78753,
+    "Lote": "565049",
+    "SKU": 50477241,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50477241-565049"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 72,
+    "NF": 78753,
+    "Lote": "563331",
+    "SKU": 50477242,
+    "Expected Replenishment Product Quantities → Expected Quantity": 72,
+    "Caixas": 72,
+    "SKU-LOT": "50477242-563331"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 240,
+    "NF": 78753,
+    "Lote": "564263",
+    "SKU": 50477247,
+    "Expected Replenishment Product Quantities → Expected Quantity": 240,
+    "Caixas": 120,
+    "SKU-LOT": "50477247-564263"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 96,
+    "NF": 78753,
+    "Lote": "565058",
+    "SKU": 50477248,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 48,
+    "SKU-LOT": "50477248-565058"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 112,
+    "NF": 78753,
+    "Lote": "565127",
+    "SKU": 50477249,
+    "Expected Replenishment Product Quantities → Expected Quantity": 112,
+    "Caixas": 56,
+    "SKU-LOT": "50477249-565127"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 400,
+    "NF": 78753,
+    "Lote": "565029",
+    "SKU": 50477275,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50477275-565029"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 400,
+    "NF": 78753,
+    "Lote": "565029",
+    "SKU": 50477276,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50477276-565029"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 450,
+    "NF": 78753,
+    "Lote": "565030",
+    "SKU": 50477277,
+    "Expected Replenishment Product Quantities → Expected Quantity": 450,
+    "Caixas": 450,
+    "SKU-LOT": "50477277-565030"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 400,
+    "NF": 78753,
+    "Lote": "565041",
+    "SKU": 50477278,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50477278-565041"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 360,
+    "NF": 78753,
+    "Lote": "564144",
+    "SKU": 50477292,
+    "Expected Replenishment Product Quantities → Expected Quantity": 360,
+    "Caixas": 180,
+    "SKU-LOT": "50477292-564144"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 180,
+    "NF": 78753,
+    "Lote": "565023",
+    "SKU": 50477293,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50477293-565023"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 360,
+    "NF": 78753,
+    "Lote": "565020",
+    "SKU": 50477294,
+    "Expected Replenishment Product Quantities → Expected Quantity": 360,
+    "Caixas": 180,
+    "SKU-LOT": "50477294-565020"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 180,
+    "NF": 78753,
+    "Lote": "564303",
+    "SKU": 50477295,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50477295-564303"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 180,
+    "NF": 78753,
+    "Lote": "565029",
+    "SKU": 50477296,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50477296-565029"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 180,
+    "NF": 78753,
+    "Lote": "565065",
+    "SKU": 50477297,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50477297-565065"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 180,
+    "NF": 78753,
+    "Lote": "564148",
+    "SKU": 50477298,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50477298-564148"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 180,
+    "NF": 78753,
+    "Lote": "564283",
+    "SKU": 50477299,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50477299-564283"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 180,
+    "NF": 78753,
+    "Lote": "564135",
+    "SKU": 50477300,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50477300-564135"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 180,
+    "NF": 78753,
+    "Lote": "564096",
+    "SKU": 50477301,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50477301-564096"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 84,
+    "NF": 78753,
+    "Lote": "564297",
+    "SKU": 50477302,
+    "Expected Replenishment Product Quantities → Expected Quantity": 84,
+    "Caixas": 84,
+    "SKU-LOT": "50477302-564297"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 180,
+    "NF": 78753,
+    "Lote": "564274",
+    "SKU": 50477303,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50477303-564274"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 180,
+    "NF": 78753,
+    "Lote": "564298",
+    "SKU": 50477304,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50477304-564298"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 180,
+    "NF": 78753,
+    "Lote": "564198",
+    "SKU": 50477307,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50477307-564198"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 180,
+    "NF": 78753,
+    "Lote": "565023",
+    "SKU": 50477308,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50477308-565023"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 180,
+    "NF": 78753,
+    "Lote": "564213",
+    "SKU": 50477309,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50477309-564213"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 180,
+    "NF": 78753,
+    "Lote": "564282",
+    "SKU": 50477310,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50477310-564282"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1500,
+    "NF": 78753,
+    "Lote": "995043",
+    "SKU": 50477311,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1500,
+    "Caixas": 1500,
+    "SKU-LOT": "50477311-995043"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1500,
+    "NF": 78753,
+    "Lote": "994303",
+    "SKU": 50477312,
+    "Expected Replenishment Product Quantities → Expected Quantity": 300,
+    "Caixas": 1500,
+    "SKU-LOT": "50477312-994303"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1500,
+    "NF": 78753,
+    "Lote": "994274",
+    "SKU": 50477312,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1200,
+    "Caixas": 1500,
+    "SKU-LOT": "50477312-994274"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1500,
+    "NF": 78753,
+    "Lote": "994054",
+    "SKU": 50477313,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1500,
+    "Caixas": 1500,
+    "SKU-LOT": "50477313-994054"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1500,
+    "NF": 78753,
+    "Lote": "995043",
+    "SKU": 50477314,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1500,
+    "Caixas": 1500,
+    "SKU-LOT": "50477314-995043"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1500,
+    "NF": 78753,
+    "Lote": "994276",
+    "SKU": 50477315,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1500,
+    "Caixas": 1500,
+    "SKU-LOT": "50477315-994276"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 550,
+    "NF": 78753,
+    "Lote": "564255",
+    "SKU": 50477316,
+    "Expected Replenishment Product Quantities → Expected Quantity": 550,
+    "Caixas": 550,
+    "SKU-LOT": "50477316-564255"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 550,
+    "NF": 78753,
+    "Lote": "564215",
+    "SKU": 50477317,
+    "Expected Replenishment Product Quantities → Expected Quantity": 550,
+    "Caixas": 550,
+    "SKU-LOT": "50477317-564215"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 45,
+    "NF": 78753,
+    "Lote": "565104",
+    "SKU": 50477320,
+    "Expected Replenishment Product Quantities → Expected Quantity": 45,
+    "Caixas": 45,
+    "SKU-LOT": "50477320-565104"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 120,
+    "NF": 78753,
+    "Lote": "565070",
+    "SKU": 50477321,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50477321-565070"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 400,
+    "NF": 78753,
+    "Lote": "565066",
+    "SKU": 50477330,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50477330-565066"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 192,
+    "NF": 78753,
+    "Lote": "564330",
+    "SKU": 50477331,
+    "Expected Replenishment Product Quantities → Expected Quantity": 192,
+    "Caixas": 48,
+    "SKU-LOT": "50477331-564330"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 35,
+    "NF": 78753,
+    "Lote": "745071",
+    "SKU": 50477343,
+    "Expected Replenishment Product Quantities → Expected Quantity": 35,
+    "Caixas": 35,
+    "SKU-LOT": "50477343-745071"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1000,
+    "NF": 78753,
+    "Lote": "459994",
+    "SKU": 50477346,
+    "Expected Replenishment Product Quantities → Expected Quantity": 150,
+    "Caixas": 1000,
+    "SKU-LOT": "50477346-459994"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 1000,
+    "NF": 78753,
+    "Lote": "455018",
+    "SKU": 50477346,
+    "Expected Replenishment Product Quantities → Expected Quantity": 850,
+    "Caixas": 1000,
+    "SKU-LOT": "50477346-455018"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 100,
+    "NF": 78753,
+    "Lote": "S65098",
+    "SKU": 50477546,
+    "Expected Replenishment Product Quantities → Expected Quantity": 100,
+    "Caixas": 100,
+    "SKU-LOT": "50477546-S65098"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 244,
+    "NF": 78753,
+    "Lote": "545090",
+    "SKU": 50478137,
+    "Expected Replenishment Product Quantities → Expected Quantity": 244,
+    "Caixas": 122,
+    "SKU-LOT": "50478137-545090"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 122,
+    "NF": 78753,
+    "Lote": "545087",
+    "SKU": 50478138,
+    "Expected Replenishment Product Quantities → Expected Quantity": 122,
+    "Caixas": 122,
+    "SKU-LOT": "50478138-545087"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 480,
+    "NF": 78753,
+    "Lote": "974157",
+    "SKU": 50479935,
+    "Expected Replenishment Product Quantities → Expected Quantity": 480,
+    "Caixas": 480,
+    "SKU-LOT": "50479935-974157"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 480,
+    "NF": 78753,
+    "Lote": "974166",
+    "SKU": 50479936,
+    "Expected Replenishment Product Quantities → Expected Quantity": 480,
+    "Caixas": 480,
+    "SKU-LOT": "50479936-974166"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 480,
+    "NF": 78753,
+    "Lote": "974170",
+    "SKU": 50479937,
+    "Expected Replenishment Product Quantities → Expected Quantity": 480,
+    "Caixas": 480,
+    "SKU-LOT": "50479937-974170"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 480,
+    "NF": 78753,
+    "Lote": "974117",
+    "SKU": 50479938,
+    "Expected Replenishment Product Quantities → Expected Quantity": 480,
+    "Caixas": 480,
+    "SKU-LOT": "50479938-974117"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 70,
+    "NF": 78753,
+    "Lote": "S65064",
+    "SKU": 50481628,
+    "Expected Replenishment Product Quantities → Expected Quantity": 70,
+    "Caixas": 70,
+    "SKU-LOT": "50481628-S65064"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 96,
+    "NF": 78753,
+    "Lote": "L64330",
+    "SKU": 50482576,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 16,
+    "SKU-LOT": "50482576-L64330"
+  },
+  {
+    "ID_SAP": 180831799,
+    "Remessa": 448901,
+    "Peças": 630,
+    "NF": 78753,
+    "Lote": "A10001",
+    "SKU": 50485688,
+    "Expected Replenishment Product Quantities → Expected Quantity": 630,
+    "Caixas": 630,
+    "SKU-LOT": "50485688-A10001"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 32,
+    "NF": 78751,
+    "Lote": "L64326",
+    "SKU": 50482577,
+    "Expected Replenishment Product Quantities → Expected Quantity": 32,
+    "Caixas": 16,
+    "SKU-LOT": "50482577-L64326"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 100,
+    "NF": 78751,
+    "Lote": "F94081",
+    "SKU": 50483470,
+    "Expected Replenishment Product Quantities → Expected Quantity": 100,
+    "Caixas": 100,
+    "SKU-LOT": "50483470-F94081"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 60,
+    "NF": 78751,
+    "Lote": "564267",
+    "SKU": 50483963,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50483963-564267"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 60,
+    "NF": 78751,
+    "Lote": "564297",
+    "SKU": 50483966,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50483966-564297"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 60,
+    "NF": 78751,
+    "Lote": "564263",
+    "SKU": 50483968,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50483968-564263"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 60,
+    "NF": 78751,
+    "Lote": "564255",
+    "SKU": 50484089,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50484089-564255"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 60,
+    "NF": 78751,
+    "Lote": "564214",
+    "SKU": 50484091,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50484091-564214"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 60,
+    "NF": 78751,
+    "Lote": "564304",
+    "SKU": 50484092,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50484092-564304"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 60,
+    "NF": 78751,
+    "Lote": "564219",
+    "SKU": 50484093,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50484093-564219"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 60,
+    "NF": 78751,
+    "Lote": "564249",
+    "SKU": 50484094,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50484094-564249"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 60,
+    "NF": 78751,
+    "Lote": "564214",
+    "SKU": 50484095,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50484095-564214"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 60,
+    "NF": 78751,
+    "Lote": "564220",
+    "SKU": 50484097,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50484097-564220"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 180,
+    "NF": 78751,
+    "Lote": "565014",
+    "SKU": 50484107,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50484107-565014"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 32,
+    "NF": 78751,
+    "Lote": "565101",
+    "SKU": 50484126,
+    "Expected Replenishment Product Quantities → Expected Quantity": 32,
+    "Caixas": 32,
+    "SKU-LOT": "50484126-565101"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 105,
+    "NF": 78751,
+    "Lote": "565098",
+    "SKU": 50484127,
+    "Expected Replenishment Product Quantities → Expected Quantity": 105,
+    "Caixas": 35,
+    "SKU-LOT": "50484127-565098"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 120,
+    "NF": 78751,
+    "Lote": "565077",
+    "SKU": 50484136,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 40,
+    "SKU-LOT": "50484136-565077"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 96,
+    "NF": 78751,
+    "Lote": "565085",
+    "SKU": 50484137,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 96,
+    "SKU-LOT": "50484137-565085"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 63,
+    "NF": 78751,
+    "Lote": "565031",
+    "SKU": 50484138,
+    "Expected Replenishment Product Quantities → Expected Quantity": 63,
+    "Caixas": 63,
+    "SKU-LOT": "50484138-565031"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 63,
+    "NF": 78751,
+    "Lote": "564318",
+    "SKU": 50484139,
+    "Expected Replenishment Product Quantities → Expected Quantity": 63,
+    "Caixas": 63,
+    "SKU-LOT": "50484139-564318"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 441,
+    "NF": 78751,
+    "Lote": "565037",
+    "SKU": 50484140,
+    "Expected Replenishment Product Quantities → Expected Quantity": 441,
+    "Caixas": 63,
+    "SKU-LOT": "50484140-565037"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 96,
+    "NF": 78751,
+    "Lote": "565101",
+    "SKU": 50484141,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 96,
+    "SKU-LOT": "50484141-565101"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 720,
+    "NF": 78751,
+    "Lote": "565114",
+    "SKU": 50484142,
+    "Expected Replenishment Product Quantities → Expected Quantity": 720,
+    "Caixas": 60,
+    "SKU-LOT": "50484142-565114"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 113,
+    "NF": 78751,
+    "Lote": "565076",
+    "SKU": 50484149,
+    "Expected Replenishment Product Quantities → Expected Quantity": 113,
+    "Caixas": 113,
+    "SKU-LOT": "50484149-565076"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 80,
+    "NF": 78751,
+    "Lote": "565093",
+    "SKU": 50484150,
+    "Expected Replenishment Product Quantities → Expected Quantity": 80,
+    "Caixas": 40,
+    "SKU-LOT": "50484150-565093"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 120,
+    "NF": 78751,
+    "Lote": "565092",
+    "SKU": 50484151,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50484151-565092"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 320,
+    "NF": 78751,
+    "Lote": "564339",
+    "SKU": 50484152,
+    "Expected Replenishment Product Quantities → Expected Quantity": 320,
+    "Caixas": 160,
+    "SKU-LOT": "50484152-564339"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 756,
+    "NF": 78751,
+    "Lote": "665081",
+    "SKU": 50484158,
+    "Expected Replenishment Product Quantities → Expected Quantity": 756,
+    "Caixas": 756,
+    "SKU-LOT": "50484158-665081"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 270,
+    "NF": 78751,
+    "Lote": "564270",
+    "SKU": 50484159,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50484159-564270"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 192,
+    "NF": 78751,
+    "Lote": "565065",
+    "SKU": 50486329,
+    "Expected Replenishment Product Quantities → Expected Quantity": 192,
+    "Caixas": 48,
+    "SKU-LOT": "50486329-565065"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 336,
+    "NF": 78751,
+    "Lote": "565078",
+    "SKU": 50486333,
+    "Expected Replenishment Product Quantities → Expected Quantity": 336,
+    "Caixas": 112,
+    "SKU-LOT": "50486333-565078"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 42,
+    "NF": 78751,
+    "Lote": "565044",
+    "SKU": 50486335,
+    "Expected Replenishment Product Quantities → Expected Quantity": 42,
+    "Caixas": 42,
+    "SKU-LOT": "50486335-565044"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 480,
+    "NF": 78751,
+    "Lote": "974165",
+    "SKU": 50490630,
+    "Expected Replenishment Product Quantities → Expected Quantity": 448,
+    "Caixas": 480,
+    "SKU-LOT": "50490630-974165"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 480,
+    "NF": 78751,
+    "Lote": "974149",
+    "SKU": 50490630,
+    "Expected Replenishment Product Quantities → Expected Quantity": 32,
+    "Caixas": 480,
+    "SKU-LOT": "50490630-974149"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 480,
+    "NF": 78751,
+    "Lote": "974158",
+    "SKU": 50490631,
+    "Expected Replenishment Product Quantities → Expected Quantity": 480,
+    "Caixas": 480,
+    "SKU-LOT": "50490631-974158"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 480,
+    "NF": 78751,
+    "Lote": "974149",
+    "SKU": 50490632,
+    "Expected Replenishment Product Quantities → Expected Quantity": 480,
+    "Caixas": 480,
+    "SKU-LOT": "50490632-974149"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 1125,
+    "NF": 78751,
+    "Lote": "564272",
+    "SKU": 50490633,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1125,
+    "Caixas": 1125,
+    "SKU-LOT": "50490633-564272"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 1125,
+    "NF": 78751,
+    "Lote": "564344",
+    "SKU": 50490634,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1125,
+    "Caixas": 1125,
+    "SKU-LOT": "50490634-564344"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 1125,
+    "NF": 78751,
+    "Lote": "564338",
+    "SKU": 50490635,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1125,
+    "Caixas": 1125,
+    "SKU-LOT": "50490635-564338"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 1125,
+    "NF": 78751,
+    "Lote": "564316",
+    "SKU": 50490636,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1125,
+    "Caixas": 1125,
+    "SKU-LOT": "50490636-564316"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 1125,
+    "NF": 78751,
+    "Lote": "564312",
+    "SKU": 50490637,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1125,
+    "Caixas": 1125,
+    "SKU-LOT": "50490637-564312"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 1125,
+    "NF": 78751,
+    "Lote": "564235",
+    "SKU": 50490638,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1125,
+    "Caixas": 1125,
+    "SKU-LOT": "50490638-564235"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 1125,
+    "NF": 78751,
+    "Lote": "564339",
+    "SKU": 50490639,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1125,
+    "Caixas": 1125,
+    "SKU-LOT": "50490639-564339"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 1125,
+    "NF": 78751,
+    "Lote": "564309",
+    "SKU": 50490640,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1125,
+    "Caixas": 1125,
+    "SKU-LOT": "50490640-564309"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 1125,
+    "NF": 78751,
+    "Lote": "564163",
+    "SKU": 50490641,
+    "Expected Replenishment Product Quantities → Expected Quantity": 275,
+    "Caixas": 1125,
+    "SKU-LOT": "50490641-564163"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 1125,
+    "NF": 78751,
+    "Lote": "564152",
+    "SKU": 50490641,
+    "Expected Replenishment Product Quantities → Expected Quantity": 850,
+    "Caixas": 1125,
+    "SKU-LOT": "50490641-564152"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 1125,
+    "NF": 78751,
+    "Lote": "564289",
+    "SKU": 50490642,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1125,
+    "Caixas": 1125,
+    "SKU-LOT": "50490642-564289"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 270,
+    "NF": 78751,
+    "Lote": "564310",
+    "SKU": 50490645,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50490645-564310"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 270,
+    "NF": 78751,
+    "Lote": "565055",
+    "SKU": 50490646,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50490646-565055"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 270,
+    "NF": 78751,
+    "Lote": "565024",
+    "SKU": 50490647,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50490647-565024"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 120,
+    "NF": 78751,
+    "Lote": "565091",
+    "SKU": 50492309,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50492309-565091"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 120,
+    "NF": 78751,
+    "Lote": "565008",
+    "SKU": 50492310,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 30,
+    "SKU-LOT": "50492310-565008"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 48,
+    "NF": 78751,
+    "Lote": "565105",
+    "SKU": 50492312,
+    "Expected Replenishment Product Quantities → Expected Quantity": 48,
+    "Caixas": 12,
+    "SKU-LOT": "50492312-565105"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 48,
+    "NF": 78751,
+    "Lote": "565087",
+    "SKU": 50492313,
+    "Expected Replenishment Product Quantities → Expected Quantity": 48,
+    "Caixas": 12,
+    "SKU-LOT": "50492313-565087"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 60,
+    "NF": 78751,
+    "Lote": "564256",
+    "SKU": 50492320,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50492320-564256"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 60,
+    "NF": 78751,
+    "Lote": "564306",
+    "SKU": 50492324,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50492324-564306"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 500,
+    "NF": 78751,
+    "Lote": "O35044",
+    "SKU": 50492339,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50492339-O35044"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 150,
+    "NF": 78751,
+    "Lote": "565079",
+    "SKU": 50493076,
+    "Expected Replenishment Product Quantities → Expected Quantity": 150,
+    "Caixas": 150,
+    "SKU-LOT": "50493076-565079"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 360,
+    "NF": 78751,
+    "Lote": "565080",
+    "SKU": 50493077,
+    "Expected Replenishment Product Quantities → Expected Quantity": 360,
+    "Caixas": 120,
+    "SKU-LOT": "50493077-565080"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 800,
+    "NF": 78751,
+    "Lote": "565099",
+    "SKU": 50493363,
+    "Expected Replenishment Product Quantities → Expected Quantity": 800,
+    "Caixas": 100,
+    "SKU-LOT": "50493363-565099"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 300,
+    "NF": 78751,
+    "Lote": "565064",
+    "SKU": 50493366,
+    "Expected Replenishment Product Quantities → Expected Quantity": 300,
+    "Caixas": 60,
+    "SKU-LOT": "50493366-565064"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 36,
+    "NF": 78751,
+    "Lote": "565118",
+    "SKU": 50493367,
+    "Expected Replenishment Product Quantities → Expected Quantity": 36,
+    "Caixas": 12,
+    "SKU-LOT": "50493367-565118"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 24,
+    "NF": 78751,
+    "Lote": "565129",
+    "SKU": 50493368,
+    "Expected Replenishment Product Quantities → Expected Quantity": 24,
+    "Caixas": 12,
+    "SKU-LOT": "50493368-565129"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 55,
+    "NF": 78751,
+    "Lote": "564091",
+    "SKU": 50493728,
+    "Expected Replenishment Product Quantities → Expected Quantity": 55,
+    "Caixas": 55,
+    "SKU-LOT": "50493728-564091"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 160,
+    "NF": 78751,
+    "Lote": "564167",
+    "SKU": 50493730,
+    "Expected Replenishment Product Quantities → Expected Quantity": 160,
+    "Caixas": 40,
+    "SKU-LOT": "50493730-564167"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 60,
+    "NF": 78751,
+    "Lote": "563166",
+    "SKU": 50493732,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 30,
+    "SKU-LOT": "50493732-563166"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 250,
+    "NF": 78751,
+    "Lote": "564075",
+    "SKU": 50493734,
+    "Expected Replenishment Product Quantities → Expected Quantity": 250,
+    "Caixas": 250,
+    "SKU-LOT": "50493734-564075"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 15,
+    "NF": 78751,
+    "Lote": "L64093",
+    "SKU": 50493743,
+    "Expected Replenishment Product Quantities → Expected Quantity": 15,
+    "Caixas": 15,
+    "SKU-LOT": "50493743-L64093"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 324,
+    "NF": 78751,
+    "Lote": "565069",
+    "SKU": 50494589,
+    "Expected Replenishment Product Quantities → Expected Quantity": 324,
+    "Caixas": 12,
+    "SKU-LOT": "50494589-565069"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 252,
+    "NF": 78751,
+    "Lote": "565099",
+    "SKU": 50494590,
+    "Expected Replenishment Product Quantities → Expected Quantity": 252,
+    "Caixas": 12,
+    "SKU-LOT": "50494590-565099"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 36,
+    "NF": 78751,
+    "Lote": "565034",
+    "SKU": 50494591,
+    "Expected Replenishment Product Quantities → Expected Quantity": 36,
+    "Caixas": 36,
+    "SKU-LOT": "50494591-565034"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 72,
+    "NF": 78751,
+    "Lote": "565083",
+    "SKU": 50494592,
+    "Expected Replenishment Product Quantities → Expected Quantity": 72,
+    "Caixas": 36,
+    "SKU-LOT": "50494592-565083"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 36,
+    "NF": 78751,
+    "Lote": "565084",
+    "SKU": 50494593,
+    "Expected Replenishment Product Quantities → Expected Quantity": 36,
+    "Caixas": 36,
+    "SKU-LOT": "50494593-565084"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 360,
+    "NF": 78751,
+    "Lote": "565104",
+    "SKU": 50494594,
+    "Expected Replenishment Product Quantities → Expected Quantity": 360,
+    "Caixas": 36,
+    "SKU-LOT": "50494594-565104"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 360,
+    "NF": 78751,
+    "Lote": "565070",
+    "SKU": 50494595,
+    "Expected Replenishment Product Quantities → Expected Quantity": 360,
+    "Caixas": 36,
+    "SKU-LOT": "50494595-565070"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 700,
+    "NF": 78751,
+    "Lote": "565087",
+    "SKU": 50494599,
+    "Expected Replenishment Product Quantities → Expected Quantity": 700,
+    "Caixas": 100,
+    "SKU-LOT": "50494599-565087"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 100,
+    "NF": 78751,
+    "Lote": "343042",
+    "SKU": 50494601,
+    "Expected Replenishment Product Quantities → Expected Quantity": 100,
+    "Caixas": 100,
+    "SKU-LOT": "50494601-343042"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 100,
+    "NF": 78751,
+    "Lote": "350383",
+    "SKU": 50494602,
+    "Expected Replenishment Product Quantities → Expected Quantity": 100,
+    "Caixas": 100,
+    "SKU-LOT": "50494602-350383"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 105,
+    "NF": 78751,
+    "Lote": "505210",
+    "SKU": 50494603,
+    "Expected Replenishment Product Quantities → Expected Quantity": 105,
+    "Caixas": 105,
+    "SKU-LOT": "50494603-505210"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 70,
+    "NF": 78751,
+    "Lote": "905048",
+    "SKU": 50494604,
+    "Expected Replenishment Product Quantities → Expected Quantity": 70,
+    "Caixas": 70,
+    "SKU-LOT": "50494604-905048"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 47,
+    "NF": 78751,
+    "Lote": "565125",
+    "SKU": 50494607,
+    "Expected Replenishment Product Quantities → Expected Quantity": 47,
+    "Caixas": 47,
+    "SKU-LOT": "50494607-565125"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 288,
+    "NF": 78751,
+    "Lote": "565107",
+    "SKU": 50495514,
+    "Expected Replenishment Product Quantities → Expected Quantity": 288,
+    "Caixas": 36,
+    "SKU-LOT": "50495514-565107"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 360,
+    "NF": 78751,
+    "Lote": "565056",
+    "SKU": 50495515,
+    "Expected Replenishment Product Quantities → Expected Quantity": 360,
+    "Caixas": 36,
+    "SKU-LOT": "50495515-565056"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 28,
+    "NF": 78751,
+    "Lote": "564119",
+    "SKU": 50496046,
+    "Expected Replenishment Product Quantities → Expected Quantity": 28,
+    "Caixas": 28,
+    "SKU-LOT": "50496046-564119"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 70,
+    "NF": 78751,
+    "Lote": "565101",
+    "SKU": 50497992,
+    "Expected Replenishment Product Quantities → Expected Quantity": 70,
+    "Caixas": 35,
+    "SKU-LOT": "50497992-565101"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 60,
+    "NF": 78751,
+    "Lote": "H54333",
+    "SKU": 50497994,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 20,
+    "SKU-LOT": "50497994-H54333"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 18,
+    "NF": 78751,
+    "Lote": "H54058",
+    "SKU": 50497995,
+    "Expected Replenishment Product Quantities → Expected Quantity": 18,
+    "Caixas": 18,
+    "SKU-LOT": "50497995-H54058"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 150,
+    "NF": 78751,
+    "Lote": "351142",
+    "SKU": 50497997,
+    "Expected Replenishment Product Quantities → Expected Quantity": 150,
+    "Caixas": 150,
+    "SKU-LOT": "50497997-351142"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 32,
+    "NF": 78751,
+    "Lote": "B64226",
+    "SKU": 50498158,
+    "Expected Replenishment Product Quantities → Expected Quantity": 32,
+    "Caixas": 32,
+    "SKU-LOT": "50498158-B64226"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 32,
+    "NF": 78751,
+    "Lote": "B64305",
+    "SKU": 50498399,
+    "Expected Replenishment Product Quantities → Expected Quantity": 32,
+    "Caixas": 32,
+    "SKU-LOT": "50498399-B64305"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 12,
+    "NF": 78751,
+    "Lote": "L84325",
+    "SKU": 50498403,
+    "Expected Replenishment Product Quantities → Expected Quantity": 12,
+    "Caixas": 12,
+    "SKU-LOT": "50498403-L84325"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 19,
+    "NF": 78751,
+    "Lote": "H84005",
+    "SKU": 50498405,
+    "Expected Replenishment Product Quantities → Expected Quantity": 19,
+    "Caixas": 19,
+    "SKU-LOT": "50498405-H84005"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 30,
+    "NF": 78751,
+    "Lote": "L65114",
+    "SKU": 50498415,
+    "Expected Replenishment Product Quantities → Expected Quantity": 30,
+    "Caixas": 30,
+    "SKU-LOT": "50498415-L65114"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 30,
+    "NF": 78751,
+    "Lote": "L65098",
+    "SKU": 50498416,
+    "Expected Replenishment Product Quantities → Expected Quantity": 30,
+    "Caixas": 30,
+    "SKU-LOT": "50498416-L65098"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 270,
+    "NF": 78751,
+    "Lote": "564233",
+    "SKU": 50498438,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50498438-564233"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 48,
+    "NF": 78751,
+    "Lote": "565125",
+    "SKU": 50499009,
+    "Expected Replenishment Product Quantities → Expected Quantity": 48,
+    "Caixas": 48,
+    "SKU-LOT": "50499009-565125"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 28,
+    "NF": 78751,
+    "Lote": "565087",
+    "SKU": 50499013,
+    "Expected Replenishment Product Quantities → Expected Quantity": 28,
+    "Caixas": 28,
+    "SKU-LOT": "50499013-565087"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 80,
+    "NF": 78751,
+    "Lote": "564295",
+    "SKU": 50499014,
+    "Expected Replenishment Product Quantities → Expected Quantity": 80,
+    "Caixas": 80,
+    "SKU-LOT": "50499014-564295"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 56,
+    "NF": 78751,
+    "Lote": "565073",
+    "SKU": 50499021,
+    "Expected Replenishment Product Quantities → Expected Quantity": 56,
+    "Caixas": 28,
+    "SKU-LOT": "50499021-565073"
+  },
+  {
+    "ID_SAP": 180831794,
+    "Remessa": 448902,
+    "Peças": 56,
+    "NF": 78751,
+    "Lote": "565133",
+    "SKU": 50499022,
+    "Expected Replenishment Product Quantities → Expected Quantity": 56,
+    "Caixas": 28,
+    "SKU-LOT": "50499022-565133"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 400,
+    "NF": 78754,
+    "Lote": "565024",
+    "SKU": 50436660,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50436660-565024"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 400,
+    "NF": 78754,
+    "Lote": "564313",
+    "SKU": 50436661,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50436661-564313"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 400,
+    "NF": 78754,
+    "Lote": "565020",
+    "SKU": 50436662,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50436662-565020"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 400,
+    "NF": 78754,
+    "Lote": "565027",
+    "SKU": 50436663,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50436663-565027"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 400,
+    "NF": 78754,
+    "Lote": "565023",
+    "SKU": 50436664,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50436664-565023"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 400,
+    "NF": 78754,
+    "Lote": "565037",
+    "SKU": 50436665,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50436665-565037"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 450,
+    "NF": 78754,
+    "Lote": "564319",
+    "SKU": 50436666,
+    "Expected Replenishment Product Quantities → Expected Quantity": 450,
+    "Caixas": 450,
+    "SKU-LOT": "50436666-564319"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 400,
+    "NF": 78754,
+    "Lote": "565014",
+    "SKU": 50436667,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50436667-565014"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 400,
+    "NF": 78754,
+    "Lote": "565027",
+    "SKU": 50436668,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50436668-565027"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 400,
+    "NF": 78754,
+    "Lote": "565027",
+    "SKU": 50436669,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50436669-565027"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 224,
+    "NF": 78754,
+    "Lote": "565087",
+    "SKU": 50436685,
+    "Expected Replenishment Product Quantities → Expected Quantity": 224,
+    "Caixas": 112,
+    "SKU-LOT": "50436685-565087"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 112,
+    "NF": 78754,
+    "Lote": "565072",
+    "SKU": 50436686,
+    "Expected Replenishment Product Quantities → Expected Quantity": 112,
+    "Caixas": 112,
+    "SKU-LOT": "50436686-565072"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 500,
+    "NF": 78754,
+    "Lote": "564108",
+    "SKU": 50437190,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50437190-564108"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 500,
+    "NF": 78754,
+    "Lote": "565059",
+    "SKU": 50437191,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50437191-565059"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 500,
+    "NF": 78754,
+    "Lote": "565049",
+    "SKU": 50437192,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50437192-565049"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "564270",
+    "SKU": 50437225,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437225-564270"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "563327",
+    "SKU": 50437228,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437228-563327"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "565021",
+    "SKU": 50437229,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437229-565021"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "564332",
+    "SKU": 50437230,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437230-564332"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 126,
+    "NF": 78754,
+    "Lote": "565022",
+    "SKU": 50437235,
+    "Expected Replenishment Product Quantities → Expected Quantity": 126,
+    "Caixas": 126,
+    "SKU-LOT": "50437235-565022"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "565066",
+    "SKU": 50437256,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437256-565066"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "564276",
+    "SKU": 50437257,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437257-564276"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "565014",
+    "SKU": 50437261,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437261-565014"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "564256",
+    "SKU": 50437264,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437264-564256"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "564149",
+    "SKU": 50437266,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437266-564149"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "565024",
+    "SKU": 50437271,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437271-565024"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "564253",
+    "SKU": 50437272,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437272-564253"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "564276",
+    "SKU": 50437274,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437274-564276"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "565016",
+    "SKU": 50437275,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437275-565016"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "564275",
+    "SKU": 50437277,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437277-564275"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "565048",
+    "SKU": 50437278,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437278-565048"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "564291",
+    "SKU": 50437279,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437279-564291"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 180,
+    "NF": 78754,
+    "Lote": "564289",
+    "SKU": 50437282,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50437282-564289"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 95,
+    "NF": 78754,
+    "Lote": "605077",
+    "SKU": 50437324,
+    "Expected Replenishment Product Quantities → Expected Quantity": 95,
+    "Caixas": 95,
+    "SKU-LOT": "50437324-605077"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 270,
+    "NF": 78754,
+    "Lote": "565115",
+    "SKU": 50437325,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50437325-565115"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 540,
+    "NF": 78754,
+    "Lote": "565115",
+    "SKU": 50437326,
+    "Expected Replenishment Product Quantities → Expected Quantity": 540,
+    "Caixas": 270,
+    "SKU-LOT": "50437326-565115"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 224,
+    "NF": 78754,
+    "Lote": "565079",
+    "SKU": 50437333,
+    "Expected Replenishment Product Quantities → Expected Quantity": 224,
+    "Caixas": 112,
+    "SKU-LOT": "50437333-565079"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 224,
+    "NF": 78754,
+    "Lote": "565113",
+    "SKU": 50437334,
+    "Expected Replenishment Product Quantities → Expected Quantity": 224,
+    "Caixas": 112,
+    "SKU-LOT": "50437334-565113"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 112,
+    "NF": 78754,
+    "Lote": "565072",
+    "SKU": 50437337,
+    "Expected Replenishment Product Quantities → Expected Quantity": 112,
+    "Caixas": 112,
+    "SKU-LOT": "50437337-565072"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 336,
+    "NF": 78754,
+    "Lote": "565090",
+    "SKU": 50437338,
+    "Expected Replenishment Product Quantities → Expected Quantity": 336,
+    "Caixas": 112,
+    "SKU-LOT": "50437338-565090"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 112,
+    "NF": 78754,
+    "Lote": "565086",
+    "SKU": 50437339,
+    "Expected Replenishment Product Quantities → Expected Quantity": 112,
+    "Caixas": 112,
+    "SKU-LOT": "50437339-565086"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 224,
+    "NF": 78754,
+    "Lote": "564193",
+    "SKU": 50437340,
+    "Expected Replenishment Product Quantities → Expected Quantity": 224,
+    "Caixas": 112,
+    "SKU-LOT": "50437340-564193"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 224,
+    "NF": 78754,
+    "Lote": "565120",
+    "SKU": 50437341,
+    "Expected Replenishment Product Quantities → Expected Quantity": 224,
+    "Caixas": 112,
+    "SKU-LOT": "50437341-565120"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 336,
+    "NF": 78754,
+    "Lote": "565084",
+    "SKU": 50437342,
+    "Expected Replenishment Product Quantities → Expected Quantity": 336,
+    "Caixas": 112,
+    "SKU-LOT": "50437342-565084"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 224,
+    "NF": 78754,
+    "Lote": "565091",
+    "SKU": 50437353,
+    "Expected Replenishment Product Quantities → Expected Quantity": 224,
+    "Caixas": 112,
+    "SKU-LOT": "50437353-565091"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 224,
+    "NF": 78754,
+    "Lote": "565087",
+    "SKU": 50437354,
+    "Expected Replenishment Product Quantities → Expected Quantity": 224,
+    "Caixas": 112,
+    "SKU-LOT": "50437354-565087"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 54,
+    "NF": 78754,
+    "Lote": "605037",
+    "SKU": 50437356,
+    "Expected Replenishment Product Quantities → Expected Quantity": 54,
+    "Caixas": 54,
+    "SKU-LOT": "50437356-605037"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 108,
+    "NF": 78754,
+    "Lote": "605044",
+    "SKU": 50437357,
+    "Expected Replenishment Product Quantities → Expected Quantity": 108,
+    "Caixas": 54,
+    "SKU-LOT": "50437357-605044"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 108,
+    "NF": 78754,
+    "Lote": "605132",
+    "SKU": 50437359,
+    "Expected Replenishment Product Quantities → Expected Quantity": 108,
+    "Caixas": 54,
+    "SKU-LOT": "50437359-605132"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 54,
+    "NF": 78754,
+    "Lote": "605038",
+    "SKU": 50437362,
+    "Expected Replenishment Product Quantities → Expected Quantity": 54,
+    "Caixas": 54,
+    "SKU-LOT": "50437362-605038"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 54,
+    "NF": 78754,
+    "Lote": "605078",
+    "SKU": 50437363,
+    "Expected Replenishment Product Quantities → Expected Quantity": 54,
+    "Caixas": 54,
+    "SKU-LOT": "50437363-605078"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 42,
+    "NF": 78754,
+    "Lote": "565038",
+    "SKU": 50437370,
+    "Expected Replenishment Product Quantities → Expected Quantity": 42,
+    "Caixas": 42,
+    "SKU-LOT": "50437370-565038"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 80,
+    "NF": 78754,
+    "Lote": "605122",
+    "SKU": 50437376,
+    "Expected Replenishment Product Quantities → Expected Quantity": 80,
+    "Caixas": 10,
+    "SKU-LOT": "50437376-605122"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 80,
+    "NF": 78754,
+    "Lote": "605127",
+    "SKU": 50437378,
+    "Expected Replenishment Product Quantities → Expected Quantity": 80,
+    "Caixas": 10,
+    "SKU-LOT": "50437378-605127"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 35,
+    "NF": 78754,
+    "Lote": "565051",
+    "SKU": 50437381,
+    "Expected Replenishment Product Quantities → Expected Quantity": 35,
+    "Caixas": 35,
+    "SKU-LOT": "50437381-565051"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 35,
+    "NF": 78754,
+    "Lote": "564291",
+    "SKU": 50437386,
+    "Expected Replenishment Product Quantities → Expected Quantity": 35,
+    "Caixas": 35,
+    "SKU-LOT": "50437386-564291"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 576,
+    "NF": 78754,
+    "Lote": "565111",
+    "SKU": 50437392,
+    "Expected Replenishment Product Quantities → Expected Quantity": 576,
+    "Caixas": 48,
+    "SKU-LOT": "50437392-565111"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 912,
+    "NF": 78754,
+    "Lote": "565121",
+    "SKU": 50437395,
+    "Expected Replenishment Product Quantities → Expected Quantity": 912,
+    "Caixas": 48,
+    "SKU-LOT": "50437395-565121"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 30,
+    "NF": 78754,
+    "Lote": "605063",
+    "SKU": 50437397,
+    "Expected Replenishment Product Quantities → Expected Quantity": 30,
+    "Caixas": 30,
+    "SKU-LOT": "50437397-605063"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 30,
+    "NF": 78754,
+    "Lote": "604263",
+    "SKU": 50437398,
+    "Expected Replenishment Product Quantities → Expected Quantity": 30,
+    "Caixas": 30,
+    "SKU-LOT": "50437398-604263"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 41,
+    "NF": 78754,
+    "Lote": "605055",
+    "SKU": 50437400,
+    "Expected Replenishment Product Quantities → Expected Quantity": 41,
+    "Caixas": 41,
+    "SKU-LOT": "50437400-605055"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 35,
+    "NF": 78754,
+    "Lote": "565059",
+    "SKU": 50437407,
+    "Expected Replenishment Product Quantities → Expected Quantity": 35,
+    "Caixas": 35,
+    "SKU-LOT": "50437407-565059"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 35,
+    "NF": 78754,
+    "Lote": "565034",
+    "SKU": 50437408,
+    "Expected Replenishment Product Quantities → Expected Quantity": 35,
+    "Caixas": 35,
+    "SKU-LOT": "50437408-565034"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 35,
+    "NF": 78754,
+    "Lote": "565057",
+    "SKU": 50437409,
+    "Expected Replenishment Product Quantities → Expected Quantity": 35,
+    "Caixas": 35,
+    "SKU-LOT": "50437409-565057"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 35,
+    "NF": 78754,
+    "Lote": "565021",
+    "SKU": 50437410,
+    "Expected Replenishment Product Quantities → Expected Quantity": 35,
+    "Caixas": 35,
+    "SKU-LOT": "50437410-565021"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 35,
+    "NF": 78754,
+    "Lote": "565038",
+    "SKU": 50437412,
+    "Expected Replenishment Product Quantities → Expected Quantity": 35,
+    "Caixas": 35,
+    "SKU-LOT": "50437412-565038"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 42,
+    "NF": 78754,
+    "Lote": "605087",
+    "SKU": 50437420,
+    "Expected Replenishment Product Quantities → Expected Quantity": 42,
+    "Caixas": 42,
+    "SKU-LOT": "50437420-605087"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 36,
+    "NF": 78754,
+    "Lote": "605074",
+    "SKU": 50437422,
+    "Expected Replenishment Product Quantities → Expected Quantity": 36,
+    "Caixas": 36,
+    "SKU-LOT": "50437422-605074"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 35,
+    "NF": 78754,
+    "Lote": "565007",
+    "SKU": 50437443,
+    "Expected Replenishment Product Quantities → Expected Quantity": 35,
+    "Caixas": 35,
+    "SKU-LOT": "50437443-565007"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 105,
+    "NF": 78754,
+    "Lote": "565008",
+    "SKU": 50437444,
+    "Expected Replenishment Product Quantities → Expected Quantity": 105,
+    "Caixas": 35,
+    "SKU-LOT": "50437444-565008"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 35,
+    "NF": 78754,
+    "Lote": "565101",
+    "SKU": 50437445,
+    "Expected Replenishment Product Quantities → Expected Quantity": 35,
+    "Caixas": 35,
+    "SKU-LOT": "50437445-565101"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 35,
+    "NF": 78754,
+    "Lote": "565132",
+    "SKU": 50437447,
+    "Expected Replenishment Product Quantities → Expected Quantity": 35,
+    "Caixas": 35,
+    "SKU-LOT": "50437447-565132"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 35,
+    "NF": 78754,
+    "Lote": "565133",
+    "SKU": 50437448,
+    "Expected Replenishment Product Quantities → Expected Quantity": 35,
+    "Caixas": 35,
+    "SKU-LOT": "50437448-565133"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 280,
+    "NF": 78754,
+    "Lote": "565066",
+    "SKU": 50437449,
+    "Expected Replenishment Product Quantities → Expected Quantity": 280,
+    "Caixas": 35,
+    "SKU-LOT": "50437449-565066"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 240,
+    "NF": 78754,
+    "Lote": "565058",
+    "SKU": 50437457,
+    "Expected Replenishment Product Quantities → Expected Quantity": 240,
+    "Caixas": 48,
+    "SKU-LOT": "50437457-565058"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 16,
+    "NF": 78754,
+    "Lote": "565009",
+    "SKU": 50437464,
+    "Expected Replenishment Product Quantities → Expected Quantity": 16,
+    "Caixas": 16,
+    "SKU-LOT": "50437464-565009"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 1200,
+    "NF": 78754,
+    "Lote": "605011",
+    "SKU": 50437473,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1200,
+    "Caixas": 600,
+    "SKU-LOT": "50437473-605011"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 32,
+    "NF": 78754,
+    "Lote": "565093",
+    "SKU": 50437482,
+    "Expected Replenishment Product Quantities → Expected Quantity": 32,
+    "Caixas": 32,
+    "SKU-LOT": "50437482-565093"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 32,
+    "NF": 78754,
+    "Lote": "565119",
+    "SKU": 50437483,
+    "Expected Replenishment Product Quantities → Expected Quantity": 32,
+    "Caixas": 32,
+    "SKU-LOT": "50437483-565119"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 32,
+    "NF": 78754,
+    "Lote": "565097",
+    "SKU": 50437484,
+    "Expected Replenishment Product Quantities → Expected Quantity": 32,
+    "Caixas": 32,
+    "SKU-LOT": "50437484-565097"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 80,
+    "NF": 78754,
+    "Lote": "605059",
+    "SKU": 50437493,
+    "Expected Replenishment Product Quantities → Expected Quantity": 80,
+    "Caixas": 16,
+    "SKU-LOT": "50437493-605059"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 48,
+    "NF": 78754,
+    "Lote": "605066",
+    "SKU": 50437494,
+    "Expected Replenishment Product Quantities → Expected Quantity": 33,
+    "Caixas": 16,
+    "SKU-LOT": "50437494-605066"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 48,
+    "NF": 78754,
+    "Lote": "605065",
+    "SKU": 50437494,
+    "Expected Replenishment Product Quantities → Expected Quantity": 15,
+    "Caixas": 16,
+    "SKU-LOT": "50437494-605065"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 32,
+    "NF": 78754,
+    "Lote": "605085",
+    "SKU": 50437496,
+    "Expected Replenishment Product Quantities → Expected Quantity": 32,
+    "Caixas": 16,
+    "SKU-LOT": "50437496-605085"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 600,
+    "NF": 78754,
+    "Lote": "604344",
+    "SKU": 50437501,
+    "Expected Replenishment Product Quantities → Expected Quantity": 600,
+    "Caixas": 600,
+    "SKU-LOT": "50437501-604344"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 80,
+    "NF": 78754,
+    "Lote": "563292",
+    "SKU": 50437570,
+    "Expected Replenishment Product Quantities → Expected Quantity": 80,
+    "Caixas": 80,
+    "SKU-LOT": "50437570-563292"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 49,
+    "NF": 78754,
+    "Lote": "564356",
+    "SKU": 50437572,
+    "Expected Replenishment Product Quantities → Expected Quantity": 49,
+    "Caixas": 49,
+    "SKU-LOT": "50437572-564356"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 72,
+    "NF": 78754,
+    "Lote": "565094",
+    "SKU": 50437579,
+    "Expected Replenishment Product Quantities → Expected Quantity": 72,
+    "Caixas": 72,
+    "SKU-LOT": "50437579-565094"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 756,
+    "NF": 78754,
+    "Lote": "665111",
+    "SKU": 50437594,
+    "Expected Replenishment Product Quantities → Expected Quantity": 756,
+    "Caixas": 756,
+    "SKU-LOT": "50437594-665111"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 120,
+    "NF": 78754,
+    "Lote": "565085",
+    "SKU": 50437618,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50437618-565085"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 576,
+    "NF": 78754,
+    "Lote": "565097",
+    "SKU": 50437619,
+    "Expected Replenishment Product Quantities → Expected Quantity": 576,
+    "Caixas": 48,
+    "SKU-LOT": "50437619-565097"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 35,
+    "NF": 78754,
+    "Lote": "565064",
+    "SKU": 50440440,
+    "Expected Replenishment Product Quantities → Expected Quantity": 35,
+    "Caixas": 35,
+    "SKU-LOT": "50440440-565064"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 36,
+    "NF": 78754,
+    "Lote": "605129",
+    "SKU": 50440441,
+    "Expected Replenishment Product Quantities → Expected Quantity": 36,
+    "Caixas": 36,
+    "SKU-LOT": "50440441-605129"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 70,
+    "NF": 78754,
+    "Lote": "565099",
+    "SKU": 50440442,
+    "Expected Replenishment Product Quantities → Expected Quantity": 70,
+    "Caixas": 35,
+    "SKU-LOT": "50440442-565099"
+  },
+  {
+    "ID_SAP": 180831803,
+    "Remessa": 448903,
+    "Peças": 48,
+    "NF": 78754,
+    "Lote": "Z50001",
+    "SKU": 50453888,
+    "Expected Replenishment Product Quantities → Expected Quantity": 48,
+    "Caixas": 48,
+    "SKU-LOT": "50453888-Z50001"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 244,
+    "NF": 78755,
+    "Lote": "545087",
+    "SKU": 50423972,
+    "Expected Replenishment Product Quantities → Expected Quantity": 244,
+    "Caixas": 122,
+    "SKU-LOT": "50423972-545087"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 300,
+    "NF": 78755,
+    "Lote": "563226",
+    "SKU": 50436648,
+    "Expected Replenishment Product Quantities → Expected Quantity": 300,
+    "Caixas": 300,
+    "SKU-LOT": "50436648-563226"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 400,
+    "NF": 78755,
+    "Lote": "565028",
+    "SKU": 50436655,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50436655-565028"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 400,
+    "NF": 78755,
+    "Lote": "564330",
+    "SKU": 50436656,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50436656-564330"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 400,
+    "NF": 78755,
+    "Lote": "564288",
+    "SKU": 50436657,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50436657-564288"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 400,
+    "NF": 78755,
+    "Lote": "564339",
+    "SKU": 50436658,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50436658-564339"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 400,
+    "NF": 78755,
+    "Lote": "565035",
+    "SKU": 50436659,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50436659-565035"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 25,
+    "NF": 78755,
+    "Lote": "595112",
+    "SKU": 50436703,
+    "Expected Replenishment Product Quantities → Expected Quantity": 25,
+    "Caixas": 25,
+    "SKU-LOT": "50436703-595112"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 1728,
+    "NF": 78755,
+    "Lote": "974156",
+    "SKU": 50436731,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1728,
+    "Caixas": 1728,
+    "SKU-LOT": "50436731-974156"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 500,
+    "NF": 78755,
+    "Lote": "565100",
+    "SKU": 50436742,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50436742-565100"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 500,
+    "NF": 78755,
+    "Lote": "565076",
+    "SKU": 50436743,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50436743-565076"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 500,
+    "NF": 78755,
+    "Lote": "565079",
+    "SKU": 50436745,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50436745-565079"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 500,
+    "NF": 78755,
+    "Lote": "565015",
+    "SKU": 50436748,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50436748-565015"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 500,
+    "NF": 78755,
+    "Lote": "565069",
+    "SKU": 50436758,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50436758-565069"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 550,
+    "NF": 78755,
+    "Lote": "565059",
+    "SKU": 50436759,
+    "Expected Replenishment Product Quantities → Expected Quantity": 550,
+    "Caixas": 550,
+    "SKU-LOT": "50436759-565059"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 550,
+    "NF": 78755,
+    "Lote": "565058",
+    "SKU": 50436761,
+    "Expected Replenishment Product Quantities → Expected Quantity": 550,
+    "Caixas": 550,
+    "SKU-LOT": "50436761-565058"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 224,
+    "NF": 78755,
+    "Lote": "565064",
+    "SKU": 50436767,
+    "Expected Replenishment Product Quantities → Expected Quantity": 224,
+    "Caixas": 112,
+    "SKU-LOT": "50436767-565064"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 224,
+    "NF": 78755,
+    "Lote": "565069",
+    "SKU": 50436777,
+    "Expected Replenishment Product Quantities → Expected Quantity": 224,
+    "Caixas": 32,
+    "SKU-LOT": "50436777-565069"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 90,
+    "NF": 78755,
+    "Lote": "565127",
+    "SKU": 50436784,
+    "Expected Replenishment Product Quantities → Expected Quantity": 90,
+    "Caixas": 30,
+    "SKU-LOT": "50436784-565127"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 1080,
+    "NF": 78755,
+    "Lote": "565066",
+    "SKU": 50436795,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1080,
+    "Caixas": 120,
+    "SKU-LOT": "50436795-565066"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 98,
+    "NF": 78755,
+    "Lote": "564334",
+    "SKU": 50436796,
+    "Expected Replenishment Product Quantities → Expected Quantity": 98,
+    "Caixas": 98,
+    "SKU-LOT": "50436796-564334"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 192,
+    "NF": 78755,
+    "Lote": "674293",
+    "SKU": 50436799,
+    "Expected Replenishment Product Quantities → Expected Quantity": 192,
+    "Caixas": 96,
+    "SKU-LOT": "50436799-674293"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 224,
+    "NF": 78755,
+    "Lote": "565100",
+    "SKU": 50436802,
+    "Expected Replenishment Product Quantities → Expected Quantity": 224,
+    "Caixas": 32,
+    "SKU-LOT": "50436802-565100"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 120,
+    "NF": 78755,
+    "Lote": "565038",
+    "SKU": 50436807,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50436807-565038"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 120,
+    "NF": 78755,
+    "Lote": "565038",
+    "SKU": 50436809,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50436809-565038"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 28,
+    "NF": 78755,
+    "Lote": "565101",
+    "SKU": 50436830,
+    "Expected Replenishment Product Quantities → Expected Quantity": 28,
+    "Caixas": 28,
+    "SKU-LOT": "50436830-565101"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 80,
+    "NF": 78755,
+    "Lote": "564109",
+    "SKU": 50436846,
+    "Expected Replenishment Product Quantities → Expected Quantity": 80,
+    "Caixas": 80,
+    "SKU-LOT": "50436846-564109"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 90,
+    "NF": 78755,
+    "Lote": "564215",
+    "SKU": 50436848,
+    "Expected Replenishment Product Quantities → Expected Quantity": 90,
+    "Caixas": 90,
+    "SKU-LOT": "50436848-564215"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 900,
+    "NF": 78755,
+    "Lote": "994310",
+    "SKU": 50436876,
+    "Expected Replenishment Product Quantities → Expected Quantity": 900,
+    "Caixas": 900,
+    "SKU-LOT": "50436876-994310"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 300,
+    "NF": 78755,
+    "Lote": "565087",
+    "SKU": 50436879,
+    "Expected Replenishment Product Quantities → Expected Quantity": 300,
+    "Caixas": 300,
+    "SKU-LOT": "50436879-565087"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 1728,
+    "NF": 78755,
+    "Lote": "975060",
+    "SKU": 50436888,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1728,
+    "Caixas": 1728,
+    "SKU-LOT": "50436888-975060"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 1728,
+    "NF": 78755,
+    "Lote": "975041",
+    "SKU": 50436889,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1728,
+    "Caixas": 1728,
+    "SKU-LOT": "50436889-975041"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 2250,
+    "NF": 78755,
+    "Lote": "995048",
+    "SKU": 50436890,
+    "Expected Replenishment Product Quantities → Expected Quantity": 2250,
+    "Caixas": 2250,
+    "SKU-LOT": "50436890-995048"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 2250,
+    "NF": 78755,
+    "Lote": "994235",
+    "SKU": 50436892,
+    "Expected Replenishment Product Quantities → Expected Quantity": 2250,
+    "Caixas": 2250,
+    "SKU-LOT": "50436892-994235"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 2250,
+    "NF": 78755,
+    "Lote": "995013",
+    "SKU": 50436893,
+    "Expected Replenishment Product Quantities → Expected Quantity": 2250,
+    "Caixas": 2250,
+    "SKU-LOT": "50436893-995013"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 2250,
+    "NF": 78755,
+    "Lote": "995009",
+    "SKU": 50436894,
+    "Expected Replenishment Product Quantities → Expected Quantity": 734,
+    "Caixas": 2250,
+    "SKU-LOT": "50436894-995009"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 2250,
+    "NF": 78755,
+    "Lote": "994282",
+    "SKU": 50436894,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1516,
+    "Caixas": 2250,
+    "SKU-LOT": "50436894-994282"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 1728,
+    "NF": 78755,
+    "Lote": "974270",
+    "SKU": 50436895,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1728,
+    "Caixas": 1728,
+    "SKU-LOT": "50436895-974270"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 1728,
+    "NF": 78755,
+    "Lote": "975041",
+    "SKU": 50436896,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1728,
+    "Caixas": 1728,
+    "SKU-LOT": "50436896-975041"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 1728,
+    "NF": 78755,
+    "Lote": "975016",
+    "SKU": 50436897,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1728,
+    "Caixas": 1728,
+    "SKU-LOT": "50436897-975016"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 1728,
+    "NF": 78755,
+    "Lote": "974094",
+    "SKU": 50436898,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1728,
+    "Caixas": 1728,
+    "SKU-LOT": "50436898-974094"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 1728,
+    "NF": 78755,
+    "Lote": "974300",
+    "SKU": 50436899,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1728,
+    "Caixas": 1728,
+    "SKU-LOT": "50436899-974300"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 60,
+    "NF": 78755,
+    "Lote": "565037",
+    "SKU": 50436957,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50436957-565037"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 120,
+    "NF": 78755,
+    "Lote": "564267",
+    "SKU": 50436958,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 60,
+    "SKU-LOT": "50436958-564267"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 180,
+    "NF": 78755,
+    "Lote": "565086",
+    "SKU": 50436959,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 60,
+    "SKU-LOT": "50436959-565086"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 120,
+    "NF": 78755,
+    "Lote": "565087",
+    "SKU": 50436960,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 60,
+    "SKU-LOT": "50436960-565087"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 480,
+    "NF": 78755,
+    "Lote": "565115",
+    "SKU": 50436961,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 60,
+    "SKU-LOT": "50436961-565115"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 480,
+    "NF": 78755,
+    "Lote": "565114",
+    "SKU": 50436961,
+    "Expected Replenishment Product Quantities → Expected Quantity": 300,
+    "Caixas": 60,
+    "SKU-LOT": "50436961-565114"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 180,
+    "NF": 78755,
+    "Lote": "565094",
+    "SKU": 50436962,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 60,
+    "SKU-LOT": "50436962-565094"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 120,
+    "NF": 78755,
+    "Lote": "565129",
+    "SKU": 50436963,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 60,
+    "SKU-LOT": "50436963-565129"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 120,
+    "NF": 78755,
+    "Lote": "565008",
+    "SKU": 50436964,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 60,
+    "SKU-LOT": "50436964-565008"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 60,
+    "NF": 78755,
+    "Lote": "565097",
+    "SKU": 50436965,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50436965-565097"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 60,
+    "NF": 78755,
+    "Lote": "565037",
+    "SKU": 50436966,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50436966-565037"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 60,
+    "NF": 78755,
+    "Lote": "565038",
+    "SKU": 50436967,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50436967-565038"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 60,
+    "NF": 78755,
+    "Lote": "564281",
+    "SKU": 50436968,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50436968-564281"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 60,
+    "NF": 78755,
+    "Lote": "565014",
+    "SKU": 50436969,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50436969-565014"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 60,
+    "NF": 78755,
+    "Lote": "565048",
+    "SKU": 50436970,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50436970-565048"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 96,
+    "NF": 78755,
+    "Lote": "565037",
+    "SKU": 50436977,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 96,
+    "SKU-LOT": "50436977-565037"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 96,
+    "NF": 78755,
+    "Lote": "564257",
+    "SKU": 50436978,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 96,
+    "SKU-LOT": "50436978-564257"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 96,
+    "NF": 78755,
+    "Lote": "565058",
+    "SKU": 50436979,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 96,
+    "SKU-LOT": "50436979-565058"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 96,
+    "NF": 78755,
+    "Lote": "565087",
+    "SKU": 50436980,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 96,
+    "SKU-LOT": "50436980-565087"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 96,
+    "NF": 78755,
+    "Lote": "565093",
+    "SKU": 50436981,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 96,
+    "SKU-LOT": "50436981-565093"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 96,
+    "NF": 78755,
+    "Lote": "565119",
+    "SKU": 50436982,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 96,
+    "SKU-LOT": "50436982-565119"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 96,
+    "NF": 78755,
+    "Lote": "564341",
+    "SKU": 50436983,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 96,
+    "SKU-LOT": "50436983-564341"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 96,
+    "NF": 78755,
+    "Lote": "565112",
+    "SKU": 50436984,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 96,
+    "SKU-LOT": "50436984-565112"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 96,
+    "NF": 78755,
+    "Lote": "565121",
+    "SKU": 50436985,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 96,
+    "SKU-LOT": "50436985-565121"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 144,
+    "NF": 78755,
+    "Lote": "564305",
+    "SKU": 50436998,
+    "Expected Replenishment Product Quantities → Expected Quantity": 144,
+    "Caixas": 144,
+    "SKU-LOT": "50436998-564305"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 144,
+    "NF": 78755,
+    "Lote": "564304",
+    "SKU": 50436999,
+    "Expected Replenishment Product Quantities → Expected Quantity": 144,
+    "Caixas": 144,
+    "SKU-LOT": "50436999-564304"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 144,
+    "NF": 78755,
+    "Lote": "564302",
+    "SKU": 50437000,
+    "Expected Replenishment Product Quantities → Expected Quantity": 144,
+    "Caixas": 144,
+    "SKU-LOT": "50437000-564302"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 96,
+    "NF": 78755,
+    "Lote": "565027",
+    "SKU": 50437041,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 96,
+    "SKU-LOT": "50437041-565027"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 96,
+    "NF": 78755,
+    "Lote": "565115",
+    "SKU": 50437050,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 96,
+    "SKU-LOT": "50437050-565115"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 96,
+    "NF": 78755,
+    "Lote": "565125",
+    "SKU": 50437051,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 96,
+    "SKU-LOT": "50437051-565125"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 168,
+    "NF": 78755,
+    "Lote": "565048",
+    "SKU": 50437099,
+    "Expected Replenishment Product Quantities → Expected Quantity": 168,
+    "Caixas": 168,
+    "SKU-LOT": "50437099-565048"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 168,
+    "NF": 78755,
+    "Lote": "565024",
+    "SKU": 50437103,
+    "Expected Replenishment Product Quantities → Expected Quantity": 168,
+    "Caixas": 168,
+    "SKU-LOT": "50437103-565024"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 192,
+    "NF": 78755,
+    "Lote": "564246",
+    "SKU": 50437119,
+    "Expected Replenishment Product Quantities → Expected Quantity": 192,
+    "Caixas": 192,
+    "SKU-LOT": "50437119-564246"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 192,
+    "NF": 78755,
+    "Lote": "565119",
+    "SKU": 50437120,
+    "Expected Replenishment Product Quantities → Expected Quantity": 192,
+    "Caixas": 192,
+    "SKU-LOT": "50437120-565119"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 192,
+    "NF": 78755,
+    "Lote": "565090",
+    "SKU": 50437121,
+    "Expected Replenishment Product Quantities → Expected Quantity": 192,
+    "Caixas": 192,
+    "SKU-LOT": "50437121-565090"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 192,
+    "NF": 78755,
+    "Lote": "565120",
+    "SKU": 50437122,
+    "Expected Replenishment Product Quantities → Expected Quantity": 192,
+    "Caixas": 192,
+    "SKU-LOT": "50437122-565120"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 192,
+    "NF": 78755,
+    "Lote": "565093",
+    "SKU": 50437123,
+    "Expected Replenishment Product Quantities → Expected Quantity": 192,
+    "Caixas": 192,
+    "SKU-LOT": "50437123-565093"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 192,
+    "NF": 78755,
+    "Lote": "565113",
+    "SKU": 50437124,
+    "Expected Replenishment Product Quantities → Expected Quantity": 192,
+    "Caixas": 192,
+    "SKU-LOT": "50437124-565113"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 500,
+    "NF": 78755,
+    "Lote": "565055",
+    "SKU": 50437181,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50437181-565055"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 500,
+    "NF": 78755,
+    "Lote": "565105",
+    "SKU": 50437182,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50437182-565105"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 500,
+    "NF": 78755,
+    "Lote": "565106",
+    "SKU": 50437183,
+    "Expected Replenishment Product Quantities → Expected Quantity": 206,
+    "Caixas": 500,
+    "SKU-LOT": "50437183-565106"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 500,
+    "NF": 78755,
+    "Lote": "565105",
+    "SKU": 50437183,
+    "Expected Replenishment Product Quantities → Expected Quantity": 294,
+    "Caixas": 500,
+    "SKU-LOT": "50437183-565105"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 500,
+    "NF": 78755,
+    "Lote": "565078",
+    "SKU": 50437184,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50437184-565078"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 600,
+    "NF": 78755,
+    "Lote": "563335",
+    "SKU": 50439813,
+    "Expected Replenishment Product Quantities → Expected Quantity": 600,
+    "Caixas": 600,
+    "SKU-LOT": "50439813-563335"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 600,
+    "NF": 78755,
+    "Lote": "564360",
+    "SKU": 50439814,
+    "Expected Replenishment Product Quantities → Expected Quantity": 600,
+    "Caixas": 600,
+    "SKU-LOT": "50439814-564360"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 144,
+    "NF": 78755,
+    "Lote": "564360",
+    "SKU": 50439815,
+    "Expected Replenishment Product Quantities → Expected Quantity": 144,
+    "Caixas": 144,
+    "SKU-LOT": "50439815-564360"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 144,
+    "NF": 78755,
+    "Lote": "563335",
+    "SKU": 50439816,
+    "Expected Replenishment Product Quantities → Expected Quantity": 144,
+    "Caixas": 144,
+    "SKU-LOT": "50439816-563335"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 144,
+    "NF": 78755,
+    "Lote": "564360",
+    "SKU": 50439817,
+    "Expected Replenishment Product Quantities → Expected Quantity": 144,
+    "Caixas": 144,
+    "SKU-LOT": "50439817-564360"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 250,
+    "NF": 78755,
+    "Lote": "974143",
+    "SKU": 50439818,
+    "Expected Replenishment Product Quantities → Expected Quantity": 250,
+    "Caixas": 250,
+    "SKU-LOT": "50439818-974143"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 48,
+    "NF": 78755,
+    "Lote": "N65034",
+    "SKU": 50439821,
+    "Expected Replenishment Product Quantities → Expected Quantity": 48,
+    "Caixas": 12,
+    "SKU-LOT": "50439821-N65034"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 24,
+    "NF": 78755,
+    "Lote": "N65104",
+    "SKU": 50439822,
+    "Expected Replenishment Product Quantities → Expected Quantity": 24,
+    "Caixas": 12,
+    "SKU-LOT": "50439822-N65104"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 850,
+    "NF": 78755,
+    "Lote": "SM7DO3",
+    "SKU": 50439824,
+    "Expected Replenishment Product Quantities → Expected Quantity": 850,
+    "Caixas": 850,
+    "SKU-LOT": "50439824-SM7DO3"
+  },
+  {
+    "ID_SAP": 180831802,
+    "Remessa": 448904,
+    "Peças": 546,
+    "NF": 78755,
+    "Lote": "A40006",
+    "SKU": 50492271,
+    "Expected Replenishment Product Quantities → Expected Quantity": 546,
+    "Caixas": 546,
+    "SKU-LOT": "50492271-A40006"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 240,
+    "NF": 78766,
+    "Lote": "565121",
+    "SKU": 50436701,
+    "Expected Replenishment Product Quantities → Expected Quantity": 240,
+    "Caixas": 120,
+    "SKU-LOT": "50436701-565121"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 140,
+    "NF": 78766,
+    "Lote": "565048",
+    "SKU": 50436709,
+    "Expected Replenishment Product Quantities → Expected Quantity": 140,
+    "Caixas": 35,
+    "SKU-LOT": "50436709-565048"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 300,
+    "NF": 78766,
+    "Lote": "564353",
+    "SKU": 50437621,
+    "Expected Replenishment Product Quantities → Expected Quantity": 300,
+    "Caixas": 300,
+    "SKU-LOT": "50437621-564353"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 144,
+    "NF": 78766,
+    "Lote": "565076",
+    "SKU": 50437622,
+    "Expected Replenishment Product Quantities → Expected Quantity": 144,
+    "Caixas": 48,
+    "SKU-LOT": "50437622-565076"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 300,
+    "NF": 78766,
+    "Lote": "565008",
+    "SKU": 50437624,
+    "Expected Replenishment Product Quantities → Expected Quantity": 300,
+    "Caixas": 300,
+    "SKU-LOT": "50437624-565008"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 200,
+    "NF": 78766,
+    "Lote": "565101",
+    "SKU": 50437626,
+    "Expected Replenishment Product Quantities → Expected Quantity": 200,
+    "Caixas": 100,
+    "SKU-LOT": "50437626-565101"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 360,
+    "NF": 78766,
+    "Lote": "565104",
+    "SKU": 50437627,
+    "Expected Replenishment Product Quantities → Expected Quantity": 360,
+    "Caixas": 60,
+    "SKU-LOT": "50437627-565104"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 138,
+    "NF": 78766,
+    "Lote": "565092",
+    "SKU": 50437630,
+    "Expected Replenishment Product Quantities → Expected Quantity": 138,
+    "Caixas": 138,
+    "SKU-LOT": "50437630-565092"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 192,
+    "NF": 78766,
+    "Lote": "565133",
+    "SKU": 50437636,
+    "Expected Replenishment Product Quantities → Expected Quantity": 192,
+    "Caixas": 48,
+    "SKU-LOT": "50437636-565133"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 100,
+    "NF": 78766,
+    "Lote": "565101",
+    "SKU": 50437644,
+    "Expected Replenishment Product Quantities → Expected Quantity": 100,
+    "Caixas": 100,
+    "SKU-LOT": "50437644-565101"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 60,
+    "NF": 78766,
+    "Lote": "565053",
+    "SKU": 50437659,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50437659-565053"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 80,
+    "NF": 78766,
+    "Lote": "565092",
+    "SKU": 50437660,
+    "Expected Replenishment Product Quantities → Expected Quantity": 80,
+    "Caixas": 40,
+    "SKU-LOT": "50437660-565092"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 420,
+    "NF": 78766,
+    "Lote": "565080",
+    "SKU": 50437661,
+    "Expected Replenishment Product Quantities → Expected Quantity": 420,
+    "Caixas": 60,
+    "SKU-LOT": "50437661-565080"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 360,
+    "NF": 78766,
+    "Lote": "565118",
+    "SKU": 50437662,
+    "Expected Replenishment Product Quantities → Expected Quantity": 160,
+    "Caixas": 40,
+    "SKU-LOT": "50437662-565118"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 360,
+    "NF": 78766,
+    "Lote": "565115",
+    "SKU": 50437662,
+    "Expected Replenishment Product Quantities → Expected Quantity": 200,
+    "Caixas": 40,
+    "SKU-LOT": "50437662-565115"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 54,
+    "NF": 78766,
+    "Lote": "565099",
+    "SKU": 50437664,
+    "Expected Replenishment Product Quantities → Expected Quantity": 54,
+    "Caixas": 54,
+    "SKU-LOT": "50437664-565099"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 60,
+    "NF": 78766,
+    "Lote": "564317",
+    "SKU": 50437665,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50437665-564317"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 45,
+    "NF": 78766,
+    "Lote": "674317",
+    "SKU": 50437666,
+    "Expected Replenishment Product Quantities → Expected Quantity": 45,
+    "Caixas": 45,
+    "SKU-LOT": "50437666-674317"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 480,
+    "NF": 78766,
+    "Lote": "565101",
+    "SKU": 50437668,
+    "Expected Replenishment Product Quantities → Expected Quantity": 480,
+    "Caixas": 120,
+    "SKU-LOT": "50437668-565101"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 60,
+    "NF": 78766,
+    "Lote": "565084",
+    "SKU": 50437669,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50437669-565084"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 120,
+    "NF": 78766,
+    "Lote": "565091",
+    "SKU": 50437670,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 60,
+    "SKU-LOT": "50437670-565091"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 90,
+    "NF": 78766,
+    "Lote": "565088",
+    "SKU": 50438231,
+    "Expected Replenishment Product Quantities → Expected Quantity": 90,
+    "Caixas": 45,
+    "SKU-LOT": "50438231-565088"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 40,
+    "NF": 78766,
+    "Lote": "545113",
+    "SKU": 50438236,
+    "Expected Replenishment Product Quantities → Expected Quantity": 40,
+    "Caixas": 40,
+    "SKU-LOT": "50438236-545113"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565090",
+    "SKU": 50438240,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 45,
+    "SKU-LOT": "50438240-565090"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 96,
+    "NF": 78766,
+    "Lote": "565085",
+    "SKU": 50438252,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 12,
+    "SKU-LOT": "50438252-565085"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 48,
+    "NF": 78766,
+    "Lote": "565017",
+    "SKU": 50438253,
+    "Expected Replenishment Product Quantities → Expected Quantity": 48,
+    "Caixas": 48,
+    "SKU-LOT": "50438253-565017"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 360,
+    "NF": 78766,
+    "Lote": "565079",
+    "SKU": 50438260,
+    "Expected Replenishment Product Quantities → Expected Quantity": 360,
+    "Caixas": 45,
+    "SKU-LOT": "50438260-565079"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565118",
+    "SKU": 50438261,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 45,
+    "SKU-LOT": "50438261-565118"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 180,
+    "NF": 78766,
+    "Lote": "565106",
+    "SKU": 50438264,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 45,
+    "SKU-LOT": "50438264-565106"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 250,
+    "NF": 78766,
+    "Lote": "807649",
+    "SKU": 50438412,
+    "Expected Replenishment Product Quantities → Expected Quantity": 250,
+    "Caixas": 250,
+    "SKU-LOT": "50438412-807649"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 25,
+    "NF": 78766,
+    "Lote": "Q63279",
+    "SKU": 50438416,
+    "Expected Replenishment Product Quantities → Expected Quantity": 25,
+    "Caixas": 25,
+    "SKU-LOT": "50438416-Q63279"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 60,
+    "NF": 78766,
+    "Lote": "U43217",
+    "SKU": 50438465,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50438465-U43217"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 60,
+    "NF": 78766,
+    "Lote": "U43214",
+    "SKU": 50438466,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50438466-U43214"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 60,
+    "NF": 78766,
+    "Lote": "887020",
+    "SKU": 50438467,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50438467-887020"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 96,
+    "NF": 78766,
+    "Lote": "855688",
+    "SKU": 50438490,
+    "Expected Replenishment Product Quantities → Expected Quantity": 96,
+    "Caixas": 96,
+    "SKU-LOT": "50438490-855688"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 44,
+    "NF": 78766,
+    "Lote": "800278",
+    "SKU": 50438492,
+    "Expected Replenishment Product Quantities → Expected Quantity": 44,
+    "Caixas": 44,
+    "SKU-LOT": "50438492-800278"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 72,
+    "NF": 78766,
+    "Lote": "I75014",
+    "SKU": 50438513,
+    "Expected Replenishment Product Quantities → Expected Quantity": 72,
+    "Caixas": 72,
+    "SKU-LOT": "50438513-I75014"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 72,
+    "NF": 78766,
+    "Lote": "I74316",
+    "SKU": 50438575,
+    "Expected Replenishment Product Quantities → Expected Quantity": 72,
+    "Caixas": 72,
+    "SKU-LOT": "50438575-I74316"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 27,
+    "NF": 78766,
+    "Lote": "313610",
+    "SKU": 50438678,
+    "Expected Replenishment Product Quantities → Expected Quantity": 27,
+    "Caixas": 27,
+    "SKU-LOT": "50438678-313610"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 110,
+    "NF": 78766,
+    "Lote": "S65112",
+    "SKU": 50438684,
+    "Expected Replenishment Product Quantities → Expected Quantity": 110,
+    "Caixas": 110,
+    "SKU-LOT": "50438684-S65112"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 60,
+    "NF": 78766,
+    "Lote": "843400",
+    "SKU": 50438787,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50438787-843400"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 48,
+    "NF": 78766,
+    "Lote": "H84005",
+    "SKU": 50438790,
+    "Expected Replenishment Product Quantities → Expected Quantity": 48,
+    "Caixas": 8,
+    "SKU-LOT": "50438790-H84005"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 6,
+    "NF": 78766,
+    "Lote": "804158",
+    "SKU": 50438887,
+    "Expected Replenishment Product Quantities → Expected Quantity": 6,
+    "Caixas": 6,
+    "SKU-LOT": "50438887-804158"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 12,
+    "NF": 78766,
+    "Lote": "835315",
+    "SKU": 50438959,
+    "Expected Replenishment Product Quantities → Expected Quantity": 12,
+    "Caixas": 12,
+    "SKU-LOT": "50438959-835315"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 50,
+    "NF": 78766,
+    "Lote": "Q84248",
+    "SKU": 50438969,
+    "Expected Replenishment Product Quantities → Expected Quantity": 50,
+    "Caixas": 50,
+    "SKU-LOT": "50438969-Q84248"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 300,
+    "NF": 78766,
+    "Lote": "LA3043",
+    "SKU": 50439702,
+    "Expected Replenishment Product Quantities → Expected Quantity": 300,
+    "Caixas": 300,
+    "SKU-LOT": "50439702-LA3043"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 300,
+    "NF": 78766,
+    "Lote": "563299",
+    "SKU": 50439703,
+    "Expected Replenishment Product Quantities → Expected Quantity": 300,
+    "Caixas": 300,
+    "SKU-LOT": "50439703-563299"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 300,
+    "NF": 78766,
+    "Lote": "LA3523",
+    "SKU": 50439704,
+    "Expected Replenishment Product Quantities → Expected Quantity": 300,
+    "Caixas": 300,
+    "SKU-LOT": "50439704-LA3523"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "564156",
+    "SKU": 50439706,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439706-564156"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565083",
+    "SKU": 50439707,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439707-565083"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565058",
+    "SKU": 50439708,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439708-565058"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565093",
+    "SKU": 50439709,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439709-565093"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565064",
+    "SKU": 50439710,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439710-565064"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565118",
+    "SKU": 50439711,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439711-565118"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565067",
+    "SKU": 50439723,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439723-565067"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565091",
+    "SKU": 50439724,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439724-565091"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "564244",
+    "SKU": 50439726,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439726-564244"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565073",
+    "SKU": 50439727,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439727-565073"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565066",
+    "SKU": 50439728,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439728-565066"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565098",
+    "SKU": 50439729,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439729-565098"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "564324",
+    "SKU": 50439730,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439730-564324"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "564267",
+    "SKU": 50439731,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439731-564267"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565023",
+    "SKU": 50439732,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439732-565023"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565112",
+    "SKU": 50439733,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439733-565112"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565118",
+    "SKU": 50439734,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439734-565118"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565107",
+    "SKU": 50439735,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439735-565107"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "564282",
+    "SKU": 50439736,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439736-564282"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565029",
+    "SKU": 50439737,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439737-565029"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "564163",
+    "SKU": 50439738,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439738-564163"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565097",
+    "SKU": 50439739,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439739-565097"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565029",
+    "SKU": 50439740,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439740-565029"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 270,
+    "NF": 78766,
+    "Lote": "565091",
+    "SKU": 50439741,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50439741-565091"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 180,
+    "NF": 78766,
+    "Lote": "564012",
+    "SKU": 50439761,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50439761-564012"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 180,
+    "NF": 78766,
+    "Lote": "564283",
+    "SKU": 50439762,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50439762-564283"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 180,
+    "NF": 78766,
+    "Lote": "565055",
+    "SKU": 50439763,
+    "Expected Replenishment Product Quantities → Expected Quantity": 26,
+    "Caixas": 180,
+    "SKU-LOT": "50439763-565055"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 180,
+    "NF": 78766,
+    "Lote": "564005",
+    "SKU": 50439763,
+    "Expected Replenishment Product Quantities → Expected Quantity": 95,
+    "Caixas": 180,
+    "SKU-LOT": "50439763-564005"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 180,
+    "NF": 78766,
+    "Lote": "563346",
+    "SKU": 50439763,
+    "Expected Replenishment Product Quantities → Expected Quantity": 59,
+    "Caixas": 180,
+    "SKU-LOT": "50439763-563346"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 180,
+    "NF": 78766,
+    "Lote": "564045",
+    "SKU": 50439764,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50439764-564045"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 180,
+    "NF": 78766,
+    "Lote": "564220",
+    "SKU": 50439765,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50439765-564220"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 600,
+    "NF": 78766,
+    "Lote": "603150",
+    "SKU": 50439828,
+    "Expected Replenishment Product Quantities → Expected Quantity": 600,
+    "Caixas": 600,
+    "SKU-LOT": "50439828-603150"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 400,
+    "NF": 78766,
+    "Lote": "564318",
+    "SKU": 50439832,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 400,
+    "SKU-LOT": "50439832-564318"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 600,
+    "NF": 78766,
+    "Lote": "603306",
+    "SKU": 50440446,
+    "Expected Replenishment Product Quantities → Expected Quantity": 600,
+    "Caixas": 600,
+    "SKU-LOT": "50440446-603306"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 1080,
+    "NF": 78766,
+    "Lote": "564264",
+    "SKU": 50446645,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1080,
+    "Caixas": 1080,
+    "SKU-LOT": "50446645-564264"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 1296,
+    "NF": 78766,
+    "Lote": "564298",
+    "SKU": 50446646,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1296,
+    "Caixas": 1296,
+    "SKU-LOT": "50446646-564298"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 1080,
+    "NF": 78766,
+    "Lote": "565058",
+    "SKU": 50446647,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1080,
+    "Caixas": 1080,
+    "SKU-LOT": "50446647-565058"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 50,
+    "NF": 78766,
+    "Lote": "F13203",
+    "SKU": 50446676,
+    "Expected Replenishment Product Quantities → Expected Quantity": 50,
+    "Caixas": 50,
+    "SKU-LOT": "50446676-F13203"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 34,
+    "NF": 78766,
+    "Lote": "U43237",
+    "SKU": 50448140,
+    "Expected Replenishment Product Quantities → Expected Quantity": 34,
+    "Caixas": 34,
+    "SKU-LOT": "50448140-U43237"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 75,
+    "NF": 78766,
+    "Lote": "L64033",
+    "SKU": 50448162,
+    "Expected Replenishment Product Quantities → Expected Quantity": 75,
+    "Caixas": 15,
+    "SKU-LOT": "50448162-L64033"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 18,
+    "NF": 78766,
+    "Lote": "Q84178",
+    "SKU": 50449309,
+    "Expected Replenishment Product Quantities → Expected Quantity": 18,
+    "Caixas": 18,
+    "SKU-LOT": "50449309-Q84178"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 16,
+    "NF": 78766,
+    "Lote": "A53243",
+    "SKU": 50460403,
+    "Expected Replenishment Product Quantities → Expected Quantity": 16,
+    "Caixas": 16,
+    "SKU-LOT": "50460403-A53243"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 16,
+    "NF": 78766,
+    "Lote": "A53216",
+    "SKU": 50460404,
+    "Expected Replenishment Product Quantities → Expected Quantity": 16,
+    "Caixas": 16,
+    "SKU-LOT": "50460404-A53216"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 75,
+    "NF": 78766,
+    "Lote": "I75102",
+    "SKU": 50472276,
+    "Expected Replenishment Product Quantities → Expected Quantity": 75,
+    "Caixas": 15,
+    "SKU-LOT": "50472276-I75102"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 30,
+    "NF": 78766,
+    "Lote": "Q63307",
+    "SKU": 50476516,
+    "Expected Replenishment Product Quantities → Expected Quantity": 30,
+    "Caixas": 30,
+    "SKU-LOT": "50476516-Q63307"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 123,
+    "NF": 78766,
+    "Lote": "842487",
+    "SKU": 50481090,
+    "Expected Replenishment Product Quantities → Expected Quantity": 123,
+    "Caixas": 123,
+    "SKU-LOT": "50481090-842487"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 546,
+    "NF": 78766,
+    "Lote": "ZA0008",
+    "SKU": 50492291,
+    "Expected Replenishment Product Quantities → Expected Quantity": 546,
+    "Caixas": 546,
+    "SKU-LOT": "50492291-ZA0008"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 546,
+    "NF": 78766,
+    "Lote": "ZB0002",
+    "SKU": 50492294,
+    "Expected Replenishment Product Quantities → Expected Quantity": 546,
+    "Caixas": 546,
+    "SKU-LOT": "50492294-ZB0002"
+  },
+  {
+    "ID_SAP": 180831881,
+    "Remessa": 449149,
+    "Peças": 800,
+    "NF": 78766,
+    "Lote": "Z80001",
+    "SKU": 50499998,
+    "Expected Replenishment Product Quantities → Expected Quantity": 800,
+    "Caixas": 800,
+    "SKU-LOT": "50499998-Z80001"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 500,
+    "NF": 78772,
+    "Lote": "565051",
+    "SKU": 50437185,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50437185-565051"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 54,
+    "NF": 78772,
+    "Lote": "605015",
+    "SKU": 50437358,
+    "Expected Replenishment Product Quantities → Expected Quantity": 54,
+    "Caixas": 54,
+    "SKU-LOT": "50437358-605015"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 112,
+    "NF": 78772,
+    "Lote": "605113",
+    "SKU": 50437495,
+    "Expected Replenishment Product Quantities → Expected Quantity": 112,
+    "Caixas": 16,
+    "SKU-LOT": "50437495-605113"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 150,
+    "NF": 78772,
+    "Lote": "C85106",
+    "SKU": 50438665,
+    "Expected Replenishment Product Quantities → Expected Quantity": 150,
+    "Caixas": 150,
+    "SKU-LOT": "50438665-C85106"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 300,
+    "NF": 78772,
+    "Lote": "C85106",
+    "SKU": 50438666,
+    "Expected Replenishment Product Quantities → Expected Quantity": 150,
+    "Caixas": 150,
+    "SKU-LOT": "50438666-C85106"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 300,
+    "NF": 78772,
+    "Lote": "C85075",
+    "SKU": 50438666,
+    "Expected Replenishment Product Quantities → Expected Quantity": 150,
+    "Caixas": 150,
+    "SKU-LOT": "50438666-C85075"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 100,
+    "NF": 78772,
+    "Lote": "565070",
+    "SKU": 50439838,
+    "Expected Replenishment Product Quantities → Expected Quantity": 100,
+    "Caixas": 100,
+    "SKU-LOT": "50439838-565070"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 1440,
+    "NF": 78772,
+    "Lote": "565014",
+    "SKU": 50472602,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1440,
+    "Caixas": 1440,
+    "SKU-LOT": "50472602-565014"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 300,
+    "NF": 78772,
+    "Lote": "564283",
+    "SKU": 50477246,
+    "Expected Replenishment Product Quantities → Expected Quantity": 300,
+    "Caixas": 300,
+    "SKU-LOT": "50477246-564283"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 1296,
+    "NF": 78772,
+    "Lote": "565058",
+    "SKU": 50477283,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1296,
+    "Caixas": 1296,
+    "SKU-LOT": "50477283-565058"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 1296,
+    "NF": 78772,
+    "Lote": "563311",
+    "SKU": 50477285,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1296,
+    "Caixas": 1296,
+    "SKU-LOT": "50477285-563311"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 180,
+    "NF": 78772,
+    "Lote": "564135",
+    "SKU": 50477305,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 180,
+    "SKU-LOT": "50477305-564135"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 630,
+    "NF": 78772,
+    "Lote": "ZB0001",
+    "SKU": 50485669,
+    "Expected Replenishment Product Quantities → Expected Quantity": 630,
+    "Caixas": 630,
+    "SKU-LOT": "50485669-ZB0001"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 630,
+    "NF": 78772,
+    "Lote": "ZA0001",
+    "SKU": 50485673,
+    "Expected Replenishment Product Quantities → Expected Quantity": 630,
+    "Caixas": 630,
+    "SKU-LOT": "50485673-ZA0001"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 546,
+    "NF": 78772,
+    "Lote": "7C0001",
+    "SKU": 50492270,
+    "Expected Replenishment Product Quantities → Expected Quantity": 546,
+    "Caixas": 546,
+    "SKU-LOT": "50492270-7C0001"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 551,
+    "NF": 78772,
+    "Lote": "664267",
+    "SKU": 50519731,
+    "Expected Replenishment Product Quantities → Expected Quantity": 551,
+    "Caixas": 1000,
+    "SKU-LOT": "50519731-664267"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 100,
+    "NF": 78772,
+    "Lote": "J85030",
+    "SKU": 50535304,
+    "Expected Replenishment Product Quantities → Expected Quantity": 100,
+    "Caixas": 100,
+    "SKU-LOT": "50535304-J85030"
+  },
+  {
+    "ID_SAP": 180831942,
+    "Remessa": 449151,
+    "Peças": 100,
+    "NF": 78772,
+    "Lote": "J85030",
+    "SKU": 50535305,
+    "Expected Replenishment Product Quantities → Expected Quantity": 100,
+    "Caixas": 100,
+    "SKU-LOT": "50535305-J85030"
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 546,
+    "Lote": "A10001",
+    "SKU": 50492260,
+    "Expected Replenishment Product Quantities → Expected Quantity": 546,
+    "Caixas": 546,
+    "SKU-LOT": "50492260-A10001",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 546,
+    "Lote": "A10001",
+    "SKU": 50492266,
+    "Expected Replenishment Product Quantities → Expected Quantity": 546,
+    "Caixas": 546,
+    "SKU-LOT": "50492266-A10001",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 18,
+    "Lote": "565018",
+    "SKU": 50517419,
+    "Expected Replenishment Product Quantities → Expected Quantity": 18,
+    "Caixas": 80,
+    "SKU-LOT": "50517419-565018",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 28,
+    "Lote": "564208",
+    "SKU": 50517422,
+    "Expected Replenishment Product Quantities → Expected Quantity": 28,
+    "Caixas": 14,
+    "SKU-LOT": "50517422-564208",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 36,
+    "Lote": "565056",
+    "SKU": 50518118,
+    "Expected Replenishment Product Quantities → Expected Quantity": 36,
+    "Caixas": 12,
+    "SKU-LOT": "50518118-565056",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 228,
+    "Lote": "564335",
+    "SKU": 50518168,
+    "Expected Replenishment Product Quantities → Expected Quantity": 228,
+    "Caixas": 76,
+    "SKU-LOT": "50518168-564335",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 40,
+    "Lote": "Q65086",
+    "SKU": 50519339,
+    "Expected Replenishment Product Quantities → Expected Quantity": 40,
+    "Caixas": 20,
+    "SKU-LOT": "50519339-Q65086",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 1000,
+    "Lote": "664178",
+    "SKU": 50519555,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1000,
+    "Caixas": 1000,
+    "SKU-LOT": "50519555-664178",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 1000,
+    "Lote": "664223",
+    "SKU": 50519558,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1000,
+    "Caixas": 1000,
+    "SKU-LOT": "50519558-664223",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 1000,
+    "Lote": "664223",
+    "SKU": 50519561,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1000,
+    "Caixas": 1000,
+    "SKU-LOT": "50519561-664223",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 1000,
+    "Lote": "664235",
+    "SKU": 50519718,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1000,
+    "Caixas": 1000,
+    "SKU-LOT": "50519718-664235",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 1000,
+    "Lote": "664236",
+    "SKU": 50519730,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1000,
+    "Caixas": 1000,
+    "SKU-LOT": "50519730-664236",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 1000,
+    "Lote": "664237",
+    "SKU": 50519732,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1000,
+    "Caixas": 1000,
+    "SKU-LOT": "50519732-664237",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 1000,
+    "Lote": "310104",
+    "SKU": 50519733,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1000,
+    "Caixas": 1000,
+    "SKU-LOT": "50519733-310104",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 1000,
+    "Lote": "664268",
+    "SKU": 50519734,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1000,
+    "Caixas": 1000,
+    "SKU-LOT": "50519734-664268",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 1000,
+    "Lote": "664282",
+    "SKU": 50519735,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1000,
+    "Caixas": 1000,
+    "SKU-LOT": "50519735-664282",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 768,
+    "Lote": "664277",
+    "SKU": 50519736,
+    "Expected Replenishment Product Quantities → Expected Quantity": 768,
+    "Caixas": 1000,
+    "SKU-LOT": "50519736-664277",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 80,
+    "Lote": "564355",
+    "SKU": 50520966,
+    "Expected Replenishment Product Quantities → Expected Quantity": 80,
+    "Caixas": 80,
+    "SKU-LOT": "50520966-564355",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 80,
+    "Lote": "564355",
+    "SKU": 50520967,
+    "Expected Replenishment Product Quantities → Expected Quantity": 80,
+    "Caixas": 80,
+    "SKU-LOT": "50520967-564355",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 80,
+    "Lote": "564335",
+    "SKU": 50520968,
+    "Expected Replenishment Product Quantities → Expected Quantity": 80,
+    "Caixas": 80,
+    "SKU-LOT": "50520968-564335",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 30,
+    "Lote": "565080",
+    "SKU": 50520970,
+    "Expected Replenishment Product Quantities → Expected Quantity": 30,
+    "Caixas": 30,
+    "SKU-LOT": "50520970-565080",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 30,
+    "Lote": "565083",
+    "SKU": 50520971,
+    "Expected Replenishment Product Quantities → Expected Quantity": 30,
+    "Caixas": 30,
+    "SKU-LOT": "50520971-565083",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 30,
+    "Lote": "565084",
+    "SKU": 50520972,
+    "Expected Replenishment Product Quantities → Expected Quantity": 30,
+    "Caixas": 30,
+    "SKU-LOT": "50520972-565084",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 30,
+    "Lote": "565106",
+    "SKU": 50520974,
+    "Expected Replenishment Product Quantities → Expected Quantity": 30,
+    "Caixas": 30,
+    "SKU-LOT": "50520974-565106",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 80,
+    "Lote": "565069",
+    "SKU": 50520975,
+    "Expected Replenishment Product Quantities → Expected Quantity": 80,
+    "Caixas": 80,
+    "SKU-LOT": "50520975-565069",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 91,
+    "Lote": "565092",
+    "SKU": 50520976,
+    "Expected Replenishment Product Quantities → Expected Quantity": 91,
+    "Caixas": 91,
+    "SKU-LOT": "50520976-565092",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 16,
+    "Lote": "565077",
+    "SKU": 50520981,
+    "Expected Replenishment Product Quantities → Expected Quantity": 16,
+    "Caixas": 16,
+    "SKU-LOT": "50520981-565077",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 288,
+    "Lote": "565105",
+    "SKU": 50523379,
+    "Expected Replenishment Product Quantities → Expected Quantity": 288,
+    "Caixas": 72,
+    "SKU-LOT": "50523379-565105",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 540,
+    "Lote": "565072",
+    "SKU": 50523381,
+    "Expected Replenishment Product Quantities → Expected Quantity": 540,
+    "Caixas": 90,
+    "SKU-LOT": "50523381-565072",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 120,
+    "Lote": "565085",
+    "SKU": 50523382,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50523382-565085",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 30,
+    "Lote": "565116",
+    "SKU": 50524684,
+    "Expected Replenishment Product Quantities → Expected Quantity": 30,
+    "Caixas": 30,
+    "SKU-LOT": "50524684-565116",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 490,
+    "Lote": "A4NP29",
+    "SKU": 50524713,
+    "Expected Replenishment Product Quantities → Expected Quantity": 490,
+    "Caixas": 70,
+    "SKU-LOT": "50524713-A4NP29",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 25,
+    "Lote": "F94330",
+    "SKU": 50526914,
+    "Expected Replenishment Product Quantities → Expected Quantity": 25,
+    "Caixas": 25,
+    "SKU-LOT": "50526914-F94330",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 25,
+    "Lote": "F94243",
+    "SKU": 50526915,
+    "Expected Replenishment Product Quantities → Expected Quantity": 25,
+    "Caixas": 25,
+    "SKU-LOT": "50526915-F94243",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 100,
+    "Lote": "Q65029",
+    "SKU": 50527137,
+    "Expected Replenishment Product Quantities → Expected Quantity": 100,
+    "Caixas": 100,
+    "SKU-LOT": "50527137-Q65029",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 120,
+    "Lote": "Q65031",
+    "SKU": 50527314,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50527314-Q65031",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 100,
+    "Lote": "F94309",
+    "SKU": 50527316,
+    "Expected Replenishment Product Quantities → Expected Quantity": 100,
+    "Caixas": 100,
+    "SKU-LOT": "50527316-F94309",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 120,
+    "Lote": "Q64306",
+    "SKU": 50527318,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50527318-Q64306",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 400,
+    "Lote": "565113",
+    "SKU": 50527326,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 100,
+    "SKU-LOT": "50527326-565113",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 270,
+    "Lote": "564339",
+    "SKU": 50527328,
+    "Expected Replenishment Product Quantities → Expected Quantity": 270,
+    "Caixas": 270,
+    "SKU-LOT": "50527328-564339",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 2250,
+    "Lote": "995044",
+    "SKU": 50527679,
+    "Expected Replenishment Product Quantities → Expected Quantity": 2250,
+    "Caixas": 2250,
+    "SKU-LOT": "50527679-995044",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 2250,
+    "Lote": "995056",
+    "SKU": 50527680,
+    "Expected Replenishment Product Quantities → Expected Quantity": 2250,
+    "Caixas": 2250,
+    "SKU-LOT": "50527680-995056",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 2250,
+    "Lote": "995043",
+    "SKU": 50527681,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1800,
+    "Caixas": 2250,
+    "SKU-LOT": "50527681-995043",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 2250,
+    "Lote": "995009",
+    "SKU": 50527681,
+    "Expected Replenishment Product Quantities → Expected Quantity": 450,
+    "Caixas": 2250,
+    "SKU-LOT": "50527681-995009",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 72,
+    "Lote": "LB0025",
+    "SKU": 50527813,
+    "Expected Replenishment Product Quantities → Expected Quantity": 72,
+    "Caixas": 72,
+    "SKU-LOT": "50527813-LB0025",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 72,
+    "Lote": "LB0035",
+    "SKU": 50527815,
+    "Expected Replenishment Product Quantities → Expected Quantity": 72,
+    "Caixas": 72,
+    "SKU-LOT": "50527815-LB0035",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 1500,
+    "Lote": "994327",
+    "SKU": 50527817,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1500,
+    "Caixas": 1500,
+    "SKU-LOT": "50527817-994327",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 752,
+    "Lote": "A30001",
+    "SKU": 50528119,
+    "Expected Replenishment Product Quantities → Expected Quantity": 752,
+    "Caixas": 752,
+    "SKU-LOT": "50528119-A30001",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 72,
+    "Lote": "LB0045",
+    "SKU": 50528125,
+    "Expected Replenishment Product Quantities → Expected Quantity": 72,
+    "Caixas": 72,
+    "SKU-LOT": "50528125-LB0045",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 108,
+    "Lote": "565071",
+    "SKU": 50529289,
+    "Expected Replenishment Product Quantities → Expected Quantity": 108,
+    "Caixas": 36,
+    "SKU-LOT": "50529289-565071",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 264,
+    "Lote": "565071",
+    "SKU": 50529290,
+    "Expected Replenishment Product Quantities → Expected Quantity": 216,
+    "Caixas": 12,
+    "SKU-LOT": "50529290-565071",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 264,
+    "Lote": "565070",
+    "SKU": 50529290,
+    "Expected Replenishment Product Quantities → Expected Quantity": 48,
+    "Caixas": 12,
+    "SKU-LOT": "50529290-565070",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 18,
+    "Lote": "L65073",
+    "SKU": 50529328,
+    "Expected Replenishment Product Quantities → Expected Quantity": 18,
+    "Caixas": 9,
+    "SKU-LOT": "50529328-L65073",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 24,
+    "Lote": "B63282",
+    "SKU": 50530032,
+    "Expected Replenishment Product Quantities → Expected Quantity": 24,
+    "Caixas": 24,
+    "SKU-LOT": "50530032-B63282",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 400,
+    "Lote": "565090",
+    "SKU": 50530036,
+    "Expected Replenishment Product Quantities → Expected Quantity": 400,
+    "Caixas": 100,
+    "SKU-LOT": "50530036-565090",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 154,
+    "Lote": "F85106",
+    "SKU": 50530492,
+    "Expected Replenishment Product Quantities → Expected Quantity": 154,
+    "Caixas": 14,
+    "SKU-LOT": "50530492-F85106",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 180,
+    "Lote": "565128",
+    "SKU": 50530724,
+    "Expected Replenishment Product Quantities → Expected Quantity": 180,
+    "Caixas": 45,
+    "SKU-LOT": "50530724-565128",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 120,
+    "Lote": "565127",
+    "SKU": 50530725,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50530725-565127",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 100,
+    "Lote": "W65100",
+    "SKU": 50531376,
+    "Expected Replenishment Product Quantities → Expected Quantity": 100,
+    "Caixas": 100,
+    "SKU-LOT": "50531376-W65100",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 65,
+    "Lote": "U85013",
+    "SKU": 50531495,
+    "Expected Replenishment Product Quantities → Expected Quantity": 65,
+    "Caixas": 65,
+    "SKU-LOT": "50531495-U85013",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 120,
+    "Lote": "565045",
+    "SKU": 50531551,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50531551-565045",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 24,
+    "Lote": "Q84310",
+    "SKU": 50534232,
+    "Expected Replenishment Product Quantities → Expected Quantity": 24,
+    "Caixas": 24,
+    "SKU-LOT": "50534232-Q84310",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 90,
+    "Lote": "J85030",
+    "SKU": 50535302,
+    "Expected Replenishment Product Quantities → Expected Quantity": 90,
+    "Caixas": 90,
+    "SKU-LOT": "50535302-J85030",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 90,
+    "Lote": "J85030",
+    "SKU": 50535303,
+    "Expected Replenishment Product Quantities → Expected Quantity": 90,
+    "Caixas": 90,
+    "SKU-LOT": "50535303-J85030",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 50,
+    "Lote": "S65057",
+    "SKU": 50537560,
+    "Expected Replenishment Product Quantities → Expected Quantity": 50,
+    "Caixas": 50,
+    "SKU-LOT": "50537560-S65057",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 50,
+    "Lote": "S65050",
+    "SKU": 50537561,
+    "Expected Replenishment Product Quantities → Expected Quantity": 50,
+    "Caixas": 50,
+    "SKU-LOT": "50537561-S65050",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 14,
+    "Lote": "Q65044",
+    "SKU": 50542233,
+    "Expected Replenishment Product Quantities → Expected Quantity": 14,
+    "Caixas": 7,
+    "SKU-LOT": "50542233-Q65044",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 36,
+    "Lote": "U65079",
+    "SKU": 50542236,
+    "Expected Replenishment Product Quantities → Expected Quantity": 36,
+    "Caixas": 36,
+    "SKU-LOT": "50542236-U65079",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 36,
+    "Lote": "U65039",
+    "SKU": 50542237,
+    "Expected Replenishment Product Quantities → Expected Quantity": 36,
+    "Caixas": 36,
+    "SKU-LOT": "50542237-U65039",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 90,
+    "Lote": "U65078",
+    "SKU": 50542261,
+    "Expected Replenishment Product Quantities → Expected Quantity": 90,
+    "Caixas": 18,
+    "SKU-LOT": "50542261-U65078",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 72,
+    "Lote": "U65028",
+    "SKU": 50542262,
+    "Expected Replenishment Product Quantities → Expected Quantity": 72,
+    "Caixas": 18,
+    "SKU-LOT": "50542262-U65028",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 144,
+    "Lote": "L65006",
+    "SKU": 50542266,
+    "Expected Replenishment Product Quantities → Expected Quantity": 144,
+    "Caixas": 16,
+    "SKU-LOT": "50542266-L65006",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 80,
+    "Lote": "Q65104",
+    "SKU": 50542270,
+    "Expected Replenishment Product Quantities → Expected Quantity": 80,
+    "Caixas": 20,
+    "SKU-LOT": "50542270-Q65104",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831795,
+    "Remessa": 459958,
+    "Peças": 30,
+    "Lote": "L65126",
+    "SKU": 50542731,
+    "Expected Replenishment Product Quantities → Expected Quantity": 30,
+    "Caixas": 30,
+    "SKU-LOT": "50542731-L65126",
+    "NF": 78752
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 28,
+    "Lote": "564234",
+    "SKU": 50499025,
+    "Expected Replenishment Product Quantities → Expected Quantity": 28,
+    "Caixas": 28,
+    "SKU-LOT": "50499025-564234",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 130,
+    "Lote": "564213",
+    "SKU": 50501991,
+    "Expected Replenishment Product Quantities → Expected Quantity": 130,
+    "Caixas": 130,
+    "SKU-LOT": "50501991-564213",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 48,
+    "Lote": "565052",
+    "SKU": 50501992,
+    "Expected Replenishment Product Quantities → Expected Quantity": 48,
+    "Caixas": 48,
+    "SKU-LOT": "50501992-565052",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 95,
+    "Lote": "565037",
+    "SKU": 50502929,
+    "Expected Replenishment Product Quantities → Expected Quantity": 95,
+    "Caixas": 95,
+    "SKU-LOT": "50502929-565037",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 30,
+    "Lote": "564366",
+    "SKU": 50504331,
+    "Expected Replenishment Product Quantities → Expected Quantity": 30,
+    "Caixas": 30,
+    "SKU-LOT": "50504331-564366",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 310,
+    "Lote": "564366",
+    "SKU": 50504332,
+    "Expected Replenishment Product Quantities → Expected Quantity": 310,
+    "Caixas": 310,
+    "SKU-LOT": "50504332-564366",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 72,
+    "Lote": "664247",
+    "SKU": 50506883,
+    "Expected Replenishment Product Quantities → Expected Quantity": 72,
+    "Caixas": 72,
+    "SKU-LOT": "50506883-664247",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 24,
+    "Lote": "564309",
+    "SKU": 50506884,
+    "Expected Replenishment Product Quantities → Expected Quantity": 24,
+    "Caixas": 12,
+    "SKU-LOT": "50506884-564309",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 24,
+    "Lote": "565104",
+    "SKU": 50506885,
+    "Expected Replenishment Product Quantities → Expected Quantity": 24,
+    "Caixas": 12,
+    "SKU-LOT": "50506885-565104",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 47,
+    "Lote": "564221",
+    "SKU": 50506886,
+    "Expected Replenishment Product Quantities → Expected Quantity": 47,
+    "Caixas": 47,
+    "SKU-LOT": "50506886-564221",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 240,
+    "Lote": "565016",
+    "SKU": 50506888,
+    "Expected Replenishment Product Quantities → Expected Quantity": 240,
+    "Caixas": 120,
+    "SKU-LOT": "50506888-565016",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 600,
+    "Lote": "565091",
+    "SKU": 50506959,
+    "Expected Replenishment Product Quantities → Expected Quantity": 600,
+    "Caixas": 120,
+    "SKU-LOT": "50506959-565091",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 360,
+    "Lote": "565069",
+    "SKU": 50506960,
+    "Expected Replenishment Product Quantities → Expected Quantity": 360,
+    "Caixas": 120,
+    "SKU-LOT": "50506960-565069",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 120,
+    "Lote": "565079",
+    "SKU": 50506961,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50506961-565079",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 12,
+    "Lote": "B64263",
+    "SKU": 50508264,
+    "Expected Replenishment Product Quantities → Expected Quantity": 12,
+    "Caixas": 6,
+    "SKU-LOT": "50508264-B64263",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 18,
+    "Lote": "B64243",
+    "SKU": 50508265,
+    "Expected Replenishment Product Quantities → Expected Quantity": 18,
+    "Caixas": 9,
+    "SKU-LOT": "50508265-B64243",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 10,
+    "Lote": "F94117",
+    "SKU": 50508266,
+    "Expected Replenishment Product Quantities → Expected Quantity": 10,
+    "Caixas": 10,
+    "SKU-LOT": "50508266-F94117",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 80,
+    "Lote": "L64240",
+    "SKU": 50508267,
+    "Expected Replenishment Product Quantities → Expected Quantity": 80,
+    "Caixas": 20,
+    "SKU-LOT": "50508267-L64240",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 10,
+    "Lote": "F94117",
+    "SKU": 50508310,
+    "Expected Replenishment Product Quantities → Expected Quantity": 10,
+    "Caixas": 10,
+    "SKU-LOT": "50508310-F94117",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 60,
+    "Lote": "L64256",
+    "SKU": 50508311,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 20,
+    "SKU-LOT": "50508311-L64256",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 40,
+    "Lote": "L64257",
+    "SKU": 50508312,
+    "Expected Replenishment Product Quantities → Expected Quantity": 40,
+    "Caixas": 20,
+    "SKU-LOT": "50508312-L64257",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 60,
+    "Lote": "L64255",
+    "SKU": 50508313,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 20,
+    "SKU-LOT": "50508313-L64255",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 250,
+    "Lote": "564274",
+    "SKU": 50508898,
+    "Expected Replenishment Product Quantities → Expected Quantity": 250,
+    "Caixas": 250,
+    "SKU-LOT": "50508898-564274",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 1200,
+    "Lote": "604319",
+    "SKU": 50508957,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1200,
+    "Caixas": 600,
+    "SKU-LOT": "50508957-604319",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 120,
+    "Lote": "565038",
+    "SKU": 50509559,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50509559-565038",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 120,
+    "Lote": "565069",
+    "SKU": 50509560,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50509560-565069",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 120,
+    "Lote": "565070",
+    "SKU": 50509561,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50509561-565070",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 120,
+    "Lote": "565118",
+    "SKU": 50509562,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50509562-565118",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 120,
+    "Lote": "565087",
+    "SKU": 50509563,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50509563-565087",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 120,
+    "Lote": "565104",
+    "SKU": 50509564,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50509564-565104",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 240,
+    "Lote": "565130",
+    "SKU": 50509566,
+    "Expected Replenishment Product Quantities → Expected Quantity": 240,
+    "Caixas": 40,
+    "SKU-LOT": "50509566-565130",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 108,
+    "Lote": "565067",
+    "SKU": 50509567,
+    "Expected Replenishment Product Quantities → Expected Quantity": 108,
+    "Caixas": 54,
+    "SKU-LOT": "50509567-565067",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 108,
+    "Lote": "564338",
+    "SKU": 50509569,
+    "Expected Replenishment Product Quantities → Expected Quantity": 108,
+    "Caixas": 54,
+    "SKU-LOT": "50509569-564338",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 84,
+    "Lote": "565037",
+    "SKU": 50509573,
+    "Expected Replenishment Product Quantities → Expected Quantity": 84,
+    "Caixas": 42,
+    "SKU-LOT": "50509573-565037",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 1800,
+    "Lote": "565114",
+    "SKU": 50509594,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1800,
+    "Caixas": 40,
+    "SKU-LOT": "50509594-565114",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 1120,
+    "Lote": "565125",
+    "SKU": 50509595,
+    "Expected Replenishment Product Quantities → Expected Quantity": 1000,
+    "Caixas": 40,
+    "SKU-LOT": "50509595-565125",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 1120,
+    "Lote": "565087",
+    "SKU": 50509595,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 40,
+    "SKU-LOT": "50509595-565087",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 20,
+    "Lote": "L64233",
+    "SKU": 50509606,
+    "Expected Replenishment Product Quantities → Expected Quantity": 20,
+    "Caixas": 20,
+    "SKU-LOT": "50509606-L64233",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 120,
+    "Lote": "564116",
+    "SKU": 50509939,
+    "Expected Replenishment Product Quantities → Expected Quantity": 120,
+    "Caixas": 120,
+    "SKU-LOT": "50509939-564116",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 28,
+    "Lote": "I74212",
+    "SKU": 50509946,
+    "Expected Replenishment Product Quantities → Expected Quantity": 28,
+    "Caixas": 28,
+    "SKU-LOT": "50509946-I74212",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 18,
+    "Lote": "H84279",
+    "SKU": 50510737,
+    "Expected Replenishment Product Quantities → Expected Quantity": 18,
+    "Caixas": 18,
+    "SKU-LOT": "50510737-H84279",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 18,
+    "Lote": "L65036",
+    "SKU": 50510738,
+    "Expected Replenishment Product Quantities → Expected Quantity": 18,
+    "Caixas": 18,
+    "SKU-LOT": "50510738-L65036",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 50,
+    "Lote": "U65009",
+    "SKU": 50510814,
+    "Expected Replenishment Product Quantities → Expected Quantity": 50,
+    "Caixas": 50,
+    "SKU-LOT": "50510814-U65009",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 60,
+    "Lote": "H84005",
+    "SKU": 50510817,
+    "Expected Replenishment Product Quantities → Expected Quantity": 60,
+    "Caixas": 60,
+    "SKU-LOT": "50510817-H84005",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 20,
+    "Lote": "H84005",
+    "SKU": 50510818,
+    "Expected Replenishment Product Quantities → Expected Quantity": 20,
+    "Caixas": 10,
+    "SKU-LOT": "50510818-H84005",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 2250,
+    "Lote": "994352",
+    "SKU": 50511206,
+    "Expected Replenishment Product Quantities → Expected Quantity": 2250,
+    "Caixas": 2250,
+    "SKU-LOT": "50511206-994352",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 2250,
+    "Lote": "994332",
+    "SKU": 50511208,
+    "Expected Replenishment Product Quantities → Expected Quantity": 2250,
+    "Caixas": 2250,
+    "SKU-LOT": "50511208-994332",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 2250,
+    "Lote": "994283",
+    "SKU": 50511292,
+    "Expected Replenishment Product Quantities → Expected Quantity": 2250,
+    "Caixas": 2250,
+    "SKU-LOT": "50511292-994283",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 500,
+    "Lote": "565053",
+    "SKU": 50511296,
+    "Expected Replenishment Product Quantities → Expected Quantity": 500,
+    "Caixas": 500,
+    "SKU-LOT": "50511296-565053",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 175,
+    "Lote": "565097",
+    "SKU": 50511297,
+    "Expected Replenishment Product Quantities → Expected Quantity": 175,
+    "Caixas": 500,
+    "SKU-LOT": "50511297-565097",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 500,
+    "Lote": "565098",
+    "SKU": 50511298,
+    "Expected Replenishment Product Quantities → Expected Quantity": 68,
+    "Caixas": 500,
+    "SKU-LOT": "50511298-565098",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 500,
+    "Lote": "565066",
+    "SKU": 50511298,
+    "Expected Replenishment Product Quantities → Expected Quantity": 432,
+    "Caixas": 500,
+    "SKU-LOT": "50511298-565066",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 70,
+    "Lote": "605126",
+    "SKU": 50511299,
+    "Expected Replenishment Product Quantities → Expected Quantity": 50,
+    "Caixas": 10,
+    "SKU-LOT": "50511299-605126",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 70,
+    "Lote": "605122",
+    "SKU": 50511299,
+    "Expected Replenishment Product Quantities → Expected Quantity": 20,
+    "Caixas": 10,
+    "SKU-LOT": "50511299-605122",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 800,
+    "Lote": "A10001",
+    "SKU": 50511304,
+    "Expected Replenishment Product Quantities → Expected Quantity": 800,
+    "Caixas": 800,
+    "SKU-LOT": "50511304-A10001",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 800,
+    "Lote": "ZC0001",
+    "SKU": 50511305,
+    "Expected Replenishment Product Quantities → Expected Quantity": 800,
+    "Caixas": 800,
+    "SKU-LOT": "50511305-ZC0001",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 800,
+    "Lote": "ZC0001",
+    "SKU": 50511309,
+    "Expected Replenishment Product Quantities → Expected Quantity": 800,
+    "Caixas": 800,
+    "SKU-LOT": "50511309-ZC0001",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 80,
+    "Lote": "S85034",
+    "SKU": 50511769,
+    "Expected Replenishment Product Quantities → Expected Quantity": 80,
+    "Caixas": 80,
+    "SKU-LOT": "50511769-S85034",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 54,
+    "Lote": "L64225",
+    "SKU": 50511773,
+    "Expected Replenishment Product Quantities → Expected Quantity": 54,
+    "Caixas": 27,
+    "SKU-LOT": "50511773-L64225",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 164,
+    "Lote": "E85098",
+    "SKU": 50511987,
+    "Expected Replenishment Product Quantities → Expected Quantity": 164,
+    "Caixas": 41,
+    "SKU-LOT": "50511987-E85098",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 12,
+    "Lote": "L64232",
+    "SKU": 50514043,
+    "Expected Replenishment Product Quantities → Expected Quantity": 12,
+    "Caixas": 12,
+    "SKU-LOT": "50514043-L64232",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 12,
+    "Lote": "L64234",
+    "SKU": 50514044,
+    "Expected Replenishment Product Quantities → Expected Quantity": 12,
+    "Caixas": 12,
+    "SKU-LOT": "50514044-L64234",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 15,
+    "Lote": "L64227",
+    "SKU": 50514046,
+    "Expected Replenishment Product Quantities → Expected Quantity": 15,
+    "Caixas": 15,
+    "SKU-LOT": "50514046-L64227",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 15,
+    "Lote": "L64229",
+    "SKU": 50514047,
+    "Expected Replenishment Product Quantities → Expected Quantity": 15,
+    "Caixas": 15,
+    "SKU-LOT": "50514047-L64229",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 16,
+    "Lote": "L64285",
+    "SKU": 50514048,
+    "Expected Replenishment Product Quantities → Expected Quantity": 16,
+    "Caixas": 16,
+    "SKU-LOT": "50514048-L64285",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 16,
+    "Lote": "L64292",
+    "SKU": 50514079,
+    "Expected Replenishment Product Quantities → Expected Quantity": 16,
+    "Caixas": 16,
+    "SKU-LOT": "50514079-L64292",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 16,
+    "Lote": "L64296",
+    "SKU": 50514080,
+    "Expected Replenishment Product Quantities → Expected Quantity": 16,
+    "Caixas": 16,
+    "SKU-LOT": "50514080-L64296",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 24,
+    "Lote": "L84215",
+    "SKU": 50516274,
+    "Expected Replenishment Product Quantities → Expected Quantity": 24,
+    "Caixas": 4,
+    "SKU-LOT": "50516274-L84215",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 10,
+    "Lote": "L84233",
+    "SKU": 50516276,
+    "Expected Replenishment Product Quantities → Expected Quantity": 10,
+    "Caixas": 2,
+    "SKU-LOT": "50516276-L84233",
+    "NF": 78756
+  },
+  {
+    "ID_SAP": 180831810,
+    "Remessa": 459959,
+    "Peças": 62,
+    "Lote": "565018",
+    "SKU": 50517419,
+    "Expected Replenishment Product Quantities → Expected Quantity": 62,
+    "Caixas": 80,
+    "SKU-LOT": "50517419-565018",
+    "NF": 78756
+  }
+];
+
+        // Set up the input listener when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeInput = document.getElementById('codeInput');
+            codeInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    processCode(this.value);
+                }
+            });
+            codeInput.addEventListener('input', function(event) {
+                if (this.value.length === 27) {
+                    processCode(this.value);
+                }
+            });
+        });
+
+        function processCode(code) {
+            document.getElementById('codeInput').value = "";
+            const errorElement = document.getElementById('error');
+            const resultContainer = document.getElementById('resultContainer');
+            const resultsElement = document.getElementById('results');
+
+            // Clear previous results
+            resultsElement.innerHTML = '';
+
+            // Validate and parse the code
+            if (code.length !== 27) {
+                errorElement.textContent = 'O código deve ter 27 caracteres.';
+                errorElement.style.display = 'block';
+                resultContainer.style.display = 'none';
+                return;
+            }
+
+            // Parse the code
+            const idStart = code.substring(0, 2);
+            const expirationDate = code.substring(2, 8);
+            const idMiddle = code.substring(8, 10);
+            const lot = code.substring(10, 16);
+            const idEnd = code.substring(16, 18);
+            const sku = code.substring(18).replace(/^0/, '');
+
+            // Format date from YYMMDD to DD/MM/YY
+            const year = expirationDate.substring(0, 2);
+            const month = expirationDate.substring(2, 4);
+            const day = expirationDate.substring(4, 6);
+            const formattedDate = `${day}/${month}/${year}`;
+
+            // Create SKU-LOT string for search
+            const skuLot = `${sku}-${lot}`;
+
+            // Search for the SKU-LOT in the JSON data
+            let found = false;
+
+            // Search in all loaded JSON data
+            for (const fileName in jsonData) {
+                const fileData = jsonData[fileName];
+                
+                for (const item of fileData) {
+                    if (item['SKU-LOT'] === skuLot) {
+                        found = true;
+                        
+                        // Create a card for each match
+                        const card = document.createElement('div');
+                        card.className = 'result-card';
+                        
+                        // Primary info (NF and Remessa)
+                        const primaryInfo = document.createElement('div');
+                        primaryInfo.className = 'primary-info';
+                        
+                        const nfBox = document.createElement('div');
+                        nfBox.className = 'info-box primary';
+                        nfBox.innerHTML = `
+                            <div class="info-label">NF</div>
+                            <div class="info-value primary">${item.NF || '-'}</div>
+                        `;
+                        
+                        const remessaBox = document.createElement('div');
+                        remessaBox.className = 'info-box primary';
+                        remessaBox.innerHTML = `
+                            <div class="info-label">REMESSA</div>
+                            <div class="info-value primary">${item.Remessa || '-'}</div>
+                        `;
+                        
+                        primaryInfo.appendChild(nfBox);
+                        primaryInfo.appendChild(remessaBox);
+                        
+                        // Secondary info (Caixas)
+                        const secondaryInfo = document.createElement('div');
+                        secondaryInfo.className = 'secondary-info';
+                        
+                        const caixasBox = document.createElement('div');
+                        caixasBox.className = 'info-box secondary';
+                        caixasBox.innerHTML = `
+                            <div class="info-label">CAIXAS</div>
+                            <div class="info-value secondary">${item.Caixas || '-'}</div>
+                        `;
+                        
+                        secondaryInfo.appendChild(caixasBox);
+                        
+                        // Tertiary info (SKU and Lote)
+                        const tertiaryInfo = document.createElement('div');
+                        tertiaryInfo.className = 'tertiary-info';
+                        
+                        const skuBox = document.createElement('div');
+                        skuBox.className = 'info-box tertiary';
+                        skuBox.innerHTML = `
+                            <div class="info-label">SKU</div>
+                            <div class="info-value tertiary">${item.SKU || '-'}</div>
+                        `;
+                        
+                        const loteBox = document.createElement('div');
+                        loteBox.className = 'info-box tertiary';
+                        loteBox.innerHTML = `
+                            <div class="info-label">LOTE</div>
+                            <div class="info-value tertiary">${item.Lote || '-'}</div>
+                        `;
+                        
+                        tertiaryInfo.appendChild(skuBox);
+                        tertiaryInfo.appendChild(loteBox);
+                        
+                        // Append all sections to the card
+                        card.appendChild(primaryInfo);
+                        card.appendChild(secondaryInfo);
+                        card.appendChild(tertiaryInfo);
+                        
+                        // Add the card to results
+                        resultsElement.appendChild(card);
+                    }
+                }
+            }
+
+            if (!found) {
+                // Create a message for no results
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = 'Nenhum resultado encontrado para este SKU-Lote.';
+                resultsElement.appendChild(noResults);
+            }
+
+            // Show the results
+            errorElement.style.display = 'none';
+            resultContainer.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
