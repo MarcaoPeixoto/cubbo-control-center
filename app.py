@@ -439,20 +439,25 @@ def bonus_projetor():
 def ops():
     return render_template('ops.html')
 
-@app.route('/zica_abastecimento_curintia')
+@app.route('/zica_abastecimento_1')
 @login_required
-def zica_abastecimento_curintia():
-    return render_template('zica_abastecimento_curintia.html')
+def zica_abastecimento_1():
+    return render_template('zica_abastecimento_1.html')
 
-@app.route('/zica_abastecimento')
+@app.route('/zica_abastecimento_2')
 @login_required
-def zica_abastecimento():
-    return render_template('zica_abastecimento.html')
+def zica_abastecimento_2():
+    return render_template('zica_abastecimento_2.html')
 
 @app.route('/zica_abastecimento_4')
 @login_required
 def zica_abastecimento_4():
     return render_template('zica_abastecimento_4.html')
+
+@app.route('/zica_abastecimento_5')
+@login_required
+def zica_abastecimento_5():
+    return render_template('zica_abastecimento_5.html')
 
 @app.route('/atrasos')
 @login_required
