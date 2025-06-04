@@ -102,26 +102,26 @@ def job_report_ops():
     except subprocess.CalledProcessError as e:
         print(f"An error occurred in Report Ops job: {e}")
 
-def job_pp_repo():
+""" def job_pp_repo():
     try:
         subprocess.run(['python', 'PP_repo.py'])
         print("PP Repo atualizados")
     except subprocess.CalledProcessError as e:
-        print(f"An error occurred in PP Repo job: {e}")
+        print(f"An error occurred in PP Repo job: {e}") """
 
-def job_controle_fluxo_pedidos_natura():
+""" def job_controle_fluxo_pedidos_natura():
     try:
         subprocess.run(['python', 'controle_fluxo_pedidos_natura.py'])
         print("Controle de fluxo de pedidos atualizados")
     except subprocess.CalledProcessError as e:
-        print(f"An error occurred in Controle de fluxo de pedidos job: {e}")
+        print(f"An error occurred in Controle de fluxo de pedidos job: {e}") """
 
 scheduler.add_job(job_embu, 'interval', minutes=5, max_instances=10000)
 scheduler.add_job(job_extrema, 'interval', minutes=7, max_instances=10000)
 scheduler.add_job(job_bonus, 'interval', minutes=3, max_instances=10000)
 scheduler.add_job(job_report_ops, 'cron', hour='20', minute='0', max_instances=10000)
 scheduler.add_job(job_pp_repo, 'interval', hours=1, max_instances=10000)
-scheduler.add_job(job_controle_fluxo_pedidos_natura, 'interval', minutes=5, max_instances=10000)
+#scheduler.add_job(job_controle_fluxo_pedidos_natura, 'interval', minutes=5, max_instances=10000)
 
 @app.before_request
 def start_scheduler():
