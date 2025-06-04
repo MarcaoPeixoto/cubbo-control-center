@@ -3,6 +3,9 @@ import json
 from dotenv import dotenv_values
 import requests
 from datetime import datetime
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+import time
 
 def create_metabase_token():
 
@@ -28,37 +31,56 @@ def create_metabase_token():
     else:
         raise Exception(f'Failed to create token: {response.content}')
     
+def create_session_with_retries():
+    session = requests.Session()
+    retries = Retry(
+        total=3,  # number of retries
+        backoff_factor=1,  # wait 1, 2, 4 seconds between retries
+        status_forcelist=[500, 502, 503, 504]
+    )
+    session.mount('https://', HTTPAdapter(max_retries=retries))
+    return session
+
 def get_dataset(question, params={}):
     METABASE_ENDPOINT = "https://cubbo.metabaseapp.com"
-    METABASE_TOKEN = create_metabase_token()
-
-    # Debug print to verify the request
-    print(f"Making request to question {question} with parameters: {params}")
-
-    try:
-        res = requests.post(
-            f"{METABASE_ENDPOINT}/api/card/{question}/query/json",
-            headers={
-                "Content-Type": "application/json",
-                'X-Metabase-Session': METABASE_TOKEN
-            },
-            json=params,  # Use json parameter instead of params
-            timeout=30  # Add timeout
-        )
-        
-        # Debug response
-        print(f"Response status code: {res.status_code}")
-        
-        if res.status_code != 200:
-            print(f"Error response from Metabase: {res.text}")
-            raise Exception(f"Metabase query failed with status {res.status_code}")
+    attempt = 0
+    
+    while True:  # Keep trying indefinitely
+        try:
+            attempt += 1
+            METABASE_TOKEN = create_metabase_token()
+            session = create_session_with_retries()
             
-        dataset = res.json()
-        return dataset
+            print(f"Attempt {attempt} to fetch data from Metabase...")
+            
+            res = session.post(
+                f"{METABASE_ENDPOINT}/api/card/{question}/query/json",
+                headers={
+                    "Content-Type": "application/json",
+                    'X-Metabase-Session': METABASE_TOKEN
+                },
+                json=params,
+                timeout=(30, 90)  # (connect timeout, read timeout)
+            )
+            
+            if res.status_code == 200:
+                dataset = res.json()
+                print("Successfully fetched data from Metabase")
+                return dataset
+            else:
+                print(f"Error response from Metabase: {res.text}")
+                print(f"Retrying in {min(attempt * 2, 30)} seconds...")  # Cap wait time at 30 seconds
+                time.sleep(min(attempt * 2, 30))
 
-    except requests.exceptions.RequestException as e:
-        print(f"Request failed: {str(e)}")
-        raise
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            print(f"Network error on attempt {attempt}: {str(e)}")
+            print(f"Retrying in {min(attempt * 2, 30)} seconds...")  # Cap wait time at 30 seconds
+            time.sleep(min(attempt * 2, 30))
+            
+        except Exception as e:
+            print(f"Unexpected error on attempt {attempt}: {str(e)}")
+            print(f"Retrying in {min(attempt * 2, 30)} seconds...")  # Cap wait time at 30 seconds
+            time.sleep(min(attempt * 2, 30))
 
 def process_data(inputs):
 

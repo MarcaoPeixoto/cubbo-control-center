@@ -30,7 +30,7 @@ import time
 import tempfile
 import fitz  # PyMuPDF
 from toteLivre import get_tote_livre
-
+from controle_fluxo_pedidos_natura import controle_fluxo_pedidos_natura
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
@@ -109,11 +109,19 @@ def job_pp_repo():
     except subprocess.CalledProcessError as e:
         print(f"An error occurred in PP Repo job: {e}")
 
+def job_controle_fluxo_pedidos_natura():
+    try:
+        subprocess.run(['python', 'controle_fluxo_pedidos_natura.py'])
+        print("Controle de fluxo de pedidos atualizados")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred in Controle de fluxo de pedidos job: {e}")
+
 scheduler.add_job(job_embu, 'interval', minutes=5, max_instances=10000)
 scheduler.add_job(job_extrema, 'interval', minutes=7, max_instances=10000)
 scheduler.add_job(job_bonus, 'interval', minutes=3, max_instances=10000)
 scheduler.add_job(job_report_ops, 'cron', hour='20', minute='0', max_instances=10000)
 scheduler.add_job(job_pp_repo, 'interval', hours=1, max_instances=10000)
+scheduler.add_job(job_controle_fluxo_pedidos_natura, 'interval', minutes=5, max_instances=10000)
 
 @app.before_request
 def start_scheduler():
@@ -465,7 +473,11 @@ def zica_abastecimento_4():
 @app.route('/zica_abastecimento_5')
 @login_required
 def zica_abastecimento_5():
-    return render_template('zica_abastecimento_5.html')
+
+@app.route('/zica_abastecimento_6')
+@login_required
+def zica_abastecimento_6():
+    return render_template('zica_abastecimento_6.html')    
 
 @app.route('/atrasos')
 @login_required
