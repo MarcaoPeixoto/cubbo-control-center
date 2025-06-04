@@ -473,6 +473,7 @@ def zica_abastecimento_4():
 @app.route('/zica_abastecimento_5')
 @login_required
 def zica_abastecimento_5():
+    return render_template('zica_abastecimento_5.html')
 
 @app.route('/zica_abastecimento_6')
 @login_required
