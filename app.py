@@ -451,42 +451,39 @@ def manifesto_route():
 @login_required
 def manifesto_route_itapeva():
     if request.method == 'POST':
-        action = request.form.get('action')
         manifesto_option = request.form.get('manifesto_option_MG')
+        action = request.form.get('action')
         
         if not manifesto_option:
             return render_template('manifestoItapeva.html', error="Please select a carrier")
         
         try:
             if action == 'generate':
-                # Get the folder ID for the selected carrier
-                folder_id = link_docs_itapeva(manifesto_option)
-                if not folder_id:
-                    return render_template('manifestoItapeva.html', error="Error: Could not determine folder ID")
-                
-                # Get manifesto data
+                # Get data from Metabase
                 data = get_manifesto_itapeva(manifesto_option)
-                current_date = datetime.now() - timedelta(hours=3)
-                document_title = f'Manifesto {manifesto_option} {current_date:%d/%m/%Y}'
                 
-                # Create the document
-                document_id = save_to_google_docs_itapeva(document_title, data, folder_id, manifesto_option)
+                # Create document title
+                current_date = datetime.now()
+                document_title = f"Manifesto {manifesto_option} {current_date:%d/%m/%Y}"
                 
-                if document_id:
-                    doc_url = f'https://docs.google.com/document/d/{document_id}/edit'
-                    return render_template('manifestoItapeva.html', document_url=doc_url)
-                else:
-                    return render_template('manifestoItapeva.html', error="Failed to create document")
-                    
+                # Save to Google Docs
+                document_url = save_to_google_docs_itapeva(document_title, data, manifesto_option)
+                
+                return render_template('manifestoItapeva.html', document_url=document_url)
+                
             elif action == 'consulta':
-                # Get manifesto data for consultation
+                # Get data from Metabase
                 data = get_manifesto_itapeva(manifesto_option)
-                not_dispatched_count = nao_despachados_itapeva(data, manifesto_option)
-                return render_template('manifestoItapeva.html', not_dispatched_count=not_dispatched_count)
+                
+                # Get non-dispatched orders
+                not_dispatched = nao_despachados_itapeva(data, manifesto_option)
+                
+                return render_template('manifestoItapeva.html', not_dispatched_count=not_dispatched)
                 
         except Exception as e:
+            print(f"Error in manifesto_route_itapeva: {str(e)}")
             return render_template('manifestoItapeva.html', error=str(e))
-            
+    
     return render_template('manifestoItapeva.html')
 
 @app.route('/bonus')
