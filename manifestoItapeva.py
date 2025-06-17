@@ -40,31 +40,31 @@ print(f"CORREIOS Folder ID: {correios_folder}")
 
 def get_manifesto_itapeva(carrier):
     try:
-        print("Input parameters:")
-        print(f"Carrier: {carrier}")
+        current_date = datetime.now() - timedelta(hours=3)
         
-        # Get current date
-        current_date = datetime.now()
-        print(f"Date: {current_date:%Y-%m-%d}")
+        # Convert dates to string format YYYY-MM-DD
+        date_str = current_date.strftime('%Y-%m-%d')
         
-        # Prepare parameters for Metabase query
-        params = {
-            'carrier_name': carrier,
-            'shipping_date': current_date,
-            'dispatch_date': current_date
+        manifesto_inputs = {
+            'carrier_name': carrier, 
+            'shipping_date': date_str,
+            'dispatch_date': date_str
         }
         
-        # Process parameters
-        processed_params = process_data(params)
+        # Debug prints
+        print("Input parameters:")
+        print(f"Carrier: {carrier}")
+        print(f"Date: {date_str}")
+        
+        processed_params = process_data(manifesto_inputs)
         print("Processed parameters:")
         print(json.dumps(processed_params, indent=2))
         
-        # Get data from Metabase
+        # Get the dataset with parameters
         response = get_dataset('9450', processed_params)
         
-        # Debug prints for response
-        print("Response type:", type(response))
-        print("\nData Structure Analysis:")
+        # Debug print the response
+        print(f"Response type: {type(response)}")
         
         # Convert response to list if it's a dictionary
         if isinstance(response, dict):
@@ -74,21 +74,30 @@ def get_manifesto_itapeva(carrier):
                 pedidos = [response]  # Convert single dict to list
         else:
             pedidos = response
-            
-        if not pedidos:
-            print(f"No orders found for carrier {carrier} on date {current_date:%Y-%m-%d}")
+
+        if not pedidos:  # Add validation
+            print(f"No orders found for carrier {carrier} on date {date_str}")
             raise ValueError("No orders found for the specified carrier and date")
-            
+
+        # Debug prints for data structure
+        print("\nData Structure Analysis:")
         print(f"Pedidos type: {type(pedidos)}")
+
+        # Validate required fields exist
+        required_fields = ['shipping_number', 'dispatched_at']
+        if pedidos and isinstance(pedidos[0], dict):
+            missing_fields = [field for field in required_fields if field not in pedidos[0]]
+            if missing_fields:
+                print(f"Warning: Missing required fields: {missing_fields}")
+
         print(f"Total orders retrieved: {len(pedidos)}")
-        if pedidos:
-            print(f"Sample order format: {pedidos[0]}")
-        
-        # Process orders
+        print(f"Sample order format: {pedidos[0] if pedidos else 'No orders'}")
+
+        # Now proceed with the list
         trackings_dispatched = [x['shipping_number'] for x in pedidos if x.get('dispatched_at')]
         trackings_not_dispatched = [x['shipping_number'] for x in pedidos if not x.get('dispatched_at')]
-        
-        # Collect data to return
+
+        # Collect data to insert into Google Doc
         data = {
             'current_date': current_date,
             'carrier': carrier,
@@ -99,14 +108,19 @@ def get_manifesto_itapeva(carrier):
             'dispatched_trackings': trackings_dispatched,
             'pedidos': pedidos  # Include the full pedidos list
         }
-        
+
         return data
-        
     except Exception as e:
         print(f"Error in get_manifesto_itapeva: {str(e)}")
-        print(f"Error type: {type(e)}")
-        import traceback
-        print(f"Traceback: {traceback.format_exc()}")
+        # Only try to print details about pedidos if it exists
+        pedidos_exists = 'pedidos' in locals() or 'pedidos' in globals()
+        if pedidos_exists:
+            print(f"Type of pedidos: {type(pedidos)}")  # Debug print
+            if pedidos:
+                print(f"Type of first item: {type(pedidos[0])}")  # Debug print
+                print(f"First item content: {pedidos[0]}")  # Debug print
+        else:
+            print("Error occurred before pedidos variable was defined")
         raise
 
 def nao_despachados_itapeva(data, transportadora):
