@@ -449,12 +449,11 @@ def manifesto_route():
 
 @app.route('/manifestoItapeva', methods=['GET', 'POST'])
 @login_required
-def manifesto_route_itapeva():
+def manifesto_itapeva_route():
     if request.method == 'POST':
-        transportadora = request.form.get('manifesto_option_MG')
+        transportadora = request.form.get('manifesto_option')
         action = request.form.get('action')
         print(f"Selected transportadora: {transportadora}")
-        
         if transportadora:
             try:
                 data = get_manifesto_itapeva(transportadora)
@@ -464,8 +463,8 @@ def manifesto_route_itapeva():
                     # Only return the not_dispatched_count without creating a Google Doc
                     return render_template('manifestoItapeva.html', not_dispatched_count=not_dispatched_count)
                 elif action == 'generate':
-                    # Generate Google Doc
-                    document_url = save_to_google_docs_itapeva(data, transportadora)
+                    # Generate Google Doc as before
+                    document_url = link_docs_itapeva(transportadora)
                     if document_url:
                         return render_template('manifestoItapeva.html', not_dispatched_count=not_dispatched_count, document_url=document_url)
                     else:
@@ -473,7 +472,6 @@ def manifesto_route_itapeva():
                 else:
                     return render_template('manifestoItapeva.html', error="Invalid action.")
             except Exception as e:
-                print(f"Error in manifesto_route_itapeva: {str(e)}")
                 return render_template('manifestoItapeva.html', error=f"An error occurred: {str(e)}")
         else:
             return render_template('manifestoItapeva.html', error="Please select a valid option.")

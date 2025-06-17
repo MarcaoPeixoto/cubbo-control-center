@@ -85,9 +85,11 @@
             border-radius: 4px;
             color: black;
         }
+
         li {
             color: black;
         }
+        
         .back-button {
             background-color: #6c757d;
             color: white;
@@ -108,8 +110,8 @@
 </head>
 <body>
     <div class="container">
-        <form method="POST" action="{{ url_for('manifesto_route_itapeva') }}" id="manifestoForm">
-            <select name="manifesto_option_MG" required>
+        <form method="POST" action="{{ url_for('manifesto_itapeva_route') }}">
+            <select name="manifesto_option" required>
                 <option value="">Select an option</option>
                 <option value="LOGGI">LOGGI</option>
                 <option value="CORREIOS">CORREIOS</option>
@@ -143,7 +145,6 @@
             </div>
         {% endif %}
 
-        <!-- Add the "Voltar" button here -->
         <button class="back-button" onclick="window.location.href='/ops'">Voltar</button>
     </div>
 
@@ -153,4 +154,4 @@
         });
     </script>
 </body>
-</html>
+</html> 
