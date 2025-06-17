@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='estilo.css') }}">
+    <title>Manifesto</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            overflow: scroll;
+            height: fit-content;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        select {
+            width: 200px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #0741dd;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0536b5;
+        }
+        .result, .document-link {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e6f3ff;
+            border-radius: 4px;
+        }
+        .document-link a {
+            color: #0741dd;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .document-link a:hover {
+            text-decoration: underline;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .loading-bar {
+            display: none;
+            width: 100%;
+            height: 4px;
+            background-color: #f3f3f3;
+            margin-top: 20px;
+        }
+        .loading-bar-progress {
+            width: 0;
+            height: 100%;
+            background-color: #0741dd;
+            animation: loading 15s linear forwards;
+        }
+        @keyframes loading {
+            0% { width: 0; }
+            100% { width: 100%; }
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e6f3ff;
+            border-radius: 4px;
+            color: black; /* Change text color to black */
+        }
+
+        li {
+            color: black;
+        }
+        
+        .back-button {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            position: absolute;
+            top: 5%;
+            left: 5%;
+        }
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <form method="POST" action="{{ url_for('manifesto_route_itapeva') }}">
+            <select name="manifesto_option_MG" required>
+                <option value="">Select an option</option>
+                <option value="LOGGI">LOGGI</option>
+                <option value="CORREIOS">CORREIOS</option>
+                <option value="JT">JT</option>
+            </select>
+            <button type="submit" name="action" value="generate">Criar Manifesto</button>
+            <button type="submit" name="action" value="consulta">Consulta</button>
+        </form>
+        
+        <div id="loadingBar" class="loading-bar">
+            <div class="loading-bar-progress"></div>
+        </div>
+
+        {% if not_dispatched_count %}
+            <div>
+                <h2>Not Dispatched Orders:</h2>
+                {{ not_dispatched_count|safe }}
+            </div>
+        {% endif %}
+
+        {% if document_url %}
+            <div>
+                <h2>Generated Document:</h2>
+                <a href="{{ document_url }}" target="_blank">View Document</a>
+            </div>
+        {% endif %}
+
+        {% if error %}
+            <div class="error">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <!-- Add the "Voltar" button here -->
+        <button class="back-button" onclick="window.location.href='/ops'">Voltar</button>
+    </div>
+
+    <script>
+        document.getElementById('manifestoForm').addEventListener('submit', function(e) {
+            document.getElementById('loadingBar').style.display = 'block';
+        });
+    </script>
+</body>
+</html>

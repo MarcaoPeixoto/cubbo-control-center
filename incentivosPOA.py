@@ -1,0 +1,772 @@
+import json
+from datetime import datetime, timedelta, timezone
+import numpy as np
+import os
+from dotenv import dotenv_values
+from redis_connection import get_redis_connection
+from dateutil import parser
+from parseDT import parse_date
+from metabase import get_dataset, process_data
+
+env_config = dotenv_values(".env")
+
+hora_agora = datetime.now()
+nova_hora = (hora_agora - timedelta(hours=3)).strftime("%H:%M")
+
+redis_client = get_redis_connection()
+
+class CONFIG:
+
+    FERIADOS_ACCOUNTS = []
+
+    def __init__(self):
+            self.JSON_CONFIG = self.get_configurations()
+            self.FERIADOS_ACCOUNTS = self.JSON_CONFIG["BR"]["holidays"]
+
+    def get_configurations(self):
+            with open("json/config.json", "r", ) as f:
+                config = json.load(f)
+            return config
+        
+config = CONFIG()
+
+def erase_json_files():
+    # List of all JSON files to erase
+    json_files = ["json/excluded_orders.json", "json/excluded_recibos.json", "json/sla_POA.json"]
+
+    for file_path in json_files:
+        with open(file_path, "w") as file:
+            json.dump([], file)
+    save_to_redis("sla_POA", "[]")
+    save_to_redis("excluded_orders", "[]")
+    save_to_redis("excluded_recibos", "[]")
+    print("jsons apagados")
+
+def check_and_erase_json_files():
+    # Path to the file storing the last cleanup date
+    last_cleanup_file = "last_cleanup.txt"
+
+    # Get the current date
+    now = datetime.now()
+    current_month = now.month
+    current_year = now.year
+
+    # Check if the last_cleanup_file exists and is not empty
+    if os.path.exists(last_cleanup_file):
+        with open(last_cleanup_file, "r") as f:
+            last_cleanup_date = f.read().strip()
+        
+        try:
+            # Extract the last cleanup month and year
+            last_cleanup_month, last_cleanup_year = map(int, last_cleanup_date.split("-"))
+        except (ValueError, IndexError):
+            # If the file is empty or has invalid format, perform cleanup and write the current date
+            erase_json_files()
+            with open(last_cleanup_file, "w") as f:
+                f.write(f"{current_month}-{current_year}")
+            return
+
+        # Check if it is a new month
+        if (current_month != last_cleanup_month or current_year != last_cleanup_year):
+            erase_json_files()
+            # Update the last cleanup date
+            with open(last_cleanup_file, "w") as f:
+                f.write(f"{current_month}-{current_year}")
+
+    else:
+        # If file does not exist, perform cleanup and create the file
+        erase_json_files()
+        with open(last_cleanup_file, "w") as f:
+            f.write(f"{current_month}-{current_year}")
+
+
+def save_to_redis(key, data):
+    try:
+        # Ensure data is not None and can be converted to JSON
+        if data is None:
+            raise ValueError("Cannot save None data to Redis.")
+        json_data = json.dumps(data)
+        redis_client.set(key, json_data)
+    except Exception as e:
+        print(f"Error saving data to Redis: {e}")
+
+
+def load_excluded_orders():
+    try:
+        with open("json/excluded_orders.json", "r") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return []
+
+def save_excluded_orders(excluded_orders):
+    with open("json/excluded_orders.json", "w") as file:
+        json.dump(excluded_orders, file)
+
+def load_excluded_recibos():
+    try:
+        with open("json/excluded_recibos.json", "r") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return []
+
+def save_excluded_recibos(excluded_recibos):
+    with open("json/excluded_recibos.json", "w") as file:
+        json.dump(excluded_recibos, file)
+
+def save_to_json(data):
+
+    with open("json/sla_POA.json", "w") as json_file:
+        json.dump(data, json_file)
+
+def load_to_json():
+    try:
+        with open("json/sla_POA.json", "r") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return []
+
+def adjust_shipping_date(shipping_date, carrier):
+    cut_off_hours = {
+        'CUBBO': (16, 0),
+        'UELLO': (16, 0),
+        'CORREIOS': (14, 30),
+        'IMILE': (16, 0),
+        'LOGGI': (16, 0),
+        'Mercado Envíos': (14, 0),
+        'JT Express': (17, 0)
+    }
+
+    hour, minute = cut_off_hours.get(carrier, cut_off_hours['CUBBO'])
+
+    # Check if shipping date is after cut off time or is a holiday
+    if (shipping_date.hour > hour or 
+        (shipping_date.hour == hour and shipping_date.minute >= minute) or 
+        shipping_date.weekday() >= 5 or  # Check if it's Saturday or Sunday
+        shipping_date.strftime('%Y-%m-%d') in CONFIG['BR']['holidays']):
+        
+        # Increment the shipping date by one day until it's not a holiday or weekend
+        while True:
+            shipping_date += timedelta(days=1)
+            if (shipping_date.weekday() < 5 and 
+                shipping_date.strftime('%Y-%m-%d') not in CONFIG['BR']['holidays']):
+                break
+
+    return shipping_date
+
+def adjust_receiving_date(recibo):
+
+    # Convert recibo to numpy datetime64[D] format
+    recibo_np = np.datetime64(parse_date(recibo).strftime('%Y-%m-%d'))
+
+    adjusted_date_np = np.busday_offset(recibo_np, 1, roll='backward', holidays=config.JSON_CONFIG['BR']['holidays'])
+# Replace deprecated usage
+    adjusted_datetime = datetime.fromtimestamp(adjusted_date_np.astype('datetime64[s]').astype(int), tz=timezone.utc)
+
+    return adjusted_datetime
+
+dir_path = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(dir_path, "json/config.json"), "r") as f:
+    CONFIG = json.load(f)
+
+
+def last_workday_of_previous_month():
+    today = datetime.now()
+    first_day_of_this_month = today.replace(day=1)
+    last_day_of_previous_month = first_day_of_this_month - timedelta(days=1)
+
+    # Loop backwards from the last day of the month until we find a workday
+    while last_day_of_previous_month.weekday() >= 5:  # Saturday or Sunday
+        last_day_of_previous_month -= timedelta(days=1)
+        last_day_of_previous_month = last_day_of_previous_month.replace(hour=5)
+    
+    # If the last day of the previous month is a holiday, go one day backward
+    while last_day_of_previous_month.strftime("%Y-%m-%d") in CONFIG['BR']['holidays']:
+        last_day_of_previous_month -= timedelta(days=1)
+
+    print(last_day_of_previous_month)
+    return last_day_of_previous_month
+
+def ajuste_pendentes():
+    
+    excluded_orders = load_excluded_orders()
+
+    sorted_data = []
+
+    pending_at_start_date = last_workday_of_previous_month()
+
+    incentivo_inputs = process_data(
+        {
+            'pending_at_start_date': pending_at_start_date,
+            'wh': 232
+        }
+    )
+
+    orders_list = get_dataset('1496', incentivo_inputs)
+
+    #print(orders_list)
+
+
+    for order in orders_list:
+        #print(order)
+        order_number = order['order_number']
+        if order_number in excluded_orders:
+            continue
+
+        if order['status'] == "canceled" or order['status'] == "holded":
+            continue
+        
+        order['pending_at'] = parse_date(order['pending_at'])
+
+        if order['pending_at'].date() in CONFIG['BR']['holidays']:
+            order['pending_at'] += timedelta(days=1)
+            
+
+        order['pending_at'] = adjust_shipping_date(order['pending_at'],order['carrier_name'])
+
+        if order['pending_at'].date() in CONFIG['BR']['holidays']:
+            order['pending_at'] += timedelta(days=1)
+ 
+
+
+        if order['shipping_date'] is not None and order['shipping_date'] !="":
+            order['shipping_date'] = parse_date(order['shipping_date'])
+            if order['shipping_date'].month == datetime.now().month - 1:
+                continue
+
+
+            carrier = order['carrier_name']
+            if carrier == 'CUBBO':
+                shipping_time_limit = 23
+            else:
+                shipping_time_limit = 18  
+
+
+            if order['shipping_date'].hour <= shipping_time_limit and order['pending_at'].day == order['shipping_date'].day and order['shipping_date'].month == order['pending_at'].month:
+                order['SLA'] = "HIT"
+            elif order['shipping_date'].day < order['pending_at'].day and order['shipping_date'].month == order['pending_at'].month:
+                order['SLA'] = "HIT"
+            elif order['shipping_date'].month < order['pending_at'].month:
+                order['SLA'] = "HIT"
+            else:
+                order['SLA'] = "MISS"
+        else:
+            order['SLA'] = "MISS"
+            order['shipping_date'] = "PROCESSANDO"
+
+        if order['shipping_date'] == "PROCESSANDO" and order['pending_at'] > datetime.now():
+            continue
+
+        sorted_data.append({
+            'order_number': order['order_number'],
+            'store_name': order['Stores__name'],
+            'tote_code': order['Totes__unique_code'],
+            'carrier_name': order['carrier_name'],
+            'pending_at': order['pending_at'],
+            'Shipping Labels__created_at': order['shipping_date'],
+            'SLA': order['SLA'],
+            'picking_complete' : order['picking_complete']
+            })
+
+
+    return sorted_data
+
+def incentivos_pedidos(todos_pedidos):
+
+    excluded_orders = load_excluded_orders()
+    hit_count = 0
+    atraso = []
+
+    for entry in todos_pedidos:
+        # Check if the entry is a MISS and increment the counter
+        if entry['SLA'] == "HIT":
+            hit_count += 1
+        if entry["SLA"] == "MISS":
+            if entry['store_name'] != "ABOVE AVERAGE":
+                atraso.append({
+                    'tote_code': entry['tote_code'],
+                    'order_number': entry['order_number'],
+                    'store_name': entry['store_name'],
+                    'pending_at': entry['pending_at'],
+                    'Shipping Labels__created_at': entry['Shipping Labels__created_at'],
+                    'carrier_name': entry['carrier_name']
+                })
+        
+
+    for excluded_order in excluded_orders:
+        # Remove the excluded orders from the atraso list
+        atraso = [entry for entry in atraso if entry['order_number'] != excluded_order]
+
+    sla_porcent = (hit_count / len(todos_pedidos)) * 100
+
+
+    current_month = datetime.now().month
+
+    pedidos_semana_1=1
+    hit_semana_1=1
+
+    for s1 in todos_pedidos:
+        if s1['pending_at'].day<=7 or s1['pending_at'].month < current_month:
+            pedidos_semana_1 +=1
+            if s1['SLA']=="HIT":
+                hit_semana_1+=1
+        else:
+            continue
+
+    pedidos_semana_2=1
+    hit_semana_2=1
+
+    for s1 in todos_pedidos:
+        if s1['pending_at'].day>7 and s1['pending_at'].day<=16:
+            pedidos_semana_2 +=1
+            if s1['SLA']=="HIT":
+                hit_semana_2+=1
+            #para imprimir pedidos com atraso da semana 2    
+            #if s1['SLA']=="MISS":
+                #print(s1)
+        else:
+            continue  
+
+    pedidos_semana_3=1
+    hit_semana_3=1
+    
+    for s1 in todos_pedidos:
+        if s1['pending_at'].day>14 and s1['pending_at'].day<=21:
+            pedidos_semana_3 +=1
+            if s1['SLA']=="HIT":
+                hit_semana_3+=1
+            #para imprimir pedidos MISS semana 3
+            #if s1['SLA']=="MISS" and s1['Shipping Labels__created_at'] != "PROCESSANDO" and s1['pending_at'].day == datetime.now():
+                #print(s1)
+        else:
+            continue     
+
+    pedidos_semana_4=1
+    hit_semana_4=1
+
+    for s1 in todos_pedidos:
+        if s1['pending_at'].day>21 and s1['pending_at'].day<=28:
+            pedidos_semana_4 +=1
+            if s1['SLA']=="HIT":
+                hit_semana_4+=1
+                    #para imprimir pedidos com atraso da semana 4    
+            #if s1['SLA']=="MISS" and s1['Shipping Labels__created_at'] != "PROCESSANDO":
+                #print(s1)
+        else:
+            continue   
+
+    pedidos_semana_5=1
+    hit_semana_5=1
+
+    for s1 in todos_pedidos:
+        if s1['pending_at'].day>28 and s1['pending_at'].month == current_month:
+            pedidos_semana_5 +=1
+            if s1['SLA']=="HIT":
+                hit_semana_5+=1
+                    #para imprimir pedidos com atraso da semana 4    
+            #if s1['SLA']=="MISS" and s1['Shipping Labels__created_at'] != "PROCESSANDO":
+                #print(s1)
+        else:
+            continue  
+        
+
+    sla_semana_1 = "{:.2f}".format((hit_semana_1 / pedidos_semana_1) * 100)
+    sla_semana_2 = "{:.2f}".format((hit_semana_2 / pedidos_semana_2) * 100)
+    sla_semana_3 = "{:.2f}".format((hit_semana_3 / pedidos_semana_3) * 100)
+    sla_semana_4 = "{:.2f}".format((hit_semana_4 / pedidos_semana_4) * 100)
+    sla_semana_5 = "{:.2f}".format((hit_semana_5 / pedidos_semana_5) * 100)
+
+    print("Todos os pedidos:")
+    print(len(todos_pedidos))
+    print("Pedidos em atraso")
+    print(len(atraso))
+    #print(atraso)
+
+    return sla_semana_1, sla_semana_2, sla_semana_3, sla_semana_4, sla_semana_5, sla_porcent
+
+def incentivos_recibo():
+    excluded_recibos = load_excluded_recibos()
+    recibos_data = []
+    
+    recibo_inputs = process_data({
+        'arrived_at': (datetime.now().replace(day=1) - timedelta(days=1)),
+        'wh': 232
+    })
+
+    recibos_list = get_dataset('1485', recibo_inputs)
+
+    for recibo in recibos_list:
+        recibo_number = str(recibo['id'])
+        if recibo_number in excluded_recibos:
+            continue
+
+        # Initialize SLA as MISS by default
+        recibo['SLA'] = "MISS"
+
+        recibo['arrived_at'] = parse_date(recibo['arrived_at']) + timedelta(days=1)
+        recibo['completed_at'] = parse_date(recibo['completed_at'])
+
+        if recibo['completed_at'] is not None and recibo['completed_at'] != "":
+            if recibo['completed_at'].month == datetime.now().month - 1:
+                continue
+            if recibo['arrived_at'] is not None and recibo['arrived_at'] != "":
+                if recibo['arrived_at'] > recibo['completed_at']:
+                    recibo['SLA'] = "HIT"
+        else:
+            recibo['completed_at'] = "PROCESSANDO"
+
+        # Print ID if SLA is MISS
+        #if recibo['SLA'] == "MISS":
+            #print(f"MISS Recibo ID: {recibo['id']}")
+
+        recibos_data.append({
+            'id': recibo['id'],
+            'status': recibo['status'],
+            'Stores__name': recibo['Stores__name'],
+            'arrived_at': recibo['arrived_at'],
+            'completed_at': recibo['completed_at'],
+            'dock_to_stock_in_days': recibo['dock_to_stock_in_days'],
+            'SLA': recibo['SLA']
+        })
+
+    hit_count_recibos = 0
+    atraso_recibo = []
+
+    for check in recibos_data:
+        # Check if the entry is a MISS and increment the counter
+        if check['SLA'] == "HIT":
+            hit_count_recibos += 1
+        elif check["SLA"] == "MISS":
+            atraso_recibo.append({
+            'id': check['id'],
+            'Stores__name' : check['Stores__name'],
+            'status': check['status'],
+            'arrived_at': check['arrived_at'],
+            'completed_at': check['completed_at'],
+            'dock_to_stock_in_days': check['dock_to_stock_in_days'],
+            'SLA' : check['SLA']
+            })
+        else:
+            continue
+
+
+    for excluded_recibo in excluded_recibos:
+        # Remove the excluded orders from the atraso list
+        atraso_recibo = [r for r in atraso_recibo if r['id'] != excluded_recibo]
+
+    todos_recibos=len(recibos_data)
+    if todos_recibos == 0:
+        todos_recibos = 1
+    total_recibos = "Total Recibos: " +str(todos_recibos)
+    SLA_recibos_total = (hit_count_recibos/todos_recibos) * 100
+    SLA_recibos_format = round(SLA_recibos_total, 2)
+    porcentagem_total_recibos="SLA Percentage recibos: "+ str(SLA_recibos_format)
+    total_recibos_atrasos="Recibos MISS: " +str(len(atraso_recibo))
+
+    #print(atraso_recibo)
+    current_month = datetime.now().month
+
+    recibos_semana_1=1
+    hit_recibos_semana_1=1
+
+    for r1 in recibos_data:
+        if r1['arrived_at'].day<=7 or r1['arrived_at'].month < current_month:
+            recibos_semana_1 +=1
+            if r1['SLA']=="HIT":
+                hit_recibos_semana_1+=1
+        else:
+            continue
+
+    recibos_semana_2=1
+    hit_recibos_semana_2=1
+
+
+    for r2 in recibos_data:
+        if r2['arrived_at'].day>7 and r2['arrived_at'].day<=14:
+            recibos_semana_2 +=1
+            if r2['SLA']=="HIT":
+                hit_recibos_semana_2+=1
+        else:
+            continue  
+
+    recibos_semana_3=1
+    hit_recibos_semana_3=1
+    
+    for r3 in recibos_data:
+        if r3['arrived_at'].day>14 and r3['arrived_at'].day<=21:
+            recibos_semana_3 +=1
+            if r3['SLA']=="HIT":
+                hit_recibos_semana_3+=1
+            #if r3['SLA']=="MISS":
+                #print(r3)
+        else:
+            continue     
+
+    recibos_semana_4=1
+    hit_recibos_semana_4=1
+
+    for r4 in recibos_data:
+        if r4['arrived_at'].day>21 and r4['arrived_at'].day<=28:
+            recibos_semana_4 +=1
+            if r4['SLA']=="HIT":
+                hit_recibos_semana_4+=1
+        else:
+            continue
+
+    recibos_semana_5=1
+    hit_recibos_semana_5=1
+
+    for r5 in recibos_data:
+        if r5['arrived_at'].day>28 and r5['arrived_at'].month == current_month:
+            recibos_semana_5 +=1
+            if r5['SLA']=="HIT":
+                hit_recibos_semana_5+=1
+        else:
+            continue     
+
+    sla_recibo_1 = "{:.2f}".format((hit_recibos_semana_1 / recibos_semana_1) * 100)
+    sla_recibo_2 = "{:.2f}".format((hit_recibos_semana_2 / recibos_semana_2) * 100)
+    sla_recibo_3 = "{:.2f}".format((hit_recibos_semana_3 / recibos_semana_3) * 100)
+    sla_recibo_4 = "{:.2f}".format((hit_recibos_semana_4 / recibos_semana_4) * 100)
+    sla_recibo_5 = "{:.2f}".format((hit_recibos_semana_5 / recibos_semana_5) * 100)
+    
+    return sla_recibo_1, sla_recibo_2, sla_recibo_3, sla_recibo_4, sla_recibo_5, SLA_recibos_total
+
+    #for h in atraso_recibo:
+        #print(h)
+
+def incentivos_picking(picking_list_mes):
+
+    pedidos_semana_1 = 1
+    pedidos_semana_2 = 1
+    pedidos_semana_3 = 1
+    pedidos_semana_4 = 1
+    pedidos_semana_5 = 1
+    pedidos_hj = 1
+
+    pickings_semana_1 = 1
+    pickings_semana_2 = 1
+    pickings_semana_3 = 1
+    pickings_semana_4 = 1
+    pickings_semana_5 = 1
+    pickings_hj = 1
+
+    current_month = datetime.now().month
+
+
+    for pedidos in picking_list_mes:
+
+        if pedidos['pending_at'].day <= 7 or pedidos['pending_at'].month < current_month:
+            pedidos_semana_1 += 1
+        elif pedidos['pending_at'].day <= 14 and pedidos['pending_at'].day > 7 and pedidos['pending_at'].month == current_month:
+            pedidos_semana_2 += 1
+        elif pedidos['pending_at'].day <= 21 and pedidos['pending_at'].day > 14 and pedidos['pending_at'].month == current_month:
+            pedidos_semana_3 += 1
+        elif pedidos['pending_at'].day <= 28 and pedidos['pending_at'].day > 21 and pedidos['pending_at'].month == current_month:
+            pedidos_semana_4 += 1
+        elif pedidos['pending_at'].day > 28 and pedidos['pending_at'].month == current_month:
+            pedidos_semana_5 += 1
+        else:
+            continue
+
+        if pedidos['pending_at'].day == datetime.now().day:
+            pedidos_hj += 1
+
+        if pedidos['picking_complete'] is not None and pedidos['picking_complete'] != "":
+            pedidos['picking_complete'] = parse_date(pedidos['picking_complete'])
+        else:
+            continue
+
+        if pedidos['picking_complete'].day <= pedidos['pending_at'].day and pedidos['pending_at'].day <= 7 or pedidos['pending_at'].month < current_month and pedidos['picking_complete'] is not None:
+            pickings_semana_1 += 1
+        elif pedidos['picking_complete'].day <= pedidos['pending_at'].day and pedidos['pending_at'].day <= 14 and pedidos['pending_at'].day > 7 and pedidos['pending_at'].month == current_month:
+            pickings_semana_2 += 1
+        elif pedidos['picking_complete'].day <= pedidos['pending_at'].day and pedidos['pending_at'].day <= 21 and pedidos['pending_at'].day > 14 and pedidos['pending_at'].month == current_month:
+            pickings_semana_3 += 1
+        elif pedidos['picking_complete'].day <= pedidos['pending_at'].day and pedidos['pending_at'].day <= 28 and pedidos['pending_at'].day > 21 and pedidos['pending_at'].month == current_month:
+            pickings_semana_4 += 1
+        elif pedidos['picking_complete'].day <= pedidos['pending_at'].day and pedidos['pending_at'].day > 28 and pedidos['pending_at'].month == current_month:
+            pickings_semana_5 += 1
+        else:
+            continue
+            
+        if pedidos['picking_complete'].day <= pedidos['pending_at'].day and pedidos['pending_at'].day == datetime.now().day:
+            pickings_hj += 1
+
+            
+    # comparar packing date com picking date e adicionar na semana!
+
+
+    sla_picking_semana_1 = "{:.2f}".format((pickings_semana_1 / pedidos_semana_1) * 100)
+    sla_picking_semana_2 = "{:.2f}".format((pickings_semana_2 / pedidos_semana_2) * 100)
+    sla_picking_semana_3 = "{:.2f}".format((pickings_semana_3 / pedidos_semana_3) * 100)
+    sla_picking_semana_4 = "{:.2f}".format((pickings_semana_4 / pedidos_semana_4) * 100)
+    sla_picking_semana_5 = "{:.2f}".format((pickings_semana_5 / pedidos_semana_5) * 100)
+    sla_picking_hoje = "{:.2f}".format((pickings_hj / pedidos_hj) * 100)
+
+    if datetime.now().day <=7:
+        sla_picking_total = float(sla_picking_semana_1)
+    elif datetime.now().day > 7 and datetime.now().day <= 14:
+        sla_picking_total = (float(sla_picking_semana_1) + float(sla_picking_semana_2)) / 2
+    elif datetime.now().day > 14 and datetime.now().day <= 21:
+        sla_picking_total = (float(sla_picking_semana_1) + float(sla_picking_semana_2) + float(sla_picking_semana_3)) / 3
+    elif datetime.now().day > 21 and datetime.now().day <= 28:
+        sla_picking_total = (float(sla_picking_semana_1) + float(sla_picking_semana_2) + float(sla_picking_semana_3) + float(sla_picking_semana_4)) / 4
+    else:
+        sla_picking_total = (float(sla_picking_semana_1) + float(sla_picking_semana_2) + float(sla_picking_semana_3) + float(sla_picking_semana_4) + float(sla_picking_semana_5)) / 5
+
+
+    return sla_picking_semana_1, sla_picking_semana_2, sla_picking_semana_3, sla_picking_semana_4, sla_picking_semana_5, sla_picking_total
+
+def calculate_averages(sla_week1, sla_week2, sla_week3, sla_week4, sla_week5, sla_recibo_1, sla_recibo_2, sla_recibo_3, sla_recibo_4, sla_recibo_5, sla_picking_semana_1, sla_picking_semana_2, sla_picking_semana_3, sla_picking_semana_4, sla_picking_semana_5):
+    s1_total = (float(sla_week1) + float(sla_recibo_1) + float(sla_picking_semana_1)) / 3
+    s2_total = (float(sla_week2) + float(sla_recibo_2) + float(sla_picking_semana_2)) / 3
+    s3_total = (float(sla_week3) + float(sla_recibo_3) + float(sla_picking_semana_3)) / 3
+    s4_total = (float(sla_week4) + float(sla_recibo_4) + float(sla_picking_semana_4)) / 3
+    s5_total = (float(sla_week5) + float(sla_recibo_5) + float(sla_picking_semana_5)) / 3
+    return s1_total, s2_total, s3_total, s4_total, s5_total
+
+def ajuste_sla(ajuste):
+    ajuste += ajuste
+    return ajuste
+
+def calculate_complementary(value):
+    # Convert value to integer
+    value_int = int(value)
+    
+    # Calculate complementary value
+    complementary = 100 - value_int
+    
+    # Format result as string "<value> <complementary>"
+    result = f"{value_int} {complementary}"
+
+    result = str(result)
+    
+    return result  
+ 
+def main():
+
+    check_and_erase_json_files()
+
+    todos_pedidos = ajuste_pendentes()
+
+    sla_semana_1, sla_semana_2, sla_semana_3, sla_semana_4, sla_semana_5, sla_porcent = incentivos_pedidos(todos_pedidos)
+    sla_recibo_1, sla_recibo_2, sla_recibo_3, sla_recibo_4, sla_recibo_5, SLA_recibos_total = incentivos_recibo()
+    sla_picking_semana_1, sla_picking_semana_2, sla_picking_semana_3, sla_picking_semana_4, sla_picking_semana_5, sla_picking_total = incentivos_picking(todos_pedidos)
+
+    s1_total, s2_total, s3_total, s4_total, s5_total = calculate_averages(sla_semana_1, sla_semana_2, sla_semana_3, sla_semana_4, sla_semana_5, sla_recibo_1, sla_recibo_2, sla_recibo_3, sla_recibo_4, sla_recibo_5, sla_picking_semana_1, sla_picking_semana_2, sla_picking_semana_3, sla_picking_semana_4, sla_picking_semana_5)
+
+    # Calculate SLA for the month
+    if datetime.now().day <= 7:
+        sla_mes = s1_total
+    elif datetime.now().day > 7 and datetime.now().day <= 14:
+        sla_mes = (s1_total + s2_total) / 2
+    elif datetime.now().day > 14 and datetime.now().day <= 21:
+        sla_mes = (s1_total + s2_total + s3_total) / 3
+    elif datetime.now().day > 21 and datetime.now().day <= 28:
+        sla_mes = (s1_total + s2_total + s3_total + s4_total) / 4
+    else:
+        sla_mes = (s1_total + s2_total + s3_total + s4_total + s5_total) / 5
+
+    #calculo redução SLA 0.01%
+
+    ajuste_recibos = 0 
+    ajuste_picking = 0
+    ajuste_pedidos = 0
+
+    data_erros = load_to_json()
+
+    if data_erros:
+        ajuste_recibos = int(data_erros.get("ajuste_recibos", 0))
+        ajuste_picking = int(data_erros.get("ajuste_picking", 0))
+        ajuste_pedidos = int(data_erros.get("ajuste_pedidos", 0))
+
+
+    SLA_recibos_total = SLA_recibos_total - (ajuste_recibos*0.01)
+    sla_picking_total = sla_picking_total - (ajuste_picking*0.01)
+    sla_porcent = sla_porcent - (ajuste_pedidos*0.01)
+
+
+    total_s1_circulo = calculate_complementary(s1_total)
+    total_s2_circulo = calculate_complementary(s2_total)
+    total_s3_circulo = calculate_complementary(s3_total)
+    total_s4_circulo = calculate_complementary(s4_total)
+    sla_total_circulo = calculate_complementary(sla_mes)
+    sla_total_ci_circulo = calculate_complementary(SLA_recibos_total)
+    sla_total_pi_circulo = calculate_complementary(sla_picking_total)
+    sla_total_pa_circulo = calculate_complementary(sla_porcent)
+
+
+    data = {
+        "sla_semana_1": sla_semana_1,
+        "sla_semana_2": sla_semana_2,
+        "sla_semana_3": sla_semana_3,
+        "sla_semana_4": sla_semana_4,
+        "sla_semana_5": sla_semana_5,
+        "sla_porcent": sla_porcent,
+        "sla_recibo_1": sla_recibo_1,
+        "sla_recibo_2": sla_recibo_2,
+        "sla_recibo_3": sla_recibo_3,
+        "sla_recibo_4": sla_recibo_4,
+        "sla_recibo_5": sla_recibo_5,
+        "sla_recibos_total": SLA_recibos_total,
+        "sla_picking_semana_1": sla_picking_semana_1,
+        "sla_picking_semana_2": sla_picking_semana_2,
+        "sla_picking_semana_3": sla_picking_semana_3,
+        "sla_picking_semana_4": sla_picking_semana_4,
+        "sla_picking_semana_5": sla_picking_semana_5,
+        "sla_picking_total": sla_picking_total,
+        "s1_total": s1_total,
+        "s2_total": s2_total,
+        "s3_total": s3_total,
+        "s4_total": s4_total,
+        "s5_total": s5_total,
+        "sla_mes": sla_mes
+    }
+
+    for key in data:
+        # Convert the value to a float
+        try:
+            float_value = float(data[key])
+        except ValueError:
+            print(data[key])  
+
+        # Format the float value to one decimal place
+        formatted_value = "{:.1f}".format(float_value)
+
+        # Check if the formatted value is exactly 100.0
+        if float_value >= 100:
+            formatted_value = "100."
+
+        # Update the data dictionary with the formatted value
+        data[key] = formatted_value
+        if data[key] == "100.0":
+            data[key] = "100."
+        data[key] = str(data[key])
+
+
+
+    data2 = {
+        "total_s1_circulo": total_s1_circulo,
+        "total_s2_circulo": total_s2_circulo,
+        "total_s3_circulo": total_s3_circulo,
+        "total_s4_circulo": total_s4_circulo,
+        "sla_total_circulo": sla_total_circulo,
+        "sla_total_ci_circulo": sla_total_ci_circulo,
+        "sla_total_pi_circulo": sla_total_pi_circulo,
+        "sla_total_pa_circulo": sla_total_pa_circulo,
+        "ajuste_recibos": ajuste_recibos,
+        "ajuste_picking": ajuste_picking,
+        "ajuste_pedidos": ajuste_pedidos,
+        "hora_agora": nova_hora
+    }
+
+    data.update(data2)
+
+    # Save to JSON
+    save_to_json(data)
+    save_to_redis("sla_embu", data)
+    print("Done")
+    print(datetime.now())
+
+if __name__ == "__main__":
+    main()

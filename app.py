@@ -30,7 +30,7 @@ import time
 import tempfile
 import fitz  # PyMuPDF
 from toteLivre import get_tote_livre
-#from controle_fluxo_pedidos_natura import controle_fluxo_pedidos_natura
+from controle_fluxo_pedidos_natura import controle_fluxo_pedidos_natura
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
@@ -102,26 +102,34 @@ def job_report_ops():
     except subprocess.CalledProcessError as e:
         print(f"An error occurred in Report Ops job: {e}")
 
-""" def job_pp_repo():
+def job_pp_repo():
     try:
         subprocess.run(['python', 'PP_repo.py'])
         print("PP Repo atualizados")
     except subprocess.CalledProcessError as e:
-        print(f"An error occurred in PP Repo job: {e}") """
+        print(f"An error occurred in PP Repo job: {e}")
 
-""" def job_controle_fluxo_pedidos_natura():
+def job_controle_fluxo_pedidos_natura():
     try:
         subprocess.run(['python', 'controle_fluxo_pedidos_natura.py'])
         print("Controle de fluxo de pedidos atualizados")
     except subprocess.CalledProcessError as e:
-        print(f"An error occurred in Controle de fluxo de pedidos job: {e}") """
+        print(f"An error occurred in Controle de fluxo de pedidos job: {e}")
 
-scheduler.add_job(job_embu, 'interval', minutes=5, max_instances=10000)
+def job_nf_erro():
+    try:
+        subprocess.run(['python', 'nf_erro_natura.py'])
+        print("NF com erro atualizados")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred in NF com erro job: {e}")
+
+""" scheduler.add_job(job_embu, 'interval', minutes=5, max_instances=10000)
 scheduler.add_job(job_extrema, 'interval', minutes=7, max_instances=10000)
 scheduler.add_job(job_bonus, 'interval', minutes=3, max_instances=10000)
 scheduler.add_job(job_report_ops, 'cron', hour='20', minute='0', max_instances=10000)
-#scheduler.add_job(job_pp_repo, 'interval', hours=1, max_instances=10000)
-#scheduler.add_job(job_controle_fluxo_pedidos_natura, 'interval', minutes=5, max_instances=10000)
+scheduler.add_job(job_pp_repo, 'interval', hours=1, max_instances=10000)
+scheduler.add_job(job_controle_fluxo_pedidos_natura, 'interval', minutes=5, max_instances=10000) """
+scheduler.add_job(job_nf_erro, 'interval', minutes=30, max_instances=10000)
 
 @app.before_request
 def start_scheduler():
@@ -439,6 +447,35 @@ def manifesto_route():
             return render_template('manifesto.html', error="Please select a valid option.")
     return render_template('manifesto.html')
 
+@app.route('/manifestoItapeva', methods=['GET', 'POST'])
+@login_required
+def manifesto_route_itapeva():
+    if request.method == 'POST':
+        transportadora = request.form.get('manifesto_option_MG')
+        action = request.form.get('action')
+        print(f"Selected transportadora: {transportadora}")
+        if transportadora:
+            try:
+                data = get_manifesto(transportadora)
+                not_dispatched_count = nao_despachados(data, transportadora)
+                
+                if action == 'consulta':
+                    # Only return the not_dispatched_count without creating a Google Doc
+                    return render_template('manifestoItapeva.html', not_dispatched_count=not_dispatched_count)
+                elif action == 'generate':
+                    # Generate Google Doc as before
+                    document_url = link_docs(transportadora)
+                    if document_url:
+                        return render_template('manifestoItapeva.html', not_dispatched_count=not_dispatched_count, document_url=document_url)
+                    else:
+                        return render_template('manifestoItapeva.html', error="Failed to create the document.")
+                else:
+                    return render_template('manifestoItapeva.html', error="Invalid action.")
+            except Exception as e:
+                return render_template('manifestoItapeva.html', error=f"An error occurred: {str(e)}")
+        else:
+            return render_template('manifestoItapeva.html', error="Please select a valid option.")
+    return render_template('manifestoItapeva.html')
 
 @app.route('/bonus')
 @login_required
@@ -1217,6 +1254,7 @@ if __name__ == '__main__':
     try:
         check_redis_connectivity()
         update_jsons()
+        job_nf_erro()
         scheduler.start()
         app.run(host='0.0.0.0', debug=True)
     except Exception as e:
