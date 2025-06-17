@@ -167,7 +167,15 @@ def save_to_google_docs_itapeva(data, carrier):
     try:
         print("\nStarting save_to_google_docs_itapeva")
         print("Input data type:", type(data))
-        print("Input data structure:", json.dumps(data, indent=2) if isinstance(data, (list, dict)) else str(data))
+        
+        # Convert datetime objects to strings for JSON serialization
+        def datetime_handler(obj):
+            if isinstance(obj, datetime):
+                return obj.strftime('%Y-%m-%d %H:%M:%S')
+            raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+        
+        # Print data structure with datetime handling
+        print("Input data structure:", json.dumps(data, indent=2, default=datetime_handler) if isinstance(data, (list, dict)) else str(data))
         
         # Validate input data
         if not isinstance(data, dict):
