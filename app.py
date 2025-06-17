@@ -30,7 +30,7 @@ import time
 import tempfile
 import fitz  # PyMuPDF
 from toteLivre import get_tote_livre
-from manifestoItapeva import get_manifesto_itapeva
+from manifestoItapeva import get_manifesto_itapeva, nao_despachados_itapeva, link_docs_itapeva, save_to_google_docs_itapeva
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
@@ -451,30 +451,42 @@ def manifesto_route():
 @login_required
 def manifesto_route_itapeva():
     if request.method == 'POST':
-        transportadora = request.form.get('manifesto_option_MG')
         action = request.form.get('action')
-        print(f"Selected transportadora: {transportadora}")
-        if transportadora:
-            try:
-                data = get_manifesto_itapeva(transportadora)
-                not_dispatched_count = nao_despachados(data, transportadora)
+        manifesto_option = request.form.get('manifesto_option_MG')
+        
+        if not manifesto_option:
+            return render_template('manifestoItapeva.html', error="Please select a carrier")
+        
+        try:
+            if action == 'generate':
+                # Get the folder ID for the selected carrier
+                folder_id = link_docs_itapeva(manifesto_option)
+                if not folder_id:
+                    return render_template('manifestoItapeva.html', error="Error: Could not determine folder ID")
                 
-                if action == 'consulta':
-                    # Only return the not_dispatched_count without creating a Google Doc
-                    return render_template('manifestoItapeva.html', not_dispatched_count=not_dispatched_count)
-                elif action == 'generate':
-                    # Generate Google Doc as before
-                    document_url = link_docs(transportadora)
-                    if document_url:
-                        return render_template('manifestoItapeva.html', not_dispatched_count=not_dispatched_count, document_url=document_url)
-                    else:
-                        return render_template('manifestoItapeva.html', error="Failed to create the document.")
+                # Get manifesto data
+                data = get_manifesto_itapeva(manifesto_option)
+                current_date = datetime.now() - timedelta(hours=3)
+                document_title = f'Manifesto {manifesto_option} {current_date:%d/%m/%Y}'
+                
+                # Create the document
+                document_id = save_to_google_docs_itapeva(document_title, data, folder_id, manifesto_option)
+                
+                if document_id:
+                    doc_url = f'https://docs.google.com/document/d/{document_id}/edit'
+                    return render_template('manifestoItapeva.html', document_url=doc_url)
                 else:
-                    return render_template('manifestoItapeva.html', error="Invalid action.")
-            except Exception as e:
-                return render_template('manifestoItapeva.html', error=f"An error occurred: {str(e)}")
-        else:
-            return render_template('manifestoItapeva.html', error="Please select a valid option.")
+                    return render_template('manifestoItapeva.html', error="Failed to create document")
+                    
+            elif action == 'consulta':
+                # Get manifesto data for consultation
+                data = get_manifesto_itapeva(manifesto_option)
+                not_dispatched_count = nao_despachados_itapeva(data, manifesto_option)
+                return render_template('manifestoItapeva.html', not_dispatched_count=not_dispatched_count)
+                
+        except Exception as e:
+            return render_template('manifestoItapeva.html', error=str(e))
+            
     return render_template('manifestoItapeva.html')
 
 @app.route('/bonus')

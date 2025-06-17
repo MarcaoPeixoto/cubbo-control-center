@@ -18,12 +18,8 @@ from google_auth import authenticate_google
 # Replace the existing redis_client creation with:
 redis_client = get_redis_connection()
 
-
 # Replace the existing docs_service initialization with this:
 docs_service = authenticate_google()
-
-# Existing functions
-
 
 def get_manifesto_itapeva(carrier):
     try:
@@ -50,7 +46,7 @@ def get_manifesto_itapeva(carrier):
         print("Processed parameters:")
         print(json.dumps(processed_params, indent=2))
         
-        # Get the dataset with parameters
+        # Get the dataset with parameters - using Itapeva specific dataset
         response = get_dataset('9450', processed_params)
         
         # Debug print the response
@@ -103,7 +99,7 @@ def get_manifesto_itapeva(carrier):
 
         return data
     except Exception as e:
-        print(f"Error in get_manifesto: {str(e)}")
+        print(f"Error in get_manifesto_itapeva: {str(e)}")
         # Only try to print details about pedidos if it exists
         pedidos_exists = 'pedidos' in locals() or 'pedidos' in globals()
         if pedidos_exists:
@@ -115,7 +111,7 @@ def get_manifesto_itapeva(carrier):
             print("Error occurred before pedidos variable was defined")
         raise
 
-def nao_despachados(data, transportadora):
+def nao_despachados_itapeva(data, transportadora):
     quantidade_nao_despachados = data['not_dispatched_count']
 
     warning_text = f"Transportadora: {transportadora}\n\n"
@@ -154,8 +150,7 @@ def nao_despachados(data, transportadora):
 
     return warning_text
 
-
-def save_to_google_docs(document_title, data, folder_id=None, transportadora=None):
+def save_to_google_docs_itapeva(document_title, data, folder_id=None, transportadora=None):
     if not data or not document_title:
         raise ValueError("Missing required data or document title")
 
@@ -219,10 +214,6 @@ def save_to_google_docs(document_title, data, folder_id=None, transportadora=Non
             }
         })
 
-        # Define the header ID (the API will assign it; we'll retrieve it later)
-        # Since we can't get the headerId before executing the requests, we'll need to execute the first batchUpdate, get the headerId, then proceed
-        # So we'll first execute the createHeader request, then get the headerId
-
         # Execute the first batch update to create the header and set margins
         result = docs_service.documents().batchUpdate(
             documentId=document_id, body={'requests': requests_body}).execute()
@@ -256,187 +247,43 @@ def save_to_google_docs(document_title, data, folder_id=None, transportadora=Non
             }
         })
 
-        # Apply formatting to the header text (font size, alignment, bold for "ROMANEIO")
-        header_requests.append({
-            'updateTextStyle': {
-                'range': {
-                    'segmentId': header_id,
-                    'startIndex': 0,
-                    'endIndex': len(manifesto_text)
-                },
-                'textStyle': {
-                    'fontSize': {'magnitude': 9, 'unit': 'PT'}
-                },
-                'fields': 'fontSize'
-            }
-        })
-
-        # Apply justified alignment to the header paragraph(s)
-        header_requests.append({
-            'updateParagraphStyle': {
-                'range': {
-                    'segmentId': header_id,
-                    'startIndex': 0,
-                    'endIndex': len(manifesto_text)
-                },
-                'paragraphStyle': {
-                    'alignment': 'JUSTIFIED'
-                },
-                'fields': 'alignment'
-            }
-        })
-
-        # Bold "ROMANEIO"
-        romaneio_index = manifesto_text.find("ROMANEIO")
-        romaneio_end = romaneio_index + len("ROMANEIO")
-        header_requests.append({
-            'updateTextStyle': {
-                'range': {
-                    'segmentId': header_id,
-                    'startIndex': romaneio_index,
-                    'endIndex': romaneio_end
-                },
-                'textStyle': {
-                    'bold': True
-                },
-                'fields': 'bold'
-            }
-        })
-
-        # Now prepare the main body content
-        body_requests = []
-
-        index = 1  # Start at index 1 (after the document start)
-
-        # Prepare content to insert
-        content = ""
-
-        # Add warning about not dispatched orders if any
-        if transportadora in ["MELI", "CORREIOS"]:
-            content += "\t\t".join(data['dispatched_trackings'])
-            content += "\n\n\nAssinatura Transportadora:\n\nAssinatura Cubbo:"
-        else:
-            content += "\t".join(data['dispatched_trackings'])
-            content += "\n\n\nAssinatura Transportadora:\n\nAssinatura Cubbo:"
-
-        # Insert content into the document body only if it's not empty
-        if content:
-            body_requests.append({
-                'insertText': {
-                    'location': {'index': index},
-                    'text': content
-                }
-            })
-
-            # Apply 9 pt font size and justified alignment to all content
-            content_end_index = index + len(content)
-
-            # Update text style (font size)
-            body_requests.append({
-                'updateTextStyle': {
-                    'range': {
-                        'startIndex': index,
-                        'endIndex': content_end_index
-                    },
-                    'textStyle': {
-                        'fontSize': {'magnitude': 9, 'unit': 'PT'}
-                    },
-                    'fields': 'fontSize'
-                }
-            })
-
-            # Update paragraph style (justified alignment)
-            body_requests.append({
-                'updateParagraphStyle': {
-                    'range': {
-                        'startIndex': index,
-                        'endIndex': content_end_index
-                    },
-                    'paragraphStyle': {
-                        'alignment': 'JUSTIFIED'
-                    },
-                    'fields': 'alignment'
-                }
-            })
-
-        # Now execute the header and body requests
-        all_requests = header_requests + body_requests
-
+        # Execute the header requests
         docs_service.documents().batchUpdate(
-            documentId=document_id, body={'requests': all_requests}).execute()
+            documentId=document_id, body={'requests': header_requests}).execute()
+
+        # Prepare the main document content
+        main_requests = []
+
+        # Insert the warning text
+        warning_text = nao_despachados_itapeva(data, transportadora)
+        main_requests.append({
+            'insertText': {
+                'location': {
+                    'index': 0
+                },
+                'text': warning_text
+            }
+        })
+
+        # Execute the main content requests
+        docs_service.documents().batchUpdate(
+            documentId=document_id, body={'requests': main_requests}).execute()
 
         return document_id
-    except HttpError as err:
-        print(f"Google API error: {err}")
-        raise
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        raise
-
-def link_docs(transportadora):
-    try:
-        env_config = dotenv_values(".env")
-        # Load folder IDs from environment variables with debug prints
-        loggi_folder = env_config.get('LOGGI_FOLDER_MG_ID') or os.environ.get("LOGGI_FOLDER_MG_ID")
-        correios_folder = env_config.get('CORREIOS_FOLDER_MG_ID') or os.environ.get("CORREIOS_FOLDER_MG_ID")
-        jt_folder = env_config.get('JT_FOLDER_MG_ID') or os.environ.get("JT_FOLDER_MG_ID")
-
-        print("\nFolder IDs from environment:")
-        print(f"LOGGI Folder ID: {loggi_folder}")
-        print(f"CORREIOS Folder ID: {correios_folder}")
-        print(f"JT Folder ID: {jt_folder}")
-
-        # Determine the correct folder ID based on the transportadora
-        folder_id = None
-        if transportadora == "LOGGI":
-            folder_id = loggi_folder
-        elif transportadora == "CORREIOS":
-            folder_id = correios_folder
-        elif transportadora == "JT":
-            folder_id = jt_folder
-
-        if not folder_id:
-            print(f"Error: No folder ID found for transportadora: {transportadora}")
-            return None
-
-        print(f"\nSelected folder details:")
-        print(f"Transportadora: {transportadora}")
-        print(f"Using folder ID: {folder_id}")
-
-        # Verify folder exists before proceeding
-        try:
-            drive_service = get_drive_service()
-            folder = drive_service.files().get(fileId=folder_id).execute()
-            print(f"Verified folder name: {folder.get('name')}")
-        except Exception as e:
-            print(f"Error verifying folder: {str(e)}")
-            return None
-
-        # Get manifesto data
-        data = get_manifesto(transportadora)
-        current_date = datetime.now() - timedelta(hours=3)
-        document_title = f'Manifesto {transportadora} {current_date:%d/%m/%Y}'
-
-        print(f"\nCreating document:")
-        print(f"Title: {document_title}")
-        print(f"Date: {current_date:%d/%m/%Y}")
-        
-        # Create the document
-        document_id = save_to_google_docs(document_title, data, folder_id, transportadora)
-        
-        if document_id:
-            doc_url = f'https://docs.google.com/document/d/{document_id}/edit'
-            print(f"\nSuccess:")
-            print(f"Document created successfully: {doc_url}")
-            print(f"In folder: {folder.get('name')} ({folder_id})")
-            return doc_url
-        else:
-            print("\nError: Failed to create document")
-            return None
 
     except Exception as e:
-        print(f"\nError in link_docs: {str(e)}")
+        print(f"Error in save_to_google_docs_itapeva: {str(e)}")
         raise
+
+def link_docs_itapeva(transportadora):
+    # Define folder IDs for different carriers
+    folder_ids = {
+        "LOGGI": "1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",  # Replace with actual folder ID
+        "CORREIOS": "1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",  # Replace with actual folder ID
+        "JT": "1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"  # Replace with actual folder ID
+    }
+    
+    return folder_ids.get(transportadora)
 
 def get_difal_order_ids():
     pedidos_difal = get_dataset('613')
