@@ -166,129 +166,112 @@ def nao_despachados_itapeva(data, transportadora):
 
     return warning_text
 
-def save_to_google_docs_itapeva(document_title, data, folder_id=None, transportadora=None):
-    if not data or not document_title:
-        raise ValueError("Missing required data or document title")
-
+def save_to_google_docs_itapeva(title, pedidos, transportadora):
     try:
         print("\nStarting document creation:")
-        print(f"Title: {document_title}")
+        print(f"Title: {title}")
+        
+        # Get folder ID
+        folder_id = link_docs_itapeva(transportadora)
         print(f"Folder ID: {folder_id}")
         print(f"Transportadora: {transportadora}")
-
-        # Create a new document
-        if folder_id:
-            drive_service = get_drive_service()
-            file_metadata = {
-                'name': document_title,
-                'parents': [folder_id],
-                'mimeType': 'application/vnd.google-apps.document'
+        
+        # Create document
+        print("\nCreating document in specified folder...")
+        docs_service = authenticate_google()
+        drive_service = get_drive_service()
+        
+        # Create empty document
+        document = docs_service.documents().create(body={'title': title}).execute()
+        document_id = document.get('documentId')
+        
+        # Initialize document with a paragraph
+        docs_service.documents().batchUpdate(
+            documentId=document_id,
+            body={
+                'requests': [
+                    {
+                        'insertText': {
+                            'location': {
+                                'index': 1
+                            },
+                            'text': '\n'
+                        }
+                    }
+                ]
             }
-            
-            print("\nCreating document in specified folder...")
-            file = drive_service.files().create(
-                body=file_metadata, 
-                fields='id,parents,name'
-            ).execute()
-            
-            document_id = file.get('id')
-            print(f"Document created:")
-            print(f"ID: {document_id}")
-            print(f"Name: {file.get('name')}")
-            print(f"Parent folders: {file.get('parents')}")
-        else:
-            print("Warning: No folder ID provided, creating in root")
-            document = docs_service.documents().create(body={'title': document_title}).execute()
-            document_id = document.get('documentId')
-
-        print(f"Document created with ID: {document_id}")
-        print(f"Folder ID used: {folder_id}")
-
-        requests_body = []
-
-        # Set document margins to 0.5 inches (36 points)
-        requests_body.append({
-            'updateDocumentStyle': {
-                'documentStyle': {
-                    'marginTop': {'magnitude': 36, 'unit': 'PT'},
-                    'marginBottom': {'magnitude': 36, 'unit': 'PT'},
-                    'marginLeft': {'magnitude': 36, 'unit': 'PT'},
-                    'marginRight': {'magnitude': 36, 'unit': 'PT'},
-                },
-                'fields': 'marginTop,marginBottom,marginLeft,marginRight'
+        ).execute()
+        
+        # Add title
+        docs_service.documents().batchUpdate(
+            documentId=document_id,
+            body={
+                'requests': [
+                    {
+                        'insertText': {
+                            'location': {
+                                'index': 1
+                            },
+                            'text': f'Manifesto {transportadora} - {datetime.now().strftime("%d/%m/%Y")}\n\n'
+                        }
+                    }
+                ]
             }
-        })
-
-        # Create a header
-        requests_body.append({
-            'createHeader': {
-                'type': 'DEFAULT',
-                'sectionBreakLocation': {
-                    'segmentId': '',
-                    'index': 0
+        ).execute()
+        
+        # Add table header
+        docs_service.documents().batchUpdate(
+            documentId=document_id,
+            body={
+                'requests': [
+                    {
+                        'insertText': {
+                            'location': {
+                                'index': 1
+                            },
+                            'text': 'Pedido\tCubbo ID\tNome\tData de Criação\tData de Despacho\n'
+                        }
+                    }
+                ]
+            }
+        ).execute()
+        
+        # Add orders
+        for pedido in pedidos:
+            docs_service.documents().batchUpdate(
+                documentId=document_id,
+                body={
+                    'requests': [
+                        {
+                            'insertText': {
+                                'location': {
+                                    'index': 1
+                                },
+                                'text': f"{pedido['order_number']}\t{pedido['cubbo_id']}\t{pedido['name']}\t{pedido['created_at']}\t{pedido['dispatched_at']}\n"
+                            }
+                        }
+                    ]
                 }
-            }
-        })
-
-        # Execute the first batch update to create the header and set margins
-        result = docs_service.documents().batchUpdate(
-            documentId=document_id, body={'requests': requests_body}).execute()
-
-        # Get the header ID from the response
-        header_id = None
-        for reply in result.get('replies', []):
-            if 'createHeader' in reply:
-                header_id = reply['createHeader']['headerId']
-                break
-
-        if header_id is None:
-            print("Failed to create header.")
-            return None
-
-        # Now prepare requests to insert text into the header
-        header_requests = []
-
-        # Prepare the manifesto_text
-        manifesto_text = (f"ROMANEIO\n\nData: {data['current_date']:%d/%m/%Y}\n"
-                          f"Transportadora: {data['carrier']}\nQuantidade: {data['total_pedidos']}\n\n")
-
-        # Insert the manifesto_text into the header
-        header_requests.append({
-            'insertText': {
-                'location': {
-                    'segmentId': header_id,
-                    'index': 0
-                },
-                'text': manifesto_text
-            }
-        })
-
-        # Execute the header requests
-        docs_service.documents().batchUpdate(
-            documentId=document_id, body={'requests': header_requests}).execute()
-
-        # Prepare the main document content
-        main_requests = []
-
-        # Insert the warning text
-        warning_text = nao_despachados_itapeva(data, transportadora)
-        main_requests.append({
-            'insertText': {
-                'location': {
-                    'index': 0
-                },
-                'text': warning_text
-            }
-        })
-
-        # Execute the main content requests
-        docs_service.documents().batchUpdate(
-            documentId=document_id, body={'requests': main_requests}).execute()
-
-        return document_id
-
+            ).execute()
+        
+        # Move document to specified folder
+        file = drive_service.files().get(fileId=document_id, fields='id, parents').execute()
+        previous_parents = ",".join(file.get('parents', []))
+        
+        drive_service.files().update(
+            fileId=document_id,
+            addParents=folder_id,
+            removeParents=previous_parents,
+            fields='id, parents'
+        ).execute()
+        
+        # Get document URL
+        document_url = f"https://docs.google.com/document/d/{document_id}/edit"
+        print(f"Document created successfully: {document_url}")
+        return document_url
+        
     except Exception as e:
-        print(f"Error in save_to_google_docs_itapeva: {str(e)}")
+        print(f"Error in save_to_google_docs_itapeva: {e}")
         raise
 
 def link_docs_itapeva(transportadora):
