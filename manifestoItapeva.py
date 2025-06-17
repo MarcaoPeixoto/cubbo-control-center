@@ -275,15 +275,26 @@ def save_to_google_docs_itapeva(document_title, data, folder_id=None, transporta
         print(f"Error in save_to_google_docs_itapeva: {str(e)}")
         raise
 
+env_config = dotenv_values(".env")
+# Load folder IDs from environment variables with debug prints
+jt_folder = env_config.get('JT_FOLDER_MG_ID') or os.environ.get("JT_FOLDER_MG_ID")
+loggi_folder = env_config.get('LOGGI_FOLDER_MG_ID') or os.environ.get("LOGGI_FOLDER_MG_ID")
+correios_folder = env_config.get('CORREIOS_FOLDER_MG_ID') or os.environ.get("CORREIOS_FOLDER_MG_ID")
+
 def link_docs_itapeva(transportadora):
-    # Define folder IDs for different carriers
+    # Define folder IDs for each carrier
     folder_ids = {
-        "LOGGI": "1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",  # Replace with actual folder ID
-        "CORREIOS": "1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",  # Replace with actual folder ID
-        "JT": "1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"  # Replace with actual folder ID
+        'LOGGI': loggi_folder,  # Replace with actual LOGGI folder ID
+        'CORREIOS': correios_folder,  # Replace with actual CORREIOS folder ID
+        'JT': jt_folder  # Replace with actual JT folder ID
     }
     
-    return folder_ids.get(transportadora)
+    # Get the folder ID for the specified carrier
+    folder_id = folder_ids.get(transportadora)
+    if not folder_id:
+        raise ValueError(f"No folder ID configured for carrier: {transportadora}")
+    
+    return folder_id
 
 def get_difal_order_ids():
     pedidos_difal = get_dataset('613')
