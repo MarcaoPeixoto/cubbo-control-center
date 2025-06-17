@@ -13,6 +13,8 @@ import requests
 from metabase import get_dataset, process_data
 from google_auth import get_docs_service, get_drive_service
 from google_auth import authenticate_google
+from google.oauth2 import service_account
+import time
 
 #para atualizar
 # Replace the existing redis_client creation with:
@@ -20,6 +22,20 @@ redis_client = get_redis_connection()
 
 # Replace the existing docs_service initialization with this:
 docs_service = authenticate_google()
+
+# Load environment variables
+env_config = dotenv_values(".env")
+
+# Load folder IDs from environment variables with debug prints
+jt_folder = env_config.get('JT_FOLDER_MG_ID') or os.environ.get("JT_FOLDER_MG_ID")
+loggi_folder = env_config.get('LOGGI_FOLDER_MG_ID') or os.environ.get("LOGGI_FOLDER_MG_ID")
+correios_folder = env_config.get('CORREIOS_FOLDER_MG_ID') or os.environ.get("CORREIOS_FOLDER_MG_ID")
+
+# Debug prints for folder IDs
+print("Loaded folder IDs:")
+print(f"JT Folder ID: {jt_folder}")
+print(f"LOGGI Folder ID: {loggi_folder}")
+print(f"CORREIOS Folder ID: {correios_folder}")
 
 def get_manifesto_itapeva(carrier):
     try:
@@ -275,18 +291,12 @@ def save_to_google_docs_itapeva(document_title, data, folder_id=None, transporta
         print(f"Error in save_to_google_docs_itapeva: {str(e)}")
         raise
 
-env_config = dotenv_values(".env")
-# Load folder IDs from environment variables with debug prints
-jt_folder = env_config.get('JT_FOLDER_MG_ID') or os.environ.get("JT_FOLDER_MG_ID")
-loggi_folder = env_config.get('LOGGI_FOLDER_MG_ID') or os.environ.get("LOGGI_FOLDER_MG_ID")
-correios_folder = env_config.get('CORREIOS_FOLDER_MG_ID') or os.environ.get("CORREIOS_FOLDER_MG_ID")
-
 def link_docs_itapeva(transportadora):
     # Define folder IDs for each carrier
     folder_ids = {
-        'LOGGI': loggi_folder,  # Replace with actual LOGGI folder ID
-        'CORREIOS': correios_folder,  # Replace with actual CORREIOS folder ID
-        'JT': jt_folder  # Replace with actual JT folder ID
+        'LOGGI': loggi_folder,
+        'CORREIOS': correios_folder,
+        'JT': jt_folder
     }
     
     # Get the folder ID for the specified carrier
@@ -294,6 +304,11 @@ def link_docs_itapeva(transportadora):
     if not folder_id:
         raise ValueError(f"No folder ID configured for carrier: {transportadora}")
     
+    # Validate folder ID format
+    if not folder_id or len(folder_id) < 10:  # Basic validation
+        raise ValueError(f"Invalid folder ID format for carrier {transportadora}: {folder_id}")
+    
+    print(f"Using folder ID for {transportadora}: {folder_id}")
     return folder_id
 
 def get_difal_order_ids():
