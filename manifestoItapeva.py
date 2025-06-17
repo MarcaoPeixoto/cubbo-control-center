@@ -15,6 +15,7 @@ from google_auth import get_docs_service, get_drive_service
 from google_auth import authenticate_google
 from google.oauth2 import service_account
 import time
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 #para atualizar
 # Replace the existing redis_client creation with:
@@ -135,135 +136,119 @@ def nao_despachados_itapeva(data, transportadora):
 
     return warning_text
 
-def save_to_google_docs_itapeva(title, pedidos, transportadora):
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+def save_to_google_docs_itapeva(data, carrier):
     try:
-        print("\nStarting document creation:")
-        print(f"Title: {title}")
-        print(f"Number of orders: {len(pedidos)}")
-        print("Sample order data:", pedidos[0] if pedidos else "No orders")
+        print("\nStarting save_to_google_docs_itapeva")
+        print("Input data structure:", json.dumps(data, indent=2))
         
-        # Get folder ID
-        folder_id = link_docs_itapeva(transportadora)
-        print(f"Folder ID: {folder_id}")
-        print(f"Transportadora: {transportadora}")
+        # Get current date
+        current_date = datetime.now()
+        date_str = current_date.strftime('%d/%m/%Y')
+        
+        # Get folder ID based on carrier
+        folder_id = link_docs_itapeva(carrier)
+        if not folder_id:
+            raise ValueError(f"No folder ID found for carrier: {carrier}")
+        
+        # Create document title
+        document_title = f"Manifesto {carrier} {date_str}"
+        print(f"Creating document with title: {document_title}")
         
         # Create document
-        print("\nCreating document in specified folder...")
-        docs_service = authenticate_google()
-        drive_service = get_drive_service()
-        
-        # Create empty document
-        document = docs_service.documents().create(body={'title': title}).execute()
+        document = docs_service.documents().create(body={'title': document_title}).execute()
         document_id = document.get('documentId')
+        print(f"Document created with ID: {document_id}")
         
-        # Initialize document with a paragraph
-        docs_service.documents().batchUpdate(
-            documentId=document_id,
-            body={
-                'requests': [
-                    {
-                        'insertText': {
-                            'location': {
-                                'index': 1
-                            },
-                            'text': '\n'
-                        }
-                    }
-                ]
-            }
-        ).execute()
+        # Add delay to respect rate limits
+        time.sleep(1)
         
-        # Add title
-        docs_service.documents().batchUpdate(
-            documentId=document_id,
-            body={
-                'requests': [
-                    {
-                        'insertText': {
-                            'location': {
-                                'index': 1
-                            },
-                            'text': f'Manifesto {transportadora} - {datetime.now().strftime("%d/%m/%Y")}\n\n'
-                        }
-                    }
-                ]
-            }
-        ).execute()
-        
-        # Add table header
-        docs_service.documents().batchUpdate(
-            documentId=document_id,
-            body={
-                'requests': [
-                    {
-                        'insertText': {
-                            'location': {
-                                'index': 1
-                            },
-                            'text': 'Pedido\tCubbo ID\tNome\tData de Criação\tData de Despacho\n'
-                        }
-                    }
-                ]
-            }
-        ).execute()
-        
-        # Add orders
-        for pedido in pedidos:
-            # Format dates if they exist
-            created_at = pedido.get('created_at', '')
-            if created_at:
-                try:
-                    created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00')).strftime('%d/%m/%Y %H:%M:%S')
-                except:
-                    created_at = str(created_at)
-            
-            dispatched_at = pedido.get('dispatched_at', '')
-            if dispatched_at:
-                try:
-                    dispatched_at = datetime.fromisoformat(dispatched_at.replace('Z', '+00:00')).strftime('%d/%m/%Y %H:%M:%S')
-                except:
-                    dispatched_at = str(dispatched_at)
-            
-            # Create order row
-            order_row = f"{pedido.get('order_number', '')}\t{pedido.get('cubbo_id', '')}\t{pedido.get('name', '')}\t{created_at}\t{dispatched_at}\n"
-            
-            docs_service.documents().batchUpdate(
-                documentId=document_id,
-                body={
-                    'requests': [
-                        {
-                            'insertText': {
-                                'location': {
-                                    'index': 1
-                                },
-                                'text': order_row
-                            }
-                        }
-                    ]
+        # Prepare document content
+        requests = [
+            {
+                'insertText': {
+                    'location': {'index': 1},
+                    'text': f"Manifesto {carrier} - {date_str}\n\n"
                 }
-            ).execute()
+            }
+        ]
         
-        # Move document to specified folder
-        file = drive_service.files().get(fileId=document_id, fields='id, parents').execute()
-        previous_parents = ",".join(file.get('parents', []))
+        # Add orders to document
+        for order in data:
+            try:
+                # Format dates safely
+                created_at = order.get('created_at', '')
+                dispatched_at = order.get('dispatched_at', '')
+                
+                if created_at:
+                    try:
+                        created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00')).strftime('%d/%m/%Y %H:%M')
+                    except:
+                        created_at = str(created_at)
+                
+                if dispatched_at:
+                    try:
+                        dispatched_at = datetime.fromisoformat(dispatched_at.replace('Z', '+00:00')).strftime('%d/%m/%Y %H:%M')
+                    except:
+                        dispatched_at = str(dispatched_at)
+                
+                # Format order row
+                order_row = (
+                    f"Pedido: {order.get('order_number', '')}\n"
+                    f"Cubbo ID: {order.get('cubbo_id', '')}\n"
+                    f"Nome: {order.get('name', '')}\n"
+                    f"Data de Criação: {created_at}\n"
+                    f"Data de Despacho: {dispatched_at}\n"
+                    f"Transportadora: {order.get('carrier_name', '')}\n\n"
+                )
+                
+                requests.append({
+                    'insertText': {
+                        'location': {'index': 1},
+                        'text': order_row
+                    }
+                })
+                
+            except Exception as e:
+                print(f"Error processing order: {str(e)}")
+                continue
         
-        drive_service.files().update(
+        # Execute batch update with rate limiting
+        print("Executing batch update...")
+        result = docs_service.documents().batchUpdate(
+            documentId=document_id,
+            body={'requests': requests}
+        ).execute()
+        print("Batch update completed")
+        
+        # Add delay before moving file
+        time.sleep(1)
+        
+        # Move document to appropriate folder
+        print(f"Moving document to folder: {folder_id}")
+        file = drive_service.files().update(
             fileId=document_id,
             addParents=folder_id,
-            removeParents=previous_parents,
             fields='id, parents'
         ).execute()
+        print("Document moved successfully")
         
-        # Get document URL
+        # Generate document URL
         document_url = f"https://docs.google.com/document/d/{document_id}/edit"
-        print(f"Document created successfully: {document_url}")
+        print(f"Document URL: {document_url}")
+        
         return document_url
         
+    except HttpError as error:
+        if error.resp.status == 429:
+            print("Rate limit exceeded. Waiting before retry...")
+            time.sleep(60)  # Wait for 1 minute before retrying
+            raise  # This will trigger the retry decorator
+        else:
+            print(f"Error in save_to_google_docs_itapeva: {str(error)}")
+            raise
     except Exception as e:
-        print(f"Error in save_to_google_docs_itapeva: {e}")
-        print(f"Error type: {type(e)}")
-        import traceback
-        print(f"Traceback: {traceback.format_exc()}")
+        print(f"Error in save_to_google_docs_itapeva: {str(e)}")
         raise
 
 def link_docs_itapeva(transportadora):
