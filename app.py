@@ -30,6 +30,7 @@ import time
 import tempfile
 import fitz  # PyMuPDF
 from toteLivre import get_tote_livre
+from manifestoItapeva import get_manifesto_itapeva
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
@@ -455,7 +456,7 @@ def manifesto_route_itapeva():
         print(f"Selected transportadora: {transportadora}")
         if transportadora:
             try:
-                data = get_manifesto(transportadora)
+                data = get_manifesto_itapeva(transportadora)
                 not_dispatched_count = nao_despachados(data, transportadora)
                 
                 if action == 'consulta':
