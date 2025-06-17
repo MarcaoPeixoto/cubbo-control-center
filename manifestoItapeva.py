@@ -65,36 +65,48 @@ def get_manifesto_itapeva(carrier):
         # Debug prints for response
         print("Response type:", type(response))
         print("\nData Structure Analysis:")
-        print("Pedidos type:", type(response))
-        print("Total orders retrieved:", len(response))
-        if response:
-            print("Sample order format:", response[0])
         
-        # Validate and process the response
-        if not isinstance(response, list):
-            raise ValueError(f"Expected list response from Metabase, got {type(response)}")
+        # Convert response to list if it's a dictionary
+        if isinstance(response, dict):
+            if 'data' in response:
+                pedidos = response['data']
+            else:
+                pedidos = [response]  # Convert single dict to list
+        else:
+            pedidos = response
+            
+        if not pedidos:
+            print(f"No orders found for carrier {carrier} on date {current_date:%Y-%m-%d}")
+            raise ValueError("No orders found for the specified carrier and date")
+            
+        print(f"Pedidos type: {type(pedidos)}")
+        print(f"Total orders retrieved: {len(pedidos)}")
+        if pedidos:
+            print(f"Sample order format: {pedidos[0]}")
         
-        # Process each order to ensure required fields
-        processed_orders = []
-        for order in response:
-            if not isinstance(order, dict):
-                print(f"Warning: Skipping invalid order format: {order}")
-                continue
-                
-            processed_order = {
-                'order_number': str(order.get('order_number', '')),
-                'cubbo_id': str(order.get('cubbo_id', '')),
-                'name': str(order.get('name', '')),
-                'created_at': order.get('created_at', ''),
-                'dispatched_at': order.get('dispatched_at', ''),
-                'carrier_name': str(order.get('carrier_name', ''))
-            }
-            processed_orders.append(processed_order)
+        # Process orders
+        trackings_dispatched = [x['shipping_number'] for x in pedidos if x.get('dispatched_at')]
+        trackings_not_dispatched = [x['shipping_number'] for x in pedidos if not x.get('dispatched_at')]
         
-        return processed_orders
+        # Collect data to return
+        data = {
+            'current_date': current_date,
+            'carrier': carrier,
+            'total_pedidos': len(pedidos),
+            'not_dispatched_count': len(trackings_not_dispatched),
+            'not_dispatched_trackings': trackings_not_dispatched,
+            'dispatched_count': len(trackings_dispatched),
+            'dispatched_trackings': trackings_dispatched,
+            'pedidos': pedidos  # Include the full pedidos list
+        }
+        
+        return data
         
     except Exception as e:
         print(f"Error in get_manifesto_itapeva: {str(e)}")
+        print(f"Error type: {type(e)}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
         raise
 
 def nao_despachados_itapeva(data, transportadora):
@@ -140,7 +152,12 @@ def nao_despachados_itapeva(data, transportadora):
 def save_to_google_docs_itapeva(data, carrier):
     try:
         print("\nStarting save_to_google_docs_itapeva")
-        print("Input data structure:", json.dumps(data, indent=2))
+        print("Input data type:", type(data))
+        print("Input data structure:", json.dumps(data, indent=2) if isinstance(data, (list, dict)) else str(data))
+        
+        # Validate input data
+        if not isinstance(data, dict):
+            raise ValueError(f"Expected dictionary data, got {type(data)}")
         
         # Get current date
         current_date = datetime.now()
@@ -174,32 +191,44 @@ def save_to_google_docs_itapeva(data, carrier):
         ]
         
         # Add orders to document
-        for order in data:
+        for order in data.get('pedidos', []):
             try:
+                if not isinstance(order, dict):
+                    print(f"Warning: Skipping invalid order format: {order}")
+                    continue
+                
                 # Format dates safely
                 created_at = order.get('created_at', '')
                 dispatched_at = order.get('dispatched_at', '')
                 
                 if created_at:
                     try:
-                        created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00')).strftime('%d/%m/%Y %H:%M')
-                    except:
+                        if isinstance(created_at, str):
+                            created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00')).strftime('%d/%m/%Y %H:%M')
+                        else:
+                            created_at = str(created_at)
+                    except Exception as e:
+                        print(f"Error formatting created_at: {e}")
                         created_at = str(created_at)
                 
                 if dispatched_at:
                     try:
-                        dispatched_at = datetime.fromisoformat(dispatched_at.replace('Z', '+00:00')).strftime('%d/%m/%Y %H:%M')
-                    except:
+                        if isinstance(dispatched_at, str):
+                            dispatched_at = datetime.fromisoformat(dispatched_at.replace('Z', '+00:00')).strftime('%d/%m/%Y %H:%M')
+                        else:
+                            dispatched_at = str(dispatched_at)
+                    except Exception as e:
+                        print(f"Error formatting dispatched_at: {e}")
                         dispatched_at = str(dispatched_at)
                 
-                # Format order row
+                # Format order row with safe string conversion
                 order_row = (
-                    f"Pedido: {order.get('order_number', '')}\n"
-                    f"Cubbo ID: {order.get('cubbo_id', '')}\n"
-                    f"Nome: {order.get('name', '')}\n"
+                    f"Pedido: {str(order.get('order_number', ''))}\n"
+                    f"Cubbo ID: {str(order.get('cubbo_id', ''))}\n"
+                    f"Nome: {str(order.get('name', ''))}\n"
                     f"Data de Criação: {created_at}\n"
                     f"Data de Despacho: {dispatched_at}\n"
-                    f"Transportadora: {order.get('carrier_name', '')}\n\n"
+                    f"Transportadora: {str(order.get('carrier_name', ''))}\n\n"
                 )
                 
                 requests.append({
@@ -212,6 +241,9 @@ def save_to_google_docs_itapeva(data, carrier):
             except Exception as e:
                 print(f"Error processing order: {str(e)}")
                 continue
+        
+        if not requests:
+            raise ValueError("No valid orders to add to document")
         
         # Execute batch update with rate limiting
         print("Executing batch update...")
@@ -226,7 +258,7 @@ def save_to_google_docs_itapeva(data, carrier):
         
         # Move document to appropriate folder
         print(f"Moving document to folder: {folder_id}")
-        file = drive_service.files().update(
+        file = docs_service.files().update(
             fileId=document_id,
             addParents=folder_id,
             fields='id, parents'
@@ -249,6 +281,9 @@ def save_to_google_docs_itapeva(data, carrier):
             raise
     except Exception as e:
         print(f"Error in save_to_google_docs_itapeva: {str(e)}")
+        print(f"Error type: {type(e)}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
         raise
 
 def link_docs_itapeva(transportadora):
