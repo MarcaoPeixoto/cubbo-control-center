@@ -30,7 +30,6 @@ import time
 import tempfile
 import fitz  # PyMuPDF
 from toteLivre import get_tote_livre
-from controle_fluxo_pedidos_natura import controle_fluxo_pedidos_natura
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
@@ -123,12 +122,12 @@ def job_nf_erro():
     except subprocess.CalledProcessError as e:
         print(f"An error occurred in NF com erro job: {e}")
 
-""" scheduler.add_job(job_embu, 'interval', minutes=5, max_instances=10000)
+scheduler.add_job(job_embu, 'interval', minutes=5, max_instances=10000)
 scheduler.add_job(job_extrema, 'interval', minutes=7, max_instances=10000)
 scheduler.add_job(job_bonus, 'interval', minutes=3, max_instances=10000)
-scheduler.add_job(job_report_ops, 'cron', hour='20', minute='0', max_instances=10000)
-scheduler.add_job(job_pp_repo, 'interval', hours=1, max_instances=10000)
-scheduler.add_job(job_controle_fluxo_pedidos_natura, 'interval', minutes=5, max_instances=10000) """
+#scheduler.add_job(job_report_ops, 'cron', hour='20', minute='0', max_instances=10000)
+#scheduler.add_job(job_pp_repo, 'interval', hours=1, max_instances=10000)
+#scheduler.add_job(job_controle_fluxo_pedidos_natura, 'interval', minutes=5, max_instances=10000)
 scheduler.add_job(job_nf_erro, 'interval', minutes=30, max_instances=10000)
 
 @app.before_request
