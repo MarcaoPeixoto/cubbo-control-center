@@ -451,39 +451,32 @@ def manifesto_route():
 @login_required
 def manifesto_route_itapeva():
     if request.method == 'POST':
-        manifesto_option = request.form.get('manifesto_option_MG')
+        transportadora = request.form.get('manifesto_option_MG')
         action = request.form.get('action')
+        print(f"Selected transportadora: {transportadora}")
         
-        if not manifesto_option:
-            return render_template('manifestoItapeva.html', error="Please select a carrier")
-        
-        try:
-            if action == 'generate':
-                # Get data from Metabase
-                data = get_manifesto_itapeva(manifesto_option)
+        if transportadora:
+            try:
+                data = get_manifesto_itapeva(transportadora)
+                not_dispatched_count = nao_despachados_itapeva(data, transportadora)
                 
-                # Create document title
-                current_date = datetime.now()
-                document_title = f"Manifesto {manifesto_option} {current_date:%d/%m/%Y}"
-                
-                # Save to Google Docs
-                document_url = save_to_google_docs_itapeva(document_title, data, manifesto_option)
-                
-                return render_template('manifestoItapeva.html', document_url=document_url)
-                
-            elif action == 'consulta':
-                # Get data from Metabase
-                data = get_manifesto_itapeva(manifesto_option)
-                
-                # Get non-dispatched orders
-                not_dispatched = nao_despachados_itapeva(data, manifesto_option)
-                
-                return render_template('manifestoItapeva.html', not_dispatched_count=not_dispatched)
-                
-        except Exception as e:
-            print(f"Error in manifesto_route_itapeva: {str(e)}")
-            return render_template('manifestoItapeva.html', error=str(e))
-    
+                if action == 'consulta':
+                    # Only return the not_dispatched_count without creating a Google Doc
+                    return render_template('manifestoItapeva.html', not_dispatched_count=not_dispatched_count)
+                elif action == 'generate':
+                    # Generate Google Doc
+                    document_url = save_to_google_docs_itapeva(data, transportadora)
+                    if document_url:
+                        return render_template('manifestoItapeva.html', not_dispatched_count=not_dispatched_count, document_url=document_url)
+                    else:
+                        return render_template('manifestoItapeva.html', error="Failed to create the document.")
+                else:
+                    return render_template('manifestoItapeva.html', error="Invalid action.")
+            except Exception as e:
+                print(f"Error in manifesto_route_itapeva: {str(e)}")
+                return render_template('manifestoItapeva.html', error=f"An error occurred: {str(e)}")
+        else:
+            return render_template('manifestoItapeva.html', error="Please select a valid option.")
     return render_template('manifestoItapeva.html')
 
 @app.route('/bonus')
