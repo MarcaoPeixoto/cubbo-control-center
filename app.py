@@ -492,30 +492,10 @@ def bonus_projetor():
 def ops():
     return render_template('ops.html')
 
-@app.route('/zica_abastecimento_1')
+@app.route('/toteLivre')
 @login_required
-def zica_abastecimento_1():
-    return render_template('zica_abastecimento_1.html')
-
-@app.route('/zica_abastecimento_2')
-@login_required
-def zica_abastecimento_2():
-    return render_template('zica_abastecimento_2.html')
-
-@app.route('/zica_abastecimento_4')
-@login_required
-def zica_abastecimento_4():
-    return render_template('zica_abastecimento_4.html')
-
-@app.route('/zica_abastecimento_5')
-@login_required
-def zica_abastecimento_5():
-    return render_template('zica_abastecimento_5.html') 
-
-@app.route('/zica_abastecimento_6')
-@login_required
-def zica_abastecimento_6():
-    return render_template('zica_abastecimento_6.html')     
+def toteLivre():
+    return render_template('toteLivre.html')
 
 @app.route('/atrasos')
 @login_required
@@ -1245,9 +1225,61 @@ def api_tote_livre():
     try:
         # Get real-time data directly from the get_tote_livre function
         tote_data = get_tote_livre()
-        return jsonify(tote_data)
+        
+        if "error" in tote_data:
+            return jsonify({"error": tote_data["error"]}), 500
+        
+        # Return the dataset for the table display
+        return jsonify(tote_data["dataset"])
     except Exception as e:
         app.logger.error(f"Error getting tote livre data: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/tote-livre-zpl', methods=['GET'])
+@login_required
+def api_tote_livre_zpl():
+    try:
+        # Get real-time data directly from the get_tote_livre function
+        tote_data = get_tote_livre()
+        
+        if "error" in tote_data:
+            return jsonify({"error": tote_data["error"]}), 500
+        
+        # Return the ZPL data
+        return jsonify(tote_data["zpl_data"])
+    except Exception as e:
+        app.logger.error(f"Error getting tote livre ZPL data: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/tote-livre/download-zpl', methods=['GET'])
+@login_required
+def download_tote_zpl():
+    try:
+        # Get real-time data directly from the get_tote_livre function
+        tote_data = get_tote_livre()
+        
+        if "error" in tote_data:
+            return jsonify({"error": tote_data["error"]}), 500
+        
+        # Create the ZPL content
+        zpl_content = ""
+        for zpl_code in tote_data["zpl_data"]["zpl_list"]:
+            zpl_content += zpl_code + "\n"
+        
+        # Create a BytesIO object to serve the file
+        from io import BytesIO
+        zpl_file = BytesIO(zpl_content.encode('utf-8'))
+        zpl_file.seek(0)
+        
+        # Return the file for download
+        return send_file(
+            zpl_file,
+            mimetype='text/plain',
+            as_attachment=True,
+            download_name='tote_labels.zpl'
+        )
+    except Exception as e:
+        app.logger.error(f"Error downloading tote ZPL file: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':

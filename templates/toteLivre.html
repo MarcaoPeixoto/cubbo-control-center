@@ -11,9 +11,10 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
+            padding: 20px;
         }
         .container {
             background-color: white;
@@ -22,6 +23,8 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             text-align: center;
             position: relative;
+            max-width: 1200px;
+            width: 100%;
         }
         button {
             background-color: #0741dd;
@@ -31,6 +34,7 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
+            margin: 5px;
         }
         button:hover {
             background-color: #0536b5;
@@ -81,6 +85,46 @@
         tr:nth-child(even) {
             background-color: #f2f2f2;
         }
+        .zpl-stats {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .zpl-stats h4 {
+            margin-top: 0;
+            color: #0741dd;
+        }
+        .download-button {
+            background-color: #28a745;
+        }
+        .download-button:hover {
+            background-color: #218838;
+        }
+        .copy-button {
+            background-color: #17a2b8;
+        }
+        .copy-button:hover {
+            background-color: #138496;
+        }
+        .generate-button {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .generate-button:hover {
+            background-color: #e0a800;
+        }
+        .button-group {
+            margin: 20px 0;
+        }
+        .copy-feedback {
+            color: #28a745;
+            font-weight: bold;
+            margin-left: 10px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -89,10 +133,22 @@
             <button class="back-button">Voltar</button>
         </a>
         <h2>Totes Disponíveis</h2>
-        <button id="displayButton">Mostrar Totes</button>
+        
+        <div class="button-group">
+            <button id="displayButton">Mostrar Totes</button>
+            <button id="generateZplButton" class="generate-button">Gerar ZPL</button>
+            <button id="downloadZplButton" class="download-button" style="display: none;">Baixar ZPL</button>
+            <button id="copyZplButton" class="copy-button" style="display: none;">Copiar ZPL</button>
+            <span id="copyFeedback" class="copy-feedback">Copiado!</span>
+        </div>
         
         <div id="loading" class="loading">
             <p>Carregando dados...</p>
+        </div>
+        
+        <div id="zplStats" class="zpl-stats" style="display: none;">
+            <h4>Estatísticas ZPL</h4>
+            <div id="zplStatsContent"></div>
         </div>
         
         <div id="dataResult" class="result">
@@ -101,6 +157,8 @@
     </div>
 
     <script>
+        let zplData = null;
+
         document.getElementById('displayButton').addEventListener('click', function() {
             const loadingElement = document.getElementById('loading');
             const resultDiv = document.getElementById('dataResult');
@@ -165,6 +223,99 @@
                     resultDiv.innerHTML = `<p>Erro ao carregar dados: ${error.message}</p>`;
                     resultDiv.style.display = 'block';
                 });
+        });
+
+        document.getElementById('generateZplButton').addEventListener('click', function() {
+            const loadingElement = document.getElementById('loading');
+            const zplStatsDiv = document.getElementById('zplStats');
+            const zplStatsContent = document.getElementById('zplStatsContent');
+            const downloadButton = document.getElementById('downloadZplButton');
+            const copyButton = document.getElementById('copyZplButton');
+            
+            // Show loading indicator
+            loadingElement.style.display = 'block';
+            zplStatsDiv.style.display = 'none';
+            downloadButton.style.display = 'none';
+            copyButton.style.display = 'none';
+            
+            // Make API call to generate ZPL
+            fetch('/api/tote-livre-zpl')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loading indicator
+                    loadingElement.style.display = 'none';
+                    
+                    // Store ZPL data
+                    zplData = data;
+                    
+                    // Display ZPL statistics
+                    let statsHtml = `
+                        <p><strong>Total de Totes Disponíveis:</strong> ${data.total_available_totes}</p>
+                        <p><strong>Total de Totes Excluídos:</strong> ${data.total_excluded_totes}</p>
+                        <p><strong>Total de Jobs ZPL:</strong> ${data.total_zpl_jobs}</p>
+                        <p><strong>Primeiros 10 Totes Disponíveis:</strong> ${data.available_totes.slice(0, 10).join(', ')}${data.available_totes.length > 10 ? '...' : ''}</p>
+                    `;
+                    
+                    zplStatsContent.innerHTML = statsHtml;
+                    zplStatsDiv.style.display = 'block';
+                    downloadButton.style.display = 'inline-block';
+                    copyButton.style.display = 'inline-block';
+                })
+                .catch(error => {
+                    // Hide loading and show error
+                    loadingElement.style.display = 'none';
+                    zplStatsContent.innerHTML = `<p>Erro ao gerar ZPL: ${error.message}</p>`;
+                    zplStatsDiv.style.display = 'block';
+                });
+        });
+
+        document.getElementById('downloadZplButton').addEventListener('click', function() {
+            // Download the ZPL file
+            window.location.href = '/api/tote-livre/download-zpl';
+        });
+
+        document.getElementById('copyZplButton').addEventListener('click', function() {
+            if (!zplData || !zplData.zpl_list) {
+                alert('Nenhum ZPL gerado ainda. Clique em "Gerar ZPL" primeiro.');
+                return;
+            }
+            
+            // Combine all ZPL codes into one string
+            const allZplCodes = zplData.zpl_list.join('\n');
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(allZplCodes).then(function() {
+                // Show feedback
+                const feedback = document.getElementById('copyFeedback');
+                feedback.style.display = 'inline';
+                
+                // Hide feedback after 2 seconds
+                setTimeout(function() {
+                    feedback.style.display = 'none';
+                }, 2000);
+            }).catch(function(err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = allZplCodes;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                // Show feedback
+                const feedback = document.getElementById('copyFeedback');
+                feedback.style.display = 'inline';
+                
+                // Hide feedback after 2 seconds
+                setTimeout(function() {
+                    feedback.style.display = 'none';
+                }, 2000);
+            });
         });
     </script>
 </body>
