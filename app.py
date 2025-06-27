@@ -1282,6 +1282,191 @@ def download_tote_zpl():
         app.logger.error(f"Error downloading tote ZPL file: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+# Inventory routes
+@app.route('/inventario')
+@login_required
+def inventario():
+    return render_template('inventario.html')
+
+@app.route('/api/inventory/search', methods=['POST'])
+@login_required
+def api_inventory_search():
+    try:
+        data = request.get_json()
+        location = data.get('location')
+        
+        if not location:
+            return jsonify({"success": False, "error": "Location is required"}), 400
+        
+        # Import the inventory module
+        from inventario import get_estoque
+        
+        # Get inventory data for the location
+        products = get_estoque(location)
+        
+        # Ensure products is a list
+        if products is None:
+            products = []
+        elif not isinstance(products, list):
+            # If it's not a list, try to convert it or return empty list
+            try:
+                if isinstance(products, dict) and 'error' in products:
+                    return jsonify({"success": False, "error": products['error']}), 500
+                products = []
+            except:
+                products = []
+        
+        return jsonify({"success": True, "products": products})
+        
+    except Exception as e:
+        app.logger.error(f"Error searching inventory: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/inventory/save', methods=['POST'])
+@login_required
+def api_inventory_save():
+    try:
+        data = request.get_json()
+        location = data.get('location')
+        upc = data.get('upc')
+        system_quantity = data.get('systemQuantity')
+        counted_quantity = data.get('countedQuantity')
+        
+        if not all([location, upc, system_quantity is not None, counted_quantity is not None]):
+            return jsonify({"success": False, "error": "All fields are required"}), 400
+        
+        # Get current date
+        from datetime import datetime
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        
+        # Create Redis key for the date
+        date_key = f"inventory:{current_date}"
+        
+        # Get existing data for this date
+        existing_data = redis_client.get(date_key)
+        if existing_data:
+            inventory_data = json.loads(existing_data)
+        else:
+            inventory_data = {}
+        
+        # Create key for this location+UPC combination
+        item_key = f"{location}|{upc}"
+        
+        # Store the quantities [system_quantity, counted_quantity]
+        inventory_data[item_key] = [system_quantity, counted_quantity]
+        
+        # Save back to Redis
+        redis_client.set(date_key, json.dumps(inventory_data))
+        
+        return jsonify({"success": True})
+        
+    except Exception as e:
+        app.logger.error(f"Error saving inventory count: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/inventory/comparison')
+@login_required
+def api_inventory_comparison():
+    try:
+        # Get all inventory keys from Redis
+        inventory_keys = redis_client.keys("inventory:*")
+        
+        comparison_data = {}
+        
+        for key in inventory_keys:
+            date = key.decode('utf-8').split(':')[1]
+            data = redis_client.get(key)
+            if data:
+                comparison_data[date] = json.loads(data)
+        
+        return jsonify({"success": True, "comparison": comparison_data})
+        
+    except Exception as e:
+        app.logger.error(f"Error getting inventory comparison: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/inventory/export-sheets', methods=['POST'])
+@login_required
+def api_inventory_export_sheets():
+    try:
+        # Get all inventory data
+        inventory_keys = redis_client.keys("inventory:*")
+        
+        if not inventory_keys:
+            return jsonify({"success": False, "error": "No inventory data to export"}), 400
+        
+        # Prepare data for Google Sheets
+        sheet_data = []
+        sheet_data.append(['Data', 'Localização', 'UPC', 'Quantidade Sistema', 'Quantidade Contada', 'Diferença'])
+        
+        for key in inventory_keys:
+            date = key.decode('utf-8').split(':')[1]
+            data = redis_client.get(key)
+            if data:
+                inventory_data = json.loads(data)
+                for item_key, quantities in inventory_data.items():
+                    location, upc = item_key.split('|')
+                    system_qty, counted_qty = quantities
+                    difference = counted_qty - system_qty
+                    sheet_data.append([date, location, upc, system_qty, counted_qty, difference])
+        
+        # Create Google Sheets
+        from google_auth import get_sheets_service
+        sheets_service = get_sheets_service()
+        
+        # Create spreadsheet
+        spreadsheet = {
+            'properties': {
+                'title': f'Relatório de Inventário - {datetime.now().strftime("%Y-%m-%d %H:%M")}'
+            },
+            'sheets': [
+                {
+                    'properties': {
+                        'title': 'Inventário'
+                    }
+                }
+            ]
+        }
+        
+        spreadsheet = sheets_service.spreadsheets().create(body=spreadsheet).execute()
+        spreadsheet_id = spreadsheet['spreadsheetId']
+        
+        # Prepare the data for writing
+        range_name = 'Inventário!A1:F' + str(len(sheet_data))
+        
+        # Write data to sheet
+        body = {
+            'values': sheet_data
+        }
+        
+        sheets_service.spreadsheets().values().update(
+            spreadsheetId=spreadsheet_id,
+            range=range_name,
+            valueInputOption='RAW',
+            body=body
+        ).execute()
+        
+        # Move to the specified folder
+        drive_service = get_drive_service()
+        file = drive_service.files().update(
+            fileId=spreadsheet_id,
+            addParents='1L2INRnwl9NTOizQGk83ahfVQ_jf-We_X',
+            removeParents='root',
+            fields='id, parents'
+        ).execute()
+        
+        sheet_url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}"
+        
+        return jsonify({
+            "success": True,
+            "sheetUrl": sheet_url,
+            "spreadsheetId": spreadsheet_id
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error exporting inventory to Google Sheets: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
 if __name__ == '__main__':
     try:
         check_redis_connectivity()

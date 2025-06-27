@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='estilo.css') }}">
+    <title>Inventário</title>
+    <style>
+        body {
+            background-color: #191910;
+            color: white;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #0741dd;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .input-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #0741dd;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #0741dd;
+            border-radius: 5px;
+            background-color: #1a1a1a;
+            color: white;
+            font-size: 16px;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        .btn {
+            background-color: #0741dd;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background-color: #4a90e2;
+        }
+
+        .btn-secondary {
+            background-color: #666;
+        }
+
+        .btn-secondary:hover {
+            background-color: #888;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+        }
+
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+
+        .results-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .product-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #444;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #1a1a1a;
+        }
+
+        .product-item {
+            padding: 10px;
+            border-bottom: 1px solid #444;
+            cursor: pointer;
+        }
+
+        .product-item:hover {
+            background-color: #333;
+        }
+
+        .product-item.selected {
+            background-color: #0741dd;
+        }
+
+        .product-item:last-child {
+            border-bottom: none;
+        }
+
+        .quantity-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .comparison-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #444;
+        }
+
+        .comparison-table th {
+            background-color: #0741dd;
+            color: white;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background-color: #333;
+        }
+
+        .status-message {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .status-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .status-error {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .status-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .export-section {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0741dd;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background-color: #666;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background-color: #888;
+        }
+    </style>
+</head>
+<body>
+    <a href="/home" class="back-btn">← Voltar</a>
+    
+    <div class="container">
+        <div class="header">
+            <h1>🏪 Sistema de Inventário</h1>
+            <p>Controle de estoque por localização</p>
+        </div>
+
+        <div class="input-section">
+            <h2>📍 Localização</h2>
+            <div class="input-group">
+                <label for="location">Digite a localização:</label>
+                <input type="text" id="location" placeholder="Ex: A01-B02-C03" autocomplete="off">
+            </div>
+            <button class="btn" onclick="searchLocation()">🔍 Buscar Localização</button>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <h2>📦 Produtos Encontrados</h2>
+            <div id="productList" class="product-list"></div>
+            <div style="margin-top: 15px;">
+                <button class="btn btn-secondary" onclick="clearResults()">🔄 Limpar</button>
+            </div>
+        </div>
+
+        <div class="quantity-section" id="quantitySection">
+            <h2>📊 Contagem</h2>
+            <div class="input-group">
+                <label for="countedQuantity">Quantidade Contada:</label>
+                <input type="number" id="countedQuantity" placeholder="Digite a quantidade" min="0">
+            </div>
+            <button class="btn btn-success" onclick="saveCount()">💾 Salvar Contagem</button>
+            <button class="btn btn-secondary" onclick="clearQuantity()">🔄 Limpar</button>
+        </div>
+
+        <div class="comparison-section">
+            <h2>📈 Comparação Sistema vs Contado</h2>
+            <button class="btn btn-warning" onclick="exportToGoogleSheets()">📋 Exportar para Google Sheets</button>
+            <div id="comparisonTable"></div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processando...</p>
+        </div>
+    </div>
+
+    <script>
+        let currentLocation = '';
+        let currentUPC = '';
+        let currentSystemQuantity = 0;
+        let inventoryData = {};
+
+        function showMessage(message, type) {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.textContent = message;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(statusDiv, container.firstChild);
+            
+            setTimeout(() => {
+                statusDiv.remove();
+            }, 5000);
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        async function searchLocation() {
+            const location = document.getElementById('location').value.trim();
+            if (!location) {
+                showMessage('Por favor, digite uma localização', 'error');
+                return;
+            }
+
+            showLoading(true);
+            currentLocation = location;
+
+            try {
+                const response = await fetch('/api/inventory/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ location: location })
+                });
+
+                const data = await response.json();
+                console.log('API Response:', data); // Debug log
+                
+                if (data.success) {
+                    console.log('Products data:', data.products); // Debug log
+                    displayProducts(data.products);
+                    showMessage(`Encontrados ${data.products ? data.products.length : 0} produtos na localização ${location}`, 'success');
+                } else {
+                    showMessage(data.error || 'Erro ao buscar localização', 'error');
+                }
+            } catch (error) {
+                showMessage('Erro de conexão', 'error');
+                console.error('Error:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayProducts(products) {
+            const productList = document.getElementById('productList');
+            const resultsSection = document.getElementById('resultsSection');
+            
+            if (!products || !Array.isArray(products) || products.length === 0) {
+                productList.innerHTML = '<p>Nenhum produto encontrado nesta localização.</p>';
+                resultsSection.style.display = 'block';
+                return;
+            }
+            
+            if (products.length === 1) {
+                // Auto-select single product
+                selectProduct(products[0]);
+                return;
+            } else {
+                productList.innerHTML = products.map(product => `
+                    <div class="product-item" onclick="selectProduct(${JSON.stringify(product).replace(/"/g, '&quot;')})">
+                        <strong>UPC:</strong> ${product.UPC || 'N/A'} | 
+                        <strong>Quantidade Sistema:</strong> ${product.quantidade || 0}
+                    </div>
+                `).join('');
+            }
+            
+            resultsSection.style.display = 'block';
+        }
+
+        function selectProduct(product) {
+            currentUPC = product.UPC || '';
+            currentSystemQuantity = product.quantidade || 0;
+            
+            document.getElementById('quantitySection').style.display = 'block';
+            document.getElementById('countedQuantity').focus();
+            
+            showMessage(`Produto selecionado: UPC ${currentUPC}`, 'info');
+        }
+
+        async function saveCount() {
+            const countedQuantity = parseInt(document.getElementById('countedQuantity').value);
+            
+            if (isNaN(countedQuantity) || countedQuantity < 0) {
+                showMessage('Por favor, digite uma quantidade válida', 'error');
+                return;
+            }
+
+            if (!currentLocation || !currentUPC) {
+                showMessage('Erro: localização ou UPC não definidos', 'error');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/inventory/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        location: currentLocation,
+                        upc: currentUPC,
+                        systemQuantity: currentSystemQuantity,
+                        countedQuantity: countedQuantity
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('Contagem salva com sucesso!', 'success');
+                    clearQuantity();
+                    updateComparisonTable();
+                } else {
+                    showMessage(data.error || 'Erro ao salvar contagem', 'error');
+                }
+            } catch (error) {
+                showMessage('Erro de conexão', 'error');
+                console.error('Error:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function updateComparisonTable() {
+            try {
+                const response = await fetch('/api/inventory/comparison');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayComparisonTable(data.comparison);
+                }
+            } catch (error) {
+                console.error('Error updating comparison:', error);
+            }
+        }
+
+        function displayComparisonTable(comparison) {
+            const tableDiv = document.getElementById('comparisonTable');
+            
+            if (Object.keys(comparison).length === 0) {
+                tableDiv.innerHTML = '<p>Nenhuma contagem registrada ainda.</p>';
+                return;
+            }
+
+            let tableHTML = `
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Localização</th>
+                            <th>UPC</th>
+                            <th>Quantidade Sistema</th>
+                            <th>Quantidade Contada</th>
+                            <th>Diferença</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            for (const [date, entries] of Object.entries(comparison)) {
+                for (const [key, values] of Object.entries(entries)) {
+                    const [location, upc] = key.split('|');
+                    const [systemQty, countedQty] = values;
+                    const difference = countedQty - systemQty;
+                    const differenceClass = difference === 0 ? 'status-success' : 
+                                          difference > 0 ? 'status-info' : 'status-error';
+                    
+                    tableHTML += `
+                        <tr>
+                            <td>${date}</td>
+                            <td>${location}</td>
+                            <td>${upc}</td>
+                            <td>${systemQty}</td>
+                            <td>${countedQty}</td>
+                            <td class="${differenceClass}">${difference > 0 ? '+' : ''}${difference}</td>
+                        </tr>
+                    `;
+                }
+            }
+
+            tableHTML += '</tbody></table>';
+            tableDiv.innerHTML = tableHTML;
+        }
+
+        async function exportToGoogleSheets() {
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/inventory/export-sheets', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(`Relatório exportado com sucesso! Link: ${data.sheetUrl}`, 'success');
+                } else {
+                    showMessage(data.error || 'Erro ao exportar relatório', 'error');
+                }
+            } catch (error) {
+                showMessage('Erro de conexão', 'error');
+                console.error('Error:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('productList').innerHTML = '';
+            currentLocation = '';
+            currentUPC = '';
+            currentSystemQuantity = 0;
+        }
+
+        function clearQuantity() {
+            document.getElementById('quantitySection').style.display = 'none';
+            document.getElementById('countedQuantity').value = '';
+            currentUPC = '';
+            currentSystemQuantity = 0;
+        }
+
+        // Load comparison table on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateComparisonTable();
+        });
+
+        // Enter key handlers
+        document.getElementById('location').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchLocation();
+            }
+        });
+
+        document.getElementById('countedQuantity').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                saveCount();
+            }
+        });
+    </script>
+</body>
+</html>
