@@ -11,30 +11,43 @@
             color: white;
             font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 0 10px;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .header h1 {
             color: #0741dd;
-            font-size: 2.5em;
+            font-size: 2em;
             margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1em;
+            margin: 0;
         }
 
         .input-section {
             background-color: #2a2a2a;
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+        }
+
+        .input-section h2 {
+            color: #0741dd;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.2em;
         }
 
         .input-group {
@@ -46,16 +59,18 @@
             margin-bottom: 5px;
             font-weight: bold;
             color: #0741dd;
+            font-size: 0.9em;
         }
 
         .input-group input {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 2px solid #0741dd;
             border-radius: 5px;
             background-color: #1a1a1a;
             color: white;
             font-size: 16px;
+            box-sizing: border-box;
         }
 
         .input-group input:focus {
@@ -66,13 +81,16 @@
         .btn {
             background-color: #0741dd;
             color: white;
-            padding: 12px 24px;
+            padding: 15px 20px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
             margin-right: 10px;
             margin-bottom: 10px;
+            width: 100%;
+            max-width: 200px;
+            touch-action: manipulation;
         }
 
         .btn:hover {
@@ -106,14 +124,14 @@
 
         .results-section {
             background-color: #2a2a2a;
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             display: none;
         }
 
         .product-list {
-            max-height: 300px;
+            max-height: 200px;
             overflow-y: auto;
             border: 1px solid #444;
             border-radius: 5px;
@@ -122,9 +140,11 @@
         }
 
         .product-item {
-            padding: 10px;
+            padding: 12px;
             border-bottom: 1px solid #444;
             cursor: pointer;
+            font-size: 0.9em;
+            line-height: 1.4;
         }
 
         .product-item:hover {
@@ -141,46 +161,19 @@
 
         .quantity-section {
             background-color: #2a2a2a;
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             display: none;
-        }
-
-        .comparison-section {
-            background-color: #2a2a2a;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
-        .comparison-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        .comparison-table th,
-        .comparison-table td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #444;
-        }
-
-        .comparison-table th {
-            background-color: #0741dd;
-            color: white;
-        }
-
-        .comparison-table tr:nth-child(even) {
-            background-color: #333;
         }
 
         .status-message {
-            padding: 10px;
+            padding: 12px;
             border-radius: 5px;
             margin-bottom: 15px;
             display: none;
+            font-size: 0.9em;
+            word-wrap: break-word;
         }
 
         .status-success {
@@ -198,9 +191,9 @@
             color: white;
         }
 
-        .export-section {
-            text-align: center;
-            margin-top: 30px;
+        .status-warning {
+            background-color: #ffc107;
+            color: #212529;
         }
 
         .loading {
@@ -226,19 +219,114 @@
 
         .back-btn {
             position: fixed;
-            top: 20px;
-            left: 20px;
+            top: 10px;
+            left: 10px;
             background-color: #666;
             color: white;
-            padding: 10px 15px;
+            padding: 8px 12px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             text-decoration: none;
+            font-size: 0.8em;
+            z-index: 1000;
         }
 
         .back-btn:hover {
             background-color: #888;
+        }
+
+        .export-section {
+            text-align: center;
+            margin-top: 20px;
+            padding: 0 10px;
+        }
+
+        .export-section .btn {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        #currentOperator {
+            margin-top: 10px;
+            padding: 8px;
+            background-color: #0741dd;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+
+            .container {
+                padding: 0 5px;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .header p {
+                font-size: 0.9em;
+            }
+
+            .input-section {
+                padding: 12px;
+            }
+
+            .input-section h2 {
+                font-size: 1.1em;
+            }
+
+            .btn {
+                padding: 12px 16px;
+                font-size: 14px;
+                margin-bottom: 8px;
+            }
+
+            .product-item {
+                padding: 10px;
+                font-size: 0.85em;
+            }
+
+            .status-message {
+                padding: 10px;
+                font-size: 0.85em;
+            }
+
+            .back-btn {
+                top: 5px;
+                left: 5px;
+                padding: 6px 10px;
+                font-size: 0.75em;
+            }
+
+            .export-section {
+                margin-top: 15px;
+            }
+        }
+
+        /* Prevent zoom on input focus on iOS */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+            .input-group input {
+                font-size: 16px;
+            }
+        }
+
+        /* Touch-friendly button sizes */
+        @media (max-width: 480px) {
+            .btn {
+                min-height: 44px;
+                padding: 12px 16px;
+            }
+
+            .input-group input {
+                min-height: 44px;
+            }
         }
     </style>
 </head>
@@ -249,13 +337,22 @@
         <div class="header">
             <h1>🏪 Sistema de Inventário</h1>
             <p>Controle de estoque por localização</p>
+            <div id="currentOperator" style="display: none; margin-top: 10px; padding: 8px; background-color: #0741dd; border-radius: 5px; font-weight: bold;">
+                Operador: <span id="operatorDisplay"></span>
+            </div>
         </div>
 
         <div class="input-section">
+            <h2>👤 Operador</h2>
+            <div class="input-group">
+                <label for="operatorName">Nome do Operador:</label>
+                <input type="text" id="operatorName" placeholder="Digite seu nome" autocomplete="off" required>
+            </div>
+            
             <h2>📍 Localização</h2>
             <div class="input-group">
                 <label for="location">Digite a localização:</label>
-                <input type="text" id="location" placeholder="Ex: A01-B02-C03" autocomplete="off">
+                <input type="text" id="location" placeholder="Ex: A01-01-A" autocomplete="off">
             </div>
             <button class="btn" onclick="searchLocation()">🔍 Buscar Localização</button>
         </div>
@@ -278,15 +375,13 @@
             <button class="btn btn-secondary" onclick="clearQuantity()">🔄 Limpar</button>
         </div>
 
-        <div class="comparison-section">
-            <h2>📈 Comparação Sistema vs Contado</h2>
-            <button class="btn btn-warning" onclick="exportToGoogleSheets()">📋 Exportar para Google Sheets</button>
-            <div id="comparisonTable"></div>
-        </div>
-
         <div class="loading" id="loading">
             <div class="spinner"></div>
             <p>Processando...</p>
+        </div>
+
+        <div class="export-section" style="text-align:center; margin-top:30px;">
+            <button class="btn btn-warning" onclick="exportToGoogleSheets()">📋 Exportar para Google Sheets</button>
         </div>
     </div>
 
@@ -294,6 +389,7 @@
         let currentLocation = '';
         let currentUPC = '';
         let currentSystemQuantity = 0;
+        let currentOperator = '';
         let inventoryData = {};
 
         function showMessage(message, type) {
@@ -314,7 +410,14 @@
         }
 
         async function searchLocation() {
+            const operatorName = document.getElementById('operatorName').value.trim();
             const location = document.getElementById('location').value.trim();
+            
+            if (!operatorName) {
+                showMessage('Por favor, digite o nome do operador', 'error');
+                return;
+            }
+            
             if (!location) {
                 showMessage('Por favor, digite uma localização', 'error');
                 return;
@@ -322,6 +425,11 @@
 
             showLoading(true);
             currentLocation = location;
+            currentOperator = operatorName;
+            
+            // Show operator indicator
+            document.getElementById('operatorDisplay').textContent = operatorName;
+            document.getElementById('currentOperator').style.display = 'block';
 
             try {
                 const response = await fetch('/api/inventory/search', {
@@ -394,8 +502,8 @@
                 return;
             }
 
-            if (!currentLocation || !currentUPC) {
-                showMessage('Erro: localização ou UPC não definidos', 'error');
+            if (!currentLocation || !currentUPC || !currentOperator) {
+                showMessage('Erro: operador, localização ou UPC não definidos', 'error');
                 return;
             }
 
@@ -408,6 +516,7 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
+                        operator: currentOperator,
                         location: currentLocation,
                         upc: currentUPC,
                         systemQuantity: currentSystemQuantity,
@@ -418,95 +527,15 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    showMessage('Contagem salva com sucesso!', 'success');
+                    const difference = countedQuantity - currentSystemQuantity;
+                    if (difference !== 0) {
+                        showMessage('Contagem salva com sucesso! Discrepância detectada.', 'warning');
+                    } else {
+                        showMessage('Contagem salva com sucesso!', 'success');
+                    }
                     clearQuantity();
-                    updateComparisonTable();
                 } else {
                     showMessage(data.error || 'Erro ao salvar contagem', 'error');
-                }
-            } catch (error) {
-                showMessage('Erro de conexão', 'error');
-                console.error('Error:', error);
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        async function updateComparisonTable() {
-            try {
-                const response = await fetch('/api/inventory/comparison');
-                const data = await response.json();
-                
-                if (data.success) {
-                    displayComparisonTable(data.comparison);
-                }
-            } catch (error) {
-                console.error('Error updating comparison:', error);
-            }
-        }
-
-        function displayComparisonTable(comparison) {
-            const tableDiv = document.getElementById('comparisonTable');
-            
-            if (Object.keys(comparison).length === 0) {
-                tableDiv.innerHTML = '<p>Nenhuma contagem registrada ainda.</p>';
-                return;
-            }
-
-            let tableHTML = `
-                <table class="comparison-table">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Localização</th>
-                            <th>UPC</th>
-                            <th>Quantidade Sistema</th>
-                            <th>Quantidade Contada</th>
-                            <th>Diferença</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            for (const [date, entries] of Object.entries(comparison)) {
-                for (const [key, values] of Object.entries(entries)) {
-                    const [location, upc] = key.split('|');
-                    const [systemQty, countedQty] = values;
-                    const difference = countedQty - systemQty;
-                    const differenceClass = difference === 0 ? 'status-success' : 
-                                          difference > 0 ? 'status-info' : 'status-error';
-                    
-                    tableHTML += `
-                        <tr>
-                            <td>${date}</td>
-                            <td>${location}</td>
-                            <td>${upc}</td>
-                            <td>${systemQty}</td>
-                            <td>${countedQty}</td>
-                            <td class="${differenceClass}">${difference > 0 ? '+' : ''}${difference}</td>
-                        </tr>
-                    `;
-                }
-            }
-
-            tableHTML += '</tbody></table>';
-            tableDiv.innerHTML = tableHTML;
-        }
-
-        async function exportToGoogleSheets() {
-            showLoading(true);
-
-            try {
-                const response = await fetch('/api/inventory/export-sheets', {
-                    method: 'POST'
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    showMessage(`Relatório exportado com sucesso! Link: ${data.sheetUrl}`, 'success');
-                } else {
-                    showMessage(data.error || 'Erro ao exportar relatório', 'error');
                 }
             } catch (error) {
                 showMessage('Erro de conexão', 'error');
@@ -519,24 +548,55 @@
         function clearResults() {
             document.getElementById('resultsSection').style.display = 'none';
             document.getElementById('productList').innerHTML = '';
+            document.getElementById('currentOperator').style.display = 'none';
             currentLocation = '';
             currentUPC = '';
             currentSystemQuantity = 0;
+            // Don't clear operator name as it should persist for the session
         }
 
         function clearQuantity() {
             document.getElementById('quantitySection').style.display = 'none';
             document.getElementById('countedQuantity').value = '';
+            document.getElementById('location').value = '';
+            document.getElementById('location').focus();
             currentUPC = '';
             currentSystemQuantity = 0;
+            // Don't clear operator name as it should persist for the session
         }
 
         // Load comparison table on page load
         document.addEventListener('DOMContentLoaded', function() {
-            updateComparisonTable();
+            loadOperatorName();
         });
 
+        // Save operator name to session storage
+        function saveOperatorName() {
+            const operatorName = document.getElementById('operatorName').value.trim();
+            if (operatorName) {
+                sessionStorage.setItem('inventory_operator', operatorName);
+            }
+        }
+
+        // Load operator name from session storage
+        function loadOperatorName() {
+            const savedOperator = sessionStorage.getItem('inventory_operator');
+            if (savedOperator) {
+                document.getElementById('operatorName').value = savedOperator;
+            }
+        }
+
         // Enter key handlers
+        document.getElementById('operatorName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('location').focus();
+            }
+        });
+
+        document.getElementById('operatorName').addEventListener('blur', function() {
+            saveOperatorName();
+        });
+
         document.getElementById('location').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 searchLocation();
@@ -548,6 +608,26 @@
                 saveCount();
             }
         });
+
+        async function exportToGoogleSheets() {
+            showLoading(true);
+            try {
+                const response = await fetch('/api/inventory/export-sheets', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showMessage('Relatório exportado com sucesso!', 'success');
+                } else {
+                    showMessage(data.error || 'Erro ao exportar relatório', 'error');
+                }
+            } catch (error) {
+                showMessage('Erro de conexão', 'error');
+                console.error('Error:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
     </script>
 </body>
 </html>

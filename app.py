@@ -31,6 +31,17 @@ import tempfile
 import fitz  # PyMuPDF
 from toteLivre import get_tote_livre
 from manifestoItapeva import get_manifesto_itapeva, nao_despachados_itapeva, link_docs_itapeva, save_to_google_docs_itapeva
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaIoBaseUpload
+import schedule
+import requests
+from slack_sdk import WebClient
+from google.auth.exceptions import RefreshError
+from metabase import get_dataset, process_data
+from google_auth import authenticate_google
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
@@ -43,7 +54,6 @@ app.secret_key = os.urandom(24)
 load_dotenv()
 
 env_config = dotenv_values(".env")
-
 
 # Get environment variables
 CORRECT_PASSWORD = os.getenv('LOGIN_PASSWORD') or os.environ.get('LOGIN_PASSWORD')
@@ -753,13 +763,71 @@ def update_jsons():
 
 def check_redis_connectivity():
     try:
-        # Attempt to ping the Redis server
-        response = redis_client.ping()
-        if response:
-            print("Connected to Redis successfully!")
+        redis_client.ping()
+        logger.info("Redis connection successful")
+    except Exception as e:
+        logger.error(f"Redis connection failed: {e}")
+
+def send_inventory_discrepancy_notification(operator, location, upc, system_quantity, counted_quantity, difference):
+    """
+    Send Slack notification for inventory discrepancies
+    
+    Required environment variables:
+    - SLACK_BOT_TOKEN: Your Slack bot token (xoxb-...)
+    - SLACK_INVENTORY_CHANNEL: Channel name without # (default: teste-bot-marco)
+    
+    The bot must be invited to the channel to send messages.
+    """
+    try:
+        # Get Slack bot token from environment
+        slack_token = os.getenv('SLACK_BOT_TOKEN') or env_config.get('SLACK_BOT_TOKEN')
+        
+        if not slack_token:
+            app.logger.error("SLACK_BOT_TOKEN not found in environment")
+            return False
+        
+        client = WebClient(token=slack_token)
+        
+        # Get channel from environment or use default
+        channel = os.getenv('SLACK_INVENTORY_CHANNEL', '#teste-bot-marco')
+        if not channel.startswith('#'):
+            channel = f"#{channel}"
+        
+        app.logger.info(f"Sending notification to channel: {channel}")
+        
+        # Create the message
+        emoji = "🔴" if difference < 0 else "🟡"  # Red for negative, yellow for positive
+        status = "FALTANDO" if difference < 0 else "SOBRANDO"
+        
+        message = f"""
+{emoji} *ALERTA DE DISCREPÂNCIA NO INVENTÁRIO*
+
+*Operador:* {operator}
+*Localização:* {location}
+*UPC:* {upc}
+*Quantidade Sistema:* {system_quantity}
+*Quantidade Contada:* {counted_quantity}
+*Diferença:* {difference} ({status})
+*Data/Hora:* {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}
+        """.strip()
+        
+        # Send the message
+        response = client.chat_postMessage(
+            channel=channel,
+            text=message,
+            unfurl_links=False,
+            unfurl_media=False
+        )
+        
+        if response["ok"]:
+            app.logger.info(f"Slack notification sent successfully for discrepancy at {location}")
             return True
-    except redis.ConnectionError as e:
-        print(f"Failed to connect to Redis: {e}")
+        else:
+            app.logger.error(f"Failed to send Slack notification: {response.get('error', 'Unknown error')}")
+            return False
+            
+    except Exception as e:
+        app.logger.error(f"Error sending Slack notification: {str(e)}")
         return False
 
 @app.route('/api/remocoes')
@@ -1327,13 +1395,19 @@ def api_inventory_search():
 def api_inventory_save():
     try:
         data = request.get_json()
+        operator = data.get('operator')
         location = data.get('location')
         upc = data.get('upc')
         system_quantity = data.get('systemQuantity')
         counted_quantity = data.get('countedQuantity')
         
-        if not all([location, upc, system_quantity is not None, counted_quantity is not None]):
+        app.logger.info(f"Saving inventory: operator={operator}, location={location}, upc={upc}, system={system_quantity}, counted={counted_quantity}")
+        
+        if not all([operator, location, upc, system_quantity is not None, counted_quantity is not None]):
             return jsonify({"success": False, "error": "All fields are required"}), 400
+        
+        # Calculate difference
+        difference = counted_quantity - system_quantity
         
         # Get current date
         from datetime import datetime
@@ -1341,22 +1415,37 @@ def api_inventory_save():
         
         # Create Redis key for the date
         date_key = f"inventory:{current_date}"
+        app.logger.info(f"Redis key: {date_key}")
         
         # Get existing data for this date
         existing_data = redis_client.get(date_key)
+        app.logger.info(f"Existing data found: {'Yes' if existing_data else 'No'}")
+        
         if existing_data:
             inventory_data = json.loads(existing_data)
         else:
             inventory_data = {}
         
-        # Create key for this location+UPC combination
-        item_key = f"{location}|{upc}"
+        # Create key for this operator+location+UPC combination
+        item_key = f"{operator}|{location}|{upc}"
+        app.logger.info(f"Item key: {item_key}")
         
         # Store the quantities [system_quantity, counted_quantity]
         inventory_data[item_key] = [system_quantity, counted_quantity]
         
         # Save back to Redis
-        redis_client.set(date_key, json.dumps(inventory_data))
+        redis_result = redis_client.set(date_key, json.dumps(inventory_data))
+        app.logger.info(f"Redis save result: {redis_result}")
+        
+        # Verify the save
+        saved_data = redis_client.get(date_key)
+        app.logger.info(f"Verification - saved data found: {'Yes' if saved_data else 'No'}")
+        
+        # Send Slack notification if there's a discrepancy
+        if difference != 0:
+            send_inventory_discrepancy_notification(
+                operator, location, upc, system_quantity, counted_quantity, difference
+            )
         
         return jsonify({"success": True})
         
@@ -1374,7 +1463,12 @@ def api_inventory_comparison():
         comparison_data = {}
         
         for key in inventory_keys:
-            date = key.decode('utf-8').split(':')[1]
+            # Handle both bytes and string keys
+            if isinstance(key, bytes):
+                date = key.decode('utf-8').split(':')[1]
+            else:
+                date = key.split(':')[1]
+                
             data = redis_client.get(key)
             if data:
                 comparison_data[date] = json.loads(data)
@@ -1389,32 +1483,67 @@ def api_inventory_comparison():
 @login_required
 def api_inventory_export_sheets():
     try:
+        app.logger.info("Starting inventory export to Google Sheets")
+        
         # Get all inventory data
         inventory_keys = redis_client.keys("inventory:*")
+        app.logger.info(f"Found {len(inventory_keys)} inventory keys")
         
         if not inventory_keys:
+            app.logger.info("No inventory data found to export")
             return jsonify({"success": False, "error": "No inventory data to export"}), 400
         
         # Prepare data for Google Sheets
         sheet_data = []
-        sheet_data.append(['Data', 'Localização', 'UPC', 'Quantidade Sistema', 'Quantidade Contada', 'Diferença'])
+        sheet_data.append(['Data', 'Operador', 'Localização', 'UPC', 'Quantidade Sistema', 'Quantidade Contada', 'Diferença'])
         
         for key in inventory_keys:
-            date = key.decode('utf-8').split(':')[1]
+            # Handle both bytes and string keys
+            if isinstance(key, bytes):
+                date = key.decode('utf-8').split(':')[1]
+            else:
+                date = key.split(':')[1]
+                
             data = redis_client.get(key)
             if data:
                 inventory_data = json.loads(data)
                 for item_key, quantities in inventory_data.items():
-                    location, upc = item_key.split('|')
+                    operator, location, upc = item_key.split('|')
                     system_qty, counted_qty = quantities
                     difference = counted_qty - system_qty
-                    sheet_data.append([date, location, upc, system_qty, counted_qty, difference])
+                    sheet_data.append([date, operator, location, upc, system_qty, counted_qty, difference])
+        
+        app.logger.info(f"Prepared {len(sheet_data)} rows for export")
         
         # Create Google Sheets
-        from google_auth import get_sheets_service
-        sheets_service = get_sheets_service()
+        try:
+            from google_auth import get_sheets_service, get_drive_service
+            app.logger.info("Successfully imported Google auth functions")
+            
+            try:
+                # Add spreadsheets scope to the authentication
+                sheets_service = get_sheets_service(['https://www.googleapis.com/auth/spreadsheets'])
+                app.logger.info("Successfully created sheets service")
+            except Exception as e:
+                app.logger.error(f"Failed to create sheets service: {str(e)}")
+                return jsonify({"success": False, "error": "Failed to create Google Sheets service"}), 500
+                
+        except ImportError as e:
+            app.logger.error(f"Failed to import Google auth functions: {str(e)}")
+            app.logger.info("Trying fallback approach with get_google_credentials")
+            
+            try:
+                # Fallback: use the existing get_google_credentials function
+                creds = get_google_credentials()
+                sheets_service = build('sheets', 'v4', credentials=creds)
+                drive_service = build('drive', 'v3', credentials=creds)
+                app.logger.info("Successfully created services using fallback approach")
+            except Exception as e:
+                app.logger.error(f"Failed to create services using fallback: {str(e)}")
+                return jsonify({"success": False, "error": "Google authentication not configured"}), 500
         
         # Create spreadsheet
+        from datetime import datetime
         spreadsheet = {
             'properties': {
                 'title': f'Relatório de Inventário - {datetime.now().strftime("%Y-%m-%d %H:%M")}'
@@ -1428,34 +1557,52 @@ def api_inventory_export_sheets():
             ]
         }
         
-        spreadsheet = sheets_service.spreadsheets().create(body=spreadsheet).execute()
-        spreadsheet_id = spreadsheet['spreadsheetId']
+        try:
+            spreadsheet = sheets_service.spreadsheets().create(body=spreadsheet).execute()
+            spreadsheet_id = spreadsheet['spreadsheetId']
+            app.logger.info(f"Created spreadsheet with ID: {spreadsheet_id}")
+        except Exception as e:
+            app.logger.error(f"Failed to create spreadsheet: {str(e)}")
+            return jsonify({"success": False, "error": "Failed to create Google Spreadsheet"}), 500
         
         # Prepare the data for writing
-        range_name = 'Inventário!A1:F' + str(len(sheet_data))
+        range_name = 'Inventário!A1:G' + str(len(sheet_data))
         
         # Write data to sheet
         body = {
             'values': sheet_data
         }
         
-        sheets_service.spreadsheets().values().update(
-            spreadsheetId=spreadsheet_id,
-            range=range_name,
-            valueInputOption='RAW',
-            body=body
-        ).execute()
+        try:
+            sheets_service.spreadsheets().values().update(
+                spreadsheetId=spreadsheet_id,
+                range=range_name,
+                valueInputOption='RAW',
+                body=body
+            ).execute()
+            app.logger.info("Successfully wrote data to spreadsheet")
+        except Exception as e:
+            app.logger.error(f"Failed to write data to spreadsheet: {str(e)}")
+            return jsonify({"success": False, "error": "Failed to write data to spreadsheet"}), 500
         
         # Move to the specified folder
-        drive_service = get_drive_service()
-        file = drive_service.files().update(
-            fileId=spreadsheet_id,
-            addParents='1L2INRnwl9NTOizQGk83ahfVQ_jf-We_X',
-            removeParents='root',
-            fields='id, parents'
-        ).execute()
+        try:
+            drive_service = get_drive_service()
+            file = drive_service.files().update(
+                fileId=spreadsheet_id,
+                addParents='1L2INRnwl9NTOizQGk83ahfVQ_jf-We_X',
+                removeParents='root',
+                fields='id, parents'
+            ).execute()
+            app.logger.info("Successfully moved file to folder")
+        except Exception as e:
+            app.logger.error(f"Failed to move file to folder: {str(e)}")
+            # Don't fail the entire operation if moving to folder fails
+            app.logger.warning("Continuing without moving file to folder")
         
         sheet_url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}"
+        
+        app.logger.info(f"Export completed successfully. URL: {sheet_url}")
         
         return jsonify({
             "success": True,
