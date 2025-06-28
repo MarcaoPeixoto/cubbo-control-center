@@ -774,7 +774,7 @@ def send_inventory_discrepancy_notification(operator, location, upc, system_quan
     
     Required environment variables:
     - SLACK_BOT_TOKEN: Your Slack bot token (xoxb-...)
-    - SLACK_INVENTORY_CHANNEL: Channel name without # (default: teste-bot-marco)
+    - SLACK_INVENTORY_CHANNEL: Channel name without # (default: div-inventario-poa)
     
     The bot must be invited to the channel to send messages.
     """
@@ -789,7 +789,7 @@ def send_inventory_discrepancy_notification(operator, location, upc, system_quan
         client = WebClient(token=slack_token)
         
         # Get channel from environment or use default
-        channel = os.getenv('SLACK_INVENTORY_CHANNEL', '#teste-bot-marco')
+        channel = os.getenv('SLACK_INVENTORY_CHANNEL', '#div-inventario-poa')
         if not channel.startswith('#'):
             channel = f"#{channel}"
         
