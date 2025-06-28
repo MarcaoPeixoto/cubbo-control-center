@@ -21,66 +21,67 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 95vw;
+            width: 98%;
             margin: 0 auto;
-            padding: 25px;
+            padding: 2vw 2vw 2vw 2vw;
             display: flex;
             flex-direction: column;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 35px;
-            padding: 25px 0;
+            margin-bottom: 4vh;
+            padding: 3vh 0 2vh 0;
         }
 
         .header h1 {
             color: #333;
-            margin-bottom: 15px;
-            font-size: 2.4em;
+            margin-bottom: 2vh;
+            font-size: clamp(1.5rem, 6vw, 3.5rem);
         }
 
         .header p {
             color: #666;
-            font-size: 1.2em;
-            margin-bottom: 20px;
+            font-size: clamp(1rem, 3vw, 1.8rem);
+            margin-bottom: 2vh;
         }
 
         .input-section, .results-section, .quantity-section {
             background: white;
-            border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 30px;
+            border-radius: 2vw;
+            padding: 4vw 3vw;
+            margin-bottom: 4vh;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
         .input-section h2, .results-section h2, .quantity-section h2 {
             color: #333;
-            margin-bottom: 25px;
-            font-size: 1.5em;
+            margin-bottom: 2vh;
+            font-size: clamp(1.1rem, 4vw, 2.2rem);
         }
 
         .input-group {
-            margin-bottom: 25px;
+            margin-bottom: 3vh;
         }
 
         .input-group label {
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 1.5vh;
             color: #555;
             font-weight: bold;
-            font-size: 1.1em;
+            font-size: clamp(1rem, 3vw, 1.5rem);
         }
 
         .input-group input {
             width: 100%;
-            padding: 15px;
+            padding: 3vw 2vw;
             border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
+            border-radius: 1.5vw;
+            font-size: clamp(1rem, 3vw, 1.5rem);
             box-sizing: border-box;
-            margin-bottom: 15px;
-            min-height: 50px;
+            margin-bottom: 2vh;
+            min-height: 7vh;
         }
 
         .input-group input:focus {
@@ -93,14 +94,14 @@
             background: #007bff;
             color: white;
             border: none;
-            padding: 15px 30px;
-            border-radius: 8px;
+            padding: 2.5vw 5vw;
+            border-radius: 1.5vw;
             cursor: pointer;
-            font-size: 16px;
-            margin-right: 15px;
-            margin-bottom: 15px;
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            margin-right: 2vw;
+            margin-bottom: 2vw;
             transition: all 0.3s ease;
-            min-height: 50px;
+            min-height: 7vh;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -138,20 +139,21 @@
         }
 
         .product-list {
-            margin-top: 20px;
+            margin-top: 2vh;
         }
 
         .product-item {
             background: #f8f9fa;
             border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 15px;
+            border-radius: 1.5vw;
+            padding: 3vw 2vw;
+            margin-bottom: 2vh;
             cursor: pointer;
             transition: all 0.3s ease;
-            min-height: 60px;
+            min-height: 7vh;
             display: flex;
             align-items: center;
+            font-size: clamp(1rem, 3vw, 1.3rem);
         }
 
         .product-item:hover {
@@ -161,11 +163,11 @@
         }
 
         .status-message {
-            padding: 18px;
-            border-radius: 8px;
-            margin-bottom: 25px;
+            padding: 2vw;
+            border-radius: 1vw;
+            margin-bottom: 2vh;
             font-weight: bold;
-            font-size: 1em;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
         }
 
         .status-success {
@@ -236,133 +238,100 @@
 
         .export-section {
             text-align: center;
-            margin-top: 35px;
-            padding: 25px;
+            margin-top: 4vh;
+            padding: 3vw;
         }
 
         /* Mobile optimizations */
         @media (max-width: 768px) {
             body {
-                padding: 15px;
+                padding: 0;
                 min-height: 100vh;
             }
-
             .container {
-                padding: 0 15px;
-                margin-bottom: 40px;
+                padding: 0;
+                margin: 0;
                 min-height: 100vh;
+                width: 100vw;
+                max-width: 100vw;
             }
-
             .header {
-                margin-bottom: 35px;
-                padding: 25px 0;
+                margin-bottom: 2vw;
+                padding: 2vw 0 1vw 0;
             }
-
             .header h1 {
-                font-size: 1.8em;
-                margin-bottom: 20px;
+                font-size: clamp(1.2rem, 6vw, 2.2rem);
+                margin-bottom: 1vw;
             }
-
             .header p {
-                font-size: 1.1em;
-                margin-bottom: 20px;
+                font-size: clamp(0.9rem, 3vw, 1.1rem);
+                margin-bottom: 1vw;
             }
-
-            .input-section {
-                padding: 30px;
-                margin-bottom: 35px;
+            .input-section, .results-section, .quantity-section, .export-section {
+                padding: 2vw 1vw;
+                margin-bottom: 2vw;
+                border-radius: 1vw;
+                box-shadow: none;
+                width: 100vw;
+                max-width: 100vw;
             }
-
-            .input-section h2 {
-                font-size: 1.4em;
-                margin-bottom: 25px;
+            .input-section h2, .results-section h2, .quantity-section h2 {
+                font-size: clamp(1rem, 4vw, 1.2rem);
+                margin-bottom: 1vw;
             }
-
             .input-group {
-                margin-bottom: 25px;
+                margin-bottom: 1vw;
             }
-
             .input-group label {
-                margin-bottom: 12px;
-                font-size: 1.1em;
+                margin-bottom: 0.5vw;
+                font-size: clamp(0.9rem, 2.5vw, 1rem);
             }
-
             .input-group input {
-                padding: 18px;
-                font-size: 16px;
-                margin-bottom: 20px;
-                min-height: 55px;
+                padding: 1vw 1vw;
+                font-size: clamp(1rem, 3vw, 1.1rem);
+                margin-bottom: 1vw;
+                min-height: 5vh;
             }
-
             .btn {
-                padding: 18px 25px;
-                font-size: 16px;
-                margin-bottom: 20px;
+                padding: 1vw 0;
+                font-size: clamp(1rem, 3vw, 1.1rem);
+                margin-bottom: 1vw;
                 width: 100%;
-                min-height: 55px;
+                min-height: 5vh;
+                border-radius: 1vw;
             }
-
-            .results-section {
-                padding: 30px;
-                margin-bottom: 35px;
-            }
-
-            .results-section h2 {
-                font-size: 1.4em;
-                margin-bottom: 25px;
-            }
-
             .product-item {
-                padding: 20px;
-                font-size: 1em;
-                margin-bottom: 15px;
-                min-height: 60px;
-                display: flex;
-                align-items: center;
+                padding: 1vw 1vw;
+                font-size: clamp(1rem, 3vw, 1.1rem);
+                margin-bottom: 1vw;
+                min-height: 5vh;
+                border-radius: 1vw;
             }
-
-            .quantity-section {
-                padding: 30px;
-                margin-bottom: 35px;
-            }
-
-            .quantity-section h2 {
-                font-size: 1.4em;
-                margin-bottom: 25px;
-            }
-
             .status-message {
-                padding: 20px;
-                font-size: 1em;
-                margin-bottom: 20px;
+                padding: 1vw;
+                font-size: clamp(0.9rem, 2vw, 1rem);
+                margin-bottom: 1vw;
+                border-radius: 1vw;
             }
-
             .back-btn {
-                top: 15px;
-                left: 15px;
-                padding: 12px 16px;
+                top: 1vw;
+                left: 1vw;
+                padding: 1vw 2vw;
                 font-size: 0.9em;
+                border-radius: 1vw;
             }
-
-            .export-section {
-                margin-top: 35px;
-                padding: 30px;
-            }
-
             #currentOperator {
-                margin-top: 20px;
-                padding: 15px;
-                font-size: 1.1em;
+                margin-top: 1vw;
+                padding: 1vw;
+                font-size: clamp(0.9rem, 2vw, 1rem);
             }
-
             .loading {
-                padding: 30px;
+                padding: 2vw;
             }
-
             .spinner {
-                width: 50px;
-                height: 50px;
-                margin-bottom: 15px;
+                width: 30px;
+                height: 30px;
+                margin-bottom: 1vw;
             }
         }
 
@@ -376,91 +345,32 @@
         /* Touch-friendly button sizes */
         @media (max-width: 480px) {
             body {
-                padding: 20px;
+                padding: 0;
+                margin-bottom: 2vw;
             }
-
             .container {
-                padding: 0 20px;
-                margin-bottom: 50px;
+                padding: 0;
+                margin-bottom: 2vw;
             }
-
             .header {
-                margin-bottom: 40px;
-                padding: 30px 0;
+                margin-bottom: 2vw;
+                padding: 2vw 0 1vw 0;
             }
-
             .header h1 {
-                font-size: 2em;
-                margin-bottom: 25px;
+                font-size: clamp(1rem, 7vw, 1.5rem);
+                margin-bottom: 1vw;
             }
-
             .header p {
-                font-size: 1.2em;
-                margin-bottom: 25px;
+                font-size: clamp(0.8rem, 3vw, 1rem);
+                margin-bottom: 1vw;
             }
-
             .btn {
-                min-height: 60px;
-                padding: 20px 25px;
-                font-size: 18px;
-                margin-bottom: 25px;
+                min-height: 4vh;
+                font-size: clamp(0.9rem, 4vw, 1rem);
             }
-
             .input-group input {
-                min-height: 60px;
-                padding: 20px;
-                font-size: 18px;
-                margin-bottom: 25px;
-            }
-
-            .input-section, .results-section, .quantity-section {
-                padding: 35px;
-                margin-bottom: 40px;
-            }
-
-            .input-section h2, .results-section h2, .quantity-section h2 {
-                font-size: 1.6em;
-                margin-bottom: 30px;
-            }
-
-            .input-group {
-                margin-bottom: 30px;
-            }
-
-            .input-group label {
-                font-size: 1.2em;
-                margin-bottom: 15px;
-            }
-
-            .product-item {
-                padding: 25px;
-                font-size: 1.1em;
-                margin-bottom: 20px;
-                min-height: 70px;
-            }
-
-            .status-message {
-                padding: 25px;
-                font-size: 1.1em;
-                margin-bottom: 25px;
-            }
-
-            .export-section {
-                margin-top: 40px;
-                padding: 35px;
-            }
-
-            #currentOperator {
-                padding: 20px;
-                font-size: 1.2em;
-                margin-top: 25px;
-            }
-
-            .back-btn {
-                top: 20px;
-                left: 20px;
-                padding: 15px 20px;
-                font-size: 1em;
+                min-height: 4vh;
+                font-size: clamp(0.9rem, 4vw, 1rem);
             }
         }
 
