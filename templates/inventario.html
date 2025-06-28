@@ -12,13 +12,18 @@
             padding: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto !important;
+        }
+
+        html {
+            overflow-y: auto !important;
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
             padding: 25px;
-            min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
