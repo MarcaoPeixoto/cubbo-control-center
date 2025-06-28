@@ -527,10 +527,10 @@
                 selectProduct(products[0]);
                 return;
             } else {
+                // For multiple products, only show UPC (no system quantity)
                 productList.innerHTML = products.map(product => `
                     <div class="product-item" onclick="selectProduct(${JSON.stringify(product).replace(/"/g, '&quot;')})">
-                        <strong>UPC:</strong> ${product.UPC || 'N/A'} | 
-                        <strong>Quantidade Sistema:</strong> ${product.quantidade || 0}
+                        <strong>UPC:</strong> ${product.UPC || 'N/A'}
                     </div>
                 `).join('');
             }
