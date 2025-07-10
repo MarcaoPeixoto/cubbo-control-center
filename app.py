@@ -3,6 +3,7 @@ from flask_cors import CORS
 import json
 import os
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 import subprocess
 from functools import wraps
 from dotenv import load_dotenv, dotenv_values
@@ -133,6 +134,206 @@ def job_nf_erro():
     except subprocess.CalledProcessError as e:
         print(f"An error occurred in NF com erro job: {e}")
 
+def job_inventory_export():
+    """Daily inventory export job - runs at 11 PM São Paulo time"""
+    try:
+        from datetime import datetime
+        import pytz
+        
+        # Get current time in São Paulo timezone
+        sao_paulo_tz = pytz.timezone('America/Sao_Paulo')
+        current_time_sp = datetime.now(sao_paulo_tz)
+        
+        app.logger.info(f"Starting daily inventory export job at {current_time_sp.strftime('%Y-%m-%d %H:%M:%S')} (São Paulo time)")
+        
+        # Get current date in São Paulo timezone
+        current_date = current_time_sp.strftime("%Y-%m-%d")
+        
+        # Export current day's inventory data
+        success = export_daily_inventory_to_sheets(current_date)
+        
+        if success:
+            app.logger.info(f"Daily inventory export completed successfully for {current_date}")
+        else:
+            app.logger.error(f"Daily inventory export failed for {current_date}")
+            
+    except Exception as e:
+        app.logger.error(f"Error in daily inventory export job: {e}")
+
+def cleanup_old_inventory_data():
+    """Clean up inventory data older than 5 days - runs at 12:30 AM São Paulo time"""
+    try:
+        from datetime import datetime, timedelta
+        import pytz
+        
+        # Get current time in São Paulo timezone
+        sao_paulo_tz = pytz.timezone('America/Sao_Paulo')
+        current_time_sp = datetime.now(sao_paulo_tz)
+        
+        app.logger.info(f"Starting inventory data cleanup at {current_time_sp.strftime('%Y-%m-%d %H:%M:%S')} (São Paulo time)")
+        
+        current_date = current_time_sp
+        cutoff_date = current_date - timedelta(days=5)
+        
+        # Get all inventory keys from Redis
+        inventory_keys = redis_client.keys("inventory:*")
+        deleted_count = 0
+        
+        for key in inventory_keys:
+            # Handle both bytes and string keys
+            if isinstance(key, bytes):
+                date_str = key.decode('utf-8').split(':')[1]
+            else:
+                date_str = key.split(':')[1]
+            
+            try:
+                # Parse the date
+                key_date = datetime.strptime(date_str, "%Y-%m-%d")
+                
+                # Delete if older than cutoff date
+                if key_date < cutoff_date:
+                    redis_client.delete(key)
+                    deleted_count += 1
+                    app.logger.info(f"Deleted old inventory data for {date_str}")
+                    
+            except ValueError as e:
+                app.logger.warning(f"Could not parse date from key {key}: {e}")
+                continue
+        
+        app.logger.info(f"Inventory cleanup completed. Deleted {deleted_count} old records.")
+        
+    except Exception as e:
+        app.logger.error(f"Error in inventory cleanup: {e}")
+
+def export_daily_inventory_to_sheets(target_date):
+    """
+    Export inventory data for a specific date to Google Sheets
+    Returns True if successful, False otherwise
+    """
+    try:
+        app.logger.info(f"Starting inventory export to Google Sheets for {target_date}")
+        
+        # Get inventory data for the specific date
+        date_key = f"inventory:{target_date}"
+        inventory_data = redis_client.get(date_key)
+        
+        if not inventory_data:
+            app.logger.info(f"No inventory data found for {target_date}")
+            return True  # Not an error, just no data
+        
+        inventory_data = json.loads(inventory_data)
+        
+        if not inventory_data:
+            app.logger.info(f"Empty inventory data for {target_date}")
+            return True  # Not an error, just no data
+        
+        # Prepare data for Google Sheets
+        sheet_data = []
+        sheet_data.append(['Data', 'Operador', 'Localização', 'UPC', 'Quantidade Sistema', 'Quantidade Contada', 'Diferença'])
+        
+        for item_key, quantities in inventory_data.items():
+            operator, location, upc = item_key.split('|')
+            system_qty, counted_qty = quantities
+            difference = counted_qty - system_qty
+            sheet_data.append([target_date, operator, location, upc, system_qty, counted_qty, difference])
+        
+        app.logger.info(f"Prepared {len(sheet_data)} rows for export")
+        
+        # Create Google Sheets
+        try:
+            from google_auth import get_sheets_service, get_drive_service
+            app.logger.info("Successfully imported Google auth functions")
+            
+            try:
+                # Add spreadsheets scope to the authentication
+                sheets_service = get_sheets_service(['https://www.googleapis.com/auth/spreadsheets'])
+                app.logger.info("Successfully created sheets service")
+            except Exception as e:
+                app.logger.error(f"Failed to create sheets service: {str(e)}")
+                return False
+                
+        except ImportError as e:
+            app.logger.error(f"Failed to import Google auth functions: {str(e)}")
+            app.logger.info("Trying fallback approach with get_google_credentials")
+            
+            try:
+                # Fallback: use the existing get_google_credentials function
+                creds = get_google_credentials()
+                sheets_service = build('sheets', 'v4', credentials=creds)
+                drive_service = build('drive', 'v3', credentials=creds)
+                app.logger.info("Successfully created services using fallback approach")
+            except Exception as e:
+                app.logger.error(f"Failed to create services using fallback: {str(e)}")
+                return False
+        
+        # Create spreadsheet
+        from datetime import datetime
+        spreadsheet = {
+            'properties': {
+                'title': f'Relatório de Inventário - {target_date}'
+            },
+            'sheets': [
+                {
+                    'properties': {
+                        'title': 'Inventário'
+                    }
+                }
+            ]
+        }
+        
+        try:
+            spreadsheet = sheets_service.spreadsheets().create(body=spreadsheet).execute()
+            spreadsheet_id = spreadsheet['spreadsheetId']
+            app.logger.info(f"Created spreadsheet with ID: {spreadsheet_id}")
+        except Exception as e:
+            app.logger.error(f"Failed to create spreadsheet: {str(e)}")
+            return False
+        
+        # Prepare the data for writing
+        range_name = 'Inventário!A1:G' + str(len(sheet_data))
+        
+        # Write data to sheet
+        body = {
+            'values': sheet_data
+        }
+        
+        try:
+            sheets_service.spreadsheets().values().update(
+                spreadsheetId=spreadsheet_id,
+                range=range_name,
+                valueInputOption='RAW',
+                body=body
+            ).execute()
+            app.logger.info("Successfully wrote data to spreadsheet")
+        except Exception as e:
+            app.logger.error(f"Failed to write data to spreadsheet: {str(e)}")
+            return False
+        
+        # Move to the specified folder
+        try:
+            drive_service = get_drive_service()
+            file = drive_service.files().update(
+                fileId=spreadsheet_id,
+                addParents='1L2INRnwl9NTOizQGk83ahfVQ_jf-We_X',
+                removeParents='root',
+                fields='id, parents'
+            ).execute()
+            app.logger.info("Successfully moved file to folder")
+        except Exception as e:
+            app.logger.error(f"Failed to move file to folder: {str(e)}")
+            # Don't fail the entire operation if moving to folder fails
+            app.logger.warning("Continuing without moving file to folder")
+        
+        sheet_url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}"
+        
+        app.logger.info(f"Export completed successfully for {target_date}. URL: {sheet_url}")
+        
+        return True
+        
+    except Exception as e:
+        app.logger.error(f"Error exporting inventory to Google Sheets for {target_date}: {str(e)}")
+        return False
+
 scheduler.add_job(job_embu, 'interval', minutes=5, max_instances=10000)
 scheduler.add_job(job_extrema, 'interval', minutes=7, max_instances=10000)
 scheduler.add_job(job_bonus, 'interval', minutes=3, max_instances=10000)
@@ -140,6 +341,10 @@ scheduler.add_job(job_bonus, 'interval', minutes=3, max_instances=10000)
 #scheduler.add_job(job_pp_repo, 'interval', hours=1, max_instances=10000)
 #scheduler.add_job(job_controle_fluxo_pedidos_natura, 'interval', minutes=5, max_instances=10000)
 scheduler.add_job(job_nf_erro, 'interval', minutes=30, max_instances=10000)
+
+# Inventory jobs - São Paulo timezone (America/Sao_Paulo)
+scheduler.add_job(job_inventory_export, CronTrigger(hour=23, minute=0, timezone='America/Sao_Paulo'), max_instances=1)
+scheduler.add_job(cleanup_old_inventory_data, CronTrigger(hour=0, minute=30, timezone='America/Sao_Paulo'), max_instances=1)
 
 @app.before_request
 def start_scheduler():
@@ -1457,21 +1662,17 @@ def api_inventory_save():
 @login_required
 def api_inventory_comparison():
     try:
-        # Get all inventory keys from Redis
-        inventory_keys = redis_client.keys("inventory:*")
+        # Get current date
+        from datetime import datetime
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        
+        # Get inventory data for current day only
+        date_key = f"inventory:{current_date}"
+        data = redis_client.get(date_key)
         
         comparison_data = {}
-        
-        for key in inventory_keys:
-            # Handle both bytes and string keys
-            if isinstance(key, bytes):
-                date = key.decode('utf-8').split(':')[1]
-            else:
-                date = key.split(':')[1]
-                
-            data = redis_client.get(key)
-            if data:
-                comparison_data[date] = json.loads(data)
+        if data:
+            comparison_data[current_date] = json.loads(data)
         
         return jsonify({"success": True, "comparison": comparison_data})
         
@@ -1479,140 +1680,7 @@ def api_inventory_comparison():
         app.logger.error(f"Error getting inventory comparison: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/api/inventory/export-sheets', methods=['POST'])
-@login_required
-def api_inventory_export_sheets():
-    try:
-        app.logger.info("Starting inventory export to Google Sheets")
-        
-        # Get all inventory data
-        inventory_keys = redis_client.keys("inventory:*")
-        app.logger.info(f"Found {len(inventory_keys)} inventory keys")
-        
-        if not inventory_keys:
-            app.logger.info("No inventory data found to export")
-            return jsonify({"success": False, "error": "No inventory data to export"}), 400
-        
-        # Prepare data for Google Sheets
-        sheet_data = []
-        sheet_data.append(['Data', 'Operador', 'Localização', 'UPC', 'Quantidade Sistema', 'Quantidade Contada', 'Diferença'])
-        
-        for key in inventory_keys:
-            # Handle both bytes and string keys
-            if isinstance(key, bytes):
-                date = key.decode('utf-8').split(':')[1]
-            else:
-                date = key.split(':')[1]
-                
-            data = redis_client.get(key)
-            if data:
-                inventory_data = json.loads(data)
-                for item_key, quantities in inventory_data.items():
-                    operator, location, upc = item_key.split('|')
-                    system_qty, counted_qty = quantities
-                    difference = counted_qty - system_qty
-                    sheet_data.append([date, operator, location, upc, system_qty, counted_qty, difference])
-        
-        app.logger.info(f"Prepared {len(sheet_data)} rows for export")
-        
-        # Create Google Sheets
-        try:
-            from google_auth import get_sheets_service, get_drive_service
-            app.logger.info("Successfully imported Google auth functions")
-            
-            try:
-                # Add spreadsheets scope to the authentication
-                sheets_service = get_sheets_service(['https://www.googleapis.com/auth/spreadsheets'])
-                app.logger.info("Successfully created sheets service")
-            except Exception as e:
-                app.logger.error(f"Failed to create sheets service: {str(e)}")
-                return jsonify({"success": False, "error": "Failed to create Google Sheets service"}), 500
-                
-        except ImportError as e:
-            app.logger.error(f"Failed to import Google auth functions: {str(e)}")
-            app.logger.info("Trying fallback approach with get_google_credentials")
-            
-            try:
-                # Fallback: use the existing get_google_credentials function
-                creds = get_google_credentials()
-                sheets_service = build('sheets', 'v4', credentials=creds)
-                drive_service = build('drive', 'v3', credentials=creds)
-                app.logger.info("Successfully created services using fallback approach")
-            except Exception as e:
-                app.logger.error(f"Failed to create services using fallback: {str(e)}")
-                return jsonify({"success": False, "error": "Google authentication not configured"}), 500
-        
-        # Create spreadsheet
-        from datetime import datetime
-        spreadsheet = {
-            'properties': {
-                'title': f'Relatório de Inventário - {datetime.now().strftime("%Y-%m-%d %H:%M")}'
-            },
-            'sheets': [
-                {
-                    'properties': {
-                        'title': 'Inventário'
-                    }
-                }
-            ]
-        }
-        
-        try:
-            spreadsheet = sheets_service.spreadsheets().create(body=spreadsheet).execute()
-            spreadsheet_id = spreadsheet['spreadsheetId']
-            app.logger.info(f"Created spreadsheet with ID: {spreadsheet_id}")
-        except Exception as e:
-            app.logger.error(f"Failed to create spreadsheet: {str(e)}")
-            return jsonify({"success": False, "error": "Failed to create Google Spreadsheet"}), 500
-        
-        # Prepare the data for writing
-        range_name = 'Inventário!A1:G' + str(len(sheet_data))
-        
-        # Write data to sheet
-        body = {
-            'values': sheet_data
-        }
-        
-        try:
-            sheets_service.spreadsheets().values().update(
-                spreadsheetId=spreadsheet_id,
-                range=range_name,
-                valueInputOption='RAW',
-                body=body
-            ).execute()
-            app.logger.info("Successfully wrote data to spreadsheet")
-        except Exception as e:
-            app.logger.error(f"Failed to write data to spreadsheet: {str(e)}")
-            return jsonify({"success": False, "error": "Failed to write data to spreadsheet"}), 500
-        
-        # Move to the specified folder
-        try:
-            drive_service = get_drive_service()
-            file = drive_service.files().update(
-                fileId=spreadsheet_id,
-                addParents='1L2INRnwl9NTOizQGk83ahfVQ_jf-We_X',
-                removeParents='root',
-                fields='id, parents'
-            ).execute()
-            app.logger.info("Successfully moved file to folder")
-        except Exception as e:
-            app.logger.error(f"Failed to move file to folder: {str(e)}")
-            # Don't fail the entire operation if moving to folder fails
-            app.logger.warning("Continuing without moving file to folder")
-        
-        sheet_url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}"
-        
-        app.logger.info(f"Export completed successfully. URL: {sheet_url}")
-        
-        return jsonify({
-            "success": True,
-            "sheetUrl": sheet_url,
-            "spreadsheetId": spreadsheet_id
-        })
-        
-    except Exception as e:
-        app.logger.error(f"Error exporting inventory to Google Sheets: {str(e)}")
-        return jsonify({"success": False, "error": str(e)}), 500
+
 
 if __name__ == '__main__':
     try:

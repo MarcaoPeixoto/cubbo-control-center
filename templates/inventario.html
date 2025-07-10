@@ -236,11 +236,7 @@
             transform: translateY(-2px);
         }
 
-        .export-section {
-            text-align: center;
-            margin-top: 4vh;
-            padding: 3vw;
-        }
+
 
         /* Mobile optimizations */
         @media (max-width: 768px) {
@@ -267,7 +263,7 @@
                 font-size: clamp(0.9rem, 3vw, 1.1rem);
                 margin-bottom: 1vw;
             }
-            .input-section, .results-section, .quantity-section, .export-section {
+            .input-section, .results-section, .quantity-section {
                 padding: 2vw 1vw;
                 margin-bottom: 2vw;
                 border-radius: 1vw;
@@ -400,6 +396,9 @@
         <div class="header">
             <h1>🏪 Sistema de Inventário</h1>
             <p>Controle de estoque por localização</p>
+            <div style="margin-top: 10px; padding: 8px; background-color: #17a2b8; border-radius: 5px; font-weight: bold; color: white; font-size: 0.9em;">
+                📋 Relatório automático gerado diariamente às 23:00 (Horário de Brasília)
+            </div>
             <div id="currentOperator" style="display: none; margin-top: 10px; padding: 8px; background-color: #0741dd; border-radius: 5px; font-weight: bold;">
                 Operador: <span id="operatorDisplay"></span>
             </div>
@@ -443,9 +442,7 @@
             <p>Processando...</p>
         </div>
 
-        <div class="export-section" style="text-align:center; margin-top:30px;">
-            <button class="btn btn-warning" onclick="exportToGoogleSheets()">📋 Exportar para Google Sheets</button>
-        </div>
+
     </div>
 
     <script>
@@ -673,25 +670,7 @@
             }
         });
 
-        async function exportToGoogleSheets() {
-            showLoading(true);
-            try {
-                const response = await fetch('/api/inventory/export-sheets', {
-                    method: 'POST'
-                });
-                const data = await response.json();
-                if (data.success) {
-                    showMessage('Relatório exportado com sucesso!', 'success');
-                } else {
-                    showMessage(data.error || 'Erro ao exportar relatório', 'error');
-                }
-            } catch (error) {
-                showMessage('Erro de conexão', 'error');
-                console.error('Error:', error);
-            } finally {
-                showLoading(false);
-            }
-        }
+
     </script>
 </body>
 </html>

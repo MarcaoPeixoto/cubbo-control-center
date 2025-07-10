@@ -20,93 +20,91 @@ def generate_tote_pair_zpl(tote1, tote2):
     return zpl_code
 
 
-def generate_filtered_tote_labels_list(start_tote=1, end_tote=5000, excluded_totes=None):
-    """
-    Generate a list of ZPL codes for pairs of tote labels, excluding existing totes
-    Each ZPL code prints 2 labels: tote1&tote2, tote3&tote4, etc.
-    """
-    if excluded_totes is None:
-        excluded_totes = set()
-    
-    zpl_list = []
-    available_totes = []
-    
-    # Collect all available totes (not in excluded list)
-    for tote_num in range(start_tote, end_tote + 1):
-        if tote_num not in excluded_totes:
-            available_totes.append(tote_num)
-    
-    # Generate pairs of available totes
-    for i in range(0, len(available_totes), 2):
-        tote1 = available_totes[i]
-        tote2 = available_totes[i + 1] if i + 1 < len(available_totes) else tote1  # If odd number, duplicate last
-        
-        zpl_code = generate_tote_pair_zpl(tote1, tote2)
-        zpl_list.append(zpl_code)
-    
-    return zpl_list, available_totes
-
-
 def get_tote_livre():
+    """
+    Simple function:
+    1. Run dataset
+    2. Get unique_code from each row
+    3. Exclude first 4 letters (tote part)
+    4. Get the number (1-5000)
+    5. Create list of excluded numbers
+    6. Loop 1-5000 excluding those numbers
+    7. Generate ZPL for remaining numbers, 2 by 2
+    """
     try:
-        # Call the Metabase query to get existing totes
+        # 1. Run dataset
         response = get_dataset('9779')
         
-        # Extract unique_code column to get existing tote numbers
-        excluded_totes = set()
-        if response and isinstance(response, list) and len(response) > 0:
+        # 2. Get unique_code from each row and extract numbers
+        excluded_numbers = []
+        
+        if response and isinstance(response, list):
             for row in response:
                 if 'unique_code' in row and row['unique_code']:
                     unique_code = str(row['unique_code']).strip()
-                    # Extract number from strings like "tote1", "tote2", etc.
-                    if unique_code.lower().startswith('tote'):
+                    
+                    # 3. Exclude first 4 letters (tote part)
+                    if len(unique_code) > 4:
+                        number_part = unique_code[4:]  # Remove first 4 letters
+                        
+                        # 4. Get the number (1-5000)
                         try:
-                            # Remove "tote" prefix and convert to integer
-                            tote_num = int(unique_code[4:])  # Remove "tote" (4 characters)
-                            excluded_totes.add(tote_num)
-                        except (ValueError, TypeError):
-                            # Skip if it's not a valid number after "tote"
+                            tote_number = int(number_part)
+                            if 1 <= tote_number <= 5000:
+                                excluded_numbers.append(tote_number)
+                        except ValueError:
+                            # Skip if not a valid number
                             continue
         
-        print(f"Found {len(excluded_totes)} existing totes to exclude")
+        # Remove duplicates
+        excluded_numbers = list(set(excluded_numbers))
+        print(f"Found {len(excluded_numbers)} existing totes to exclude")
         
-        # Generate ZPL list for available totes (1 to 5000, excluding existing ones)
-        zpl_list, available_totes = generate_filtered_tote_labels_list(1, 5000, excluded_totes)
+        # 6. Loop 1-5000 excluding those numbers
+        available_numbers = []
+        for i in range(1, 5001):
+            if i not in excluded_numbers:
+                available_numbers.append(i)
         
-        # Save all ZPL codes to a file, one per line
+        print(f"Found {len(available_numbers)} available totes")
+        
+        # 7. Generate ZPL for remaining numbers, 2 by 2
+        zpl_list = []
+        for i in range(0, len(available_numbers), 2):
+            tote1 = available_numbers[i]
+            tote2 = available_numbers[i + 1] if i + 1 < len(available_numbers) else tote1
+            
+            zpl_code = generate_tote_pair_zpl(tote1, tote2)
+            zpl_list.append(zpl_code)
+        
+        # Save ZPL codes to file
         with open('tote_labels.zpl', 'w', encoding='utf-8') as f:
             for zpl_code in zpl_list:
                 f.write(zpl_code + "\n")
         
-        print(f"Generated {len(zpl_list)} ZPL print jobs for {len(available_totes)} available totes (2 labels per job)")
-        print(f"Excluded {len(excluded_totes)} existing totes")
+        print(f"Generated {len(zpl_list)} ZPL print jobs")
         print(f"Saved to tote_labels.zpl")
         
-        # Return both the dataset response and ZPL information
         return {
-            "dataset": response,
-            "zpl_data": {
-                "zpl_list": zpl_list,
-                "available_totes": available_totes,
-                "excluded_totes": list(excluded_totes),
-                "total_zpl_jobs": len(zpl_list),
-                "total_available_totes": len(available_totes),
-                "total_excluded_totes": len(excluded_totes)
-            }
+            "excluded_numbers": excluded_numbers,
+            "available_numbers": available_numbers,
+            "zpl_list": zpl_list,
+            "total_zpl_jobs": len(zpl_list)
         }
+        
     except Exception as e:
-        print(f"Error getting tote livre data: {str(e)}")
+        print(f"Error: {str(e)}")
         return {"error": str(e)}
 
 
 if __name__ == "__main__":
-    # Test the function
-    data = get_tote_livre()
-    print(f"Found {len(data)} total records in dataset")
+    # Test the simple function
+    result = get_tote_livre()
     
-    # You can also generate labels for a specific range
-    # For example, totes 1-10:
-    sample_zpl_list, sample_totes = generate_filtered_tote_labels_list(1, 10, {2, 4, 6})  # Exclude 2, 4, 6
-    print(f"Sample: Generated {len(sample_zpl_list)} ZPL jobs for available totes 1-10 (excluding 2,4,6)")
-    print(f"Available totes: {sample_totes}")
+    if "error" not in result:
+        print(f"Excluded totes: {result['excluded_numbers'][:10]}...")  # Show first 10
+        print(f"Available totes: {result['available_numbers'][:10]}...")  # Show first 10
+        print(f"Total ZPL jobs: {result['total_zpl_jobs']}")
+    else:
+        print(f"Error: {result['error']}")
 
