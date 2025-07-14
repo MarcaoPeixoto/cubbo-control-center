@@ -85,11 +85,24 @@ def get_tote_livre():
         print(f"Generated {len(zpl_list)} ZPL print jobs")
         print(f"Saved to tote_labels.zpl")
         
+        # Create dataset for table display (format expected by /api/tote-livre)
+        dataset = []
+        for tote_num in available_numbers:
+            dataset.append({
+                "tote_number": tote_num,
+                "tote_code": f"tote{tote_num}"
+            })
+        
         return {
             "excluded_numbers": excluded_numbers,
             "available_numbers": available_numbers,
             "zpl_list": zpl_list,
-            "total_zpl_jobs": len(zpl_list)
+            "total_zpl_jobs": len(zpl_list),
+            "dataset": dataset,  # For /api/tote-livre route
+            "zpl_data": {        # For /api/tote-livre-zpl and download routes
+                "zpl_list": zpl_list,
+                "total_zpl_jobs": len(zpl_list)
+            }
         }
         
     except Exception as e:
