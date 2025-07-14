@@ -101,7 +101,10 @@ def get_tote_livre():
             "dataset": dataset,  # For /api/tote-livre route
             "zpl_data": {        # For /api/tote-livre-zpl and download routes
                 "zpl_list": zpl_list,
-                "total_zpl_jobs": len(zpl_list)
+                "total_zpl_jobs": len(zpl_list),
+                "total_available_totes": len(available_numbers),
+                "total_excluded_totes": len(excluded_numbers),
+                "available_totes": available_numbers
             }
         }
         
