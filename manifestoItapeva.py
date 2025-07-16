@@ -26,6 +26,8 @@ def get_manifesto_itapeva(carrier):
         
         if carrier == "JT":
             carrier = "JT Express"
+        elif carrier == "MELI":
+            carrier = "Mercado Envíos"
 
         # Convert dates to string format YYYY-MM-DD
         date_str = current_date.strftime('%Y-%m-%d')
@@ -116,7 +118,7 @@ def nao_despachados_itapeva(data, transportadora):
     warning_text = f"Transportadora: {transportadora}\n\n"
     warning_text += f"Pedidos já processados e bipados: {data['dispatched_count']}\n\n"
 
-    if data['carrier'] in ["CORREIOS"]:
+    if data['carrier'] in ["CORREIOS", "Mercado Envíos"]:
         if quantidade_nao_despachados > 0:
             warning_text += f"<p><strong>ATENÇÃO! {quantidade_nao_despachados} pedidos processados e não despachados:</strong></p>"
             warning_text += "<p>Não foram despachados os seguintes pedidos:</p>"
@@ -302,7 +304,7 @@ def save_to_google_docs_itapeva(document_title, data, folder_id=None, transporta
         content = ""
 
         # Add warning about not dispatched orders if any
-        if transportadora in ["CORREIOS"]:
+        if transportadora in ["CORREIOS", "MELI"]:
             content += "\t\t".join(data['dispatched_trackings'])
             content += "\n\n\nAssinatura Transportadora:\n\nAssinatura Cubbo:"
         else:
@@ -370,11 +372,13 @@ def link_docs_itapeva(transportadora):
         loggi_folder = env_config.get('LOGGI_FOLDER_MG_ID') or os.environ.get("LOGGI_FOLDER_MG_ID")
         correios_folder = env_config.get('CORREIOS_FOLDER_MG_ID') or os.environ.get("CORREIOS_FOLDER_MG_ID")
         jt_folder = env_config.get('JT_FOLDER_MG_ID') or os.environ.get("JT_FOLDER_MG_ID")
+        meli_folder = env_config.get('MELI_FOLDER_MG_ID') or os.environ.get("MELI_FOLDER_MG_ID")
 
         print("\nFolder IDs from environment:")
         print(f"LOGGI Folder ID: {loggi_folder}")
         print(f"CORREIOS Folder ID: {correios_folder}")
         print(f"JT Folder ID: {jt_folder}")
+        print(f"MELI Folder ID: {meli_folder}")
 
         # Determine the correct folder ID based on the transportadora
         folder_id = None
@@ -384,6 +388,8 @@ def link_docs_itapeva(transportadora):
             folder_id = correios_folder
         elif transportadora == "JT":
             folder_id = jt_folder
+        elif transportadora == "MELI":
+            folder_id = meli_folder
 
         if not folder_id:
             print(f"Error: No folder ID found for transportadora: {transportadora}")
