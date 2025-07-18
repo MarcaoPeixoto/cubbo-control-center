@@ -69,7 +69,7 @@ def mensagem_lojas():
     changes = status_loja(filepath)
     message = []
     if changes:
-        message.append("Atenção <!channel> : ")
+        message.append("Atenção:")
         for change in changes:
             if change['old_status'] is None:  # New store detected
                 if change['new_status'] == "PROSPECT_ACCOUNT":
