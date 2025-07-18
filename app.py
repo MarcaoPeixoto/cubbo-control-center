@@ -134,6 +134,13 @@ def job_nf_erro():
     except subprocess.CalledProcessError as e:
         print(f"An error occurred in NF com erro job: {e}")
 
+def job_store_status():
+    try:
+        subprocess.run(['python', 'loja_abre_fecha.py'])
+        print("Store status monitoring completed")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred in store status job: {e}")
+
 def job_inventory_export():
     """Daily inventory export job - runs at 11 PM São Paulo time"""
     try:
@@ -341,6 +348,7 @@ scheduler.add_job(job_bonus, 'interval', minutes=3, max_instances=10000)
 #scheduler.add_job(job_pp_repo, 'interval', hours=1, max_instances=10000)
 #scheduler.add_job(job_controle_fluxo_pedidos_natura, 'interval', minutes=5, max_instances=10000)
 scheduler.add_job(job_nf_erro, 'interval', minutes=30, max_instances=10000)
+scheduler.add_job(job_store_status, 'interval', minutes=1, max_instances=10000)
 
 # Inventory jobs - São Paulo timezone (America/Sao_Paulo)
 scheduler.add_job(job_inventory_export, CronTrigger(hour=23, minute=0, timezone='America/Sao_Paulo'), max_instances=1)
