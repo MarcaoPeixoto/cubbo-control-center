@@ -60,6 +60,9 @@ scheduler = BackgroundScheduler(
     timezone='America/Sao_Paulo'  # Set timezone for all jobs
 )
 
+# Flag to track if scheduler has been initialized
+_scheduler_initialized = False
+
 # Set a secret key for sessions
 app.secret_key = os.urandom(24)
 
@@ -410,19 +413,36 @@ scheduler.add_job(cleanup_old_inventory_data, CronTrigger(hour=0, minute=30, tim
 # Remove the @app.before_request decorator and start scheduler properly
 def initialize_scheduler():
     """Initialize and start the scheduler once"""
-    if not scheduler.running:
+    global _scheduler_initialized
+    
+    if not _scheduler_initialized and not scheduler.running:
         try:
             scheduler.start()
+            _scheduler_initialized = True
             logger.info("APScheduler started successfully")
         except Exception as e:
             logger.error(f"Failed to start scheduler: {e}")
 
+# For Gunicorn compatibility, we'll initialize the scheduler lazily
+# when the first request comes in
+def ensure_scheduler_running():
+    """Ensure scheduler is running, initialize if needed"""
+    if not scheduler.running:
+        initialize_scheduler()
+
+# Initialize scheduler when the module is imported
+# This ensures it starts in the main process
+if __name__ == '__main__':
+    ensure_scheduler_running()
+
 @app.route('/')
 def inicio():
+    ensure_scheduler_running()  # Ensure scheduler is running
     return redirect('/login')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    ensure_scheduler_running()  # Ensure scheduler is running
     if request.method == 'POST':
         data = request.json
         if data and data.get('password') == CORRECT_PASSWORD:
@@ -1843,7 +1863,7 @@ if __name__ == '__main__':
         check_redis_connectivity()
         update_jsons()
         job_nf_erro()
-        initialize_scheduler()  # Start scheduler once at startup
+        initialize_scheduler()  # Start scheduler for development server
         app.run(host='0.0.0.0', debug=True)
     except Exception as e:
         logger.error(f"Failed to start the application: {e}")

@@ -47,15 +47,48 @@ def initialize_scheduler():
             logger.error(f"Failed to start scheduler: {e}")
 ```
 
-### 4. **No Job Persistence**
-**Problem**: Jobs were lost when the application restarted.
+### 4. **Gunicorn Compatibility Issues**
+**Problem**: Scheduler wasn't starting properly with Gunicorn due to worker process management.
 
-**Solution**: Added `replace_existing=True` to job definitions and proper job IDs.
+**Solution**: Created dedicated WSGI entry point and Gunicorn configuration:
+- `wsgi.py` - Proper WSGI entry point for Gunicorn
+- `gunicorn.conf.py` - Optimized Gunicorn configuration
 
-### 5. **Poor Error Handling and Logging**
-**Problem**: Only `print()` statements instead of proper logging.
+## Gunicorn-Specific Fixes
 
-**Solution**: Comprehensive logging with proper error handling.
+### **New Files Created:**
+
+1. **`wsgi.py`** - WSGI entry point that properly initializes the scheduler
+2. **`gunicorn.conf.py`** - Gunicorn configuration optimized for APScheduler
+
+### **How to Use:**
+
+Instead of running:
+```bash
+gunicorn app:app
+```
+
+Use:
+```bash
+gunicorn -c gunicorn.conf.py wsgi:application
+```
+
+Or simply:
+```bash
+gunicorn wsgi:application
+```
+
+### **Key Configuration Changes:**
+
+1. **Single Worker**: Set `workers = 1` to avoid scheduler conflicts
+2. **Preload App**: Enabled `preload_app = True` for better performance
+3. **Proper Initialization**: Scheduler starts in the worker process
+
+### **Why This Works:**
+
+- **Single Worker**: Prevents multiple schedulers from running simultaneously
+- **WSGI Entry Point**: Ensures scheduler is initialized when the app is created
+- **Proper Lifecycle**: Scheduler starts in the correct process context
 
 ## Additional Recommendations for Digital Ocean
 
@@ -72,7 +105,7 @@ sudo nano /etc/supervisor/conf.d/cubbo-control-center.conf
 
 ```ini
 [program:cubbo-control-center]
-command=/path/to/venv/bin/python app.py
+command=/path/to/venv/bin/gunicorn -c gunicorn.conf.py wsgi:application
 directory=/path/to/cubbo-control-center
 user=www-data
 autostart=true
@@ -89,18 +122,9 @@ Replace Flask's development server with Gunicorn:
 pip install gunicorn
 ```
 
-Create a WSGI entry point:
-```python
-# wsgi.py
-from app import app
-
-if __name__ == "__main__":
-    app.run()
-```
-
 Run with Gunicorn:
 ```bash
-gunicorn --workers 4 --bind 0.0.0.0:5000 wsgi:app
+gunicorn -c gunicorn.conf.py wsgi:application
 ```
 
 ### 3. **Add Health Checks**
@@ -245,7 +269,8 @@ JOB_TIMEOUTS = {
 
 ## Deployment Checklist
 
-- [ ] Use Gunicorn instead of Flask development server
+- [ ] Use Gunicorn with the new WSGI entry point
+- [ ] Use the provided Gunicorn configuration
 - [ ] Set up process manager (supervisor/systemd)
 - [ ] Configure proper logging
 - [ ] Set up health checks
@@ -264,4 +289,5 @@ After implementing these changes, you should see:
 3. **Improved Performance**: Direct function calls are faster
 4. **Better Monitoring**: Proper logging and health checks
 5. **Easier Debugging**: Clear error messages and job status
-6. **Production Ready**: Proper process management and monitoring 
+6. **Production Ready**: Proper process management and monitoring
+7. **Gunicorn Compatible**: Scheduler works properly with multiple workers 
