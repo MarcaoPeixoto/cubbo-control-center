@@ -46,8 +46,20 @@ from google_auth import authenticate_google
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing if needed
-scheduler = BackgroundScheduler()
-#t
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Configure APScheduler with better settings for production
+scheduler = BackgroundScheduler(
+    job_defaults={
+        'coalesce': True,  # Combine missed executions
+        'max_instances': 1,  # Only allow 1 instance per job
+        'misfire_grace_time': 300  # 5 minutes grace time for missed executions
+    },
+    timezone='America/Sao_Paulo'  # Set timezone for all jobs
+)
+
 # Set a secret key for sessions
 app.secret_key = os.urandom(24)
 
@@ -86,60 +98,100 @@ def login_required(f):
     return decorated_function
 
 def job_embu():
+    """Update Embu SLAs - runs every 5 minutes"""
     try:
-        subprocess.run(['python', 'incentivosEmbu.py'])
-        print("SLAs Embu atualizados")
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred in Embu job: {e}")
+        logger.info("Starting Embu SLA update job")
+        # Import and call the main function directly
+        from incentivosEmbu import main as embu_main
+        embu_main()
+        logger.info("Embu SLA update completed successfully")
+    except Exception as e:
+        logger.error(f"Error in Embu job: {e}")
 
 def job_extrema():
+    """Update Extrema SLAs - runs every 7 minutes"""
     try:
-        subprocess.run(['python', 'incentivosExtrema.py'])
-        print("SLAs Extrema atualizados")
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred in Extrema job: {e}")
+        logger.info("Starting Extrema SLA update job")
+        # Import and call the main function directly
+        from incentivosExtrema import main as extrema_main
+        extrema_main()
+        logger.info("Extrema SLA update completed successfully")
+    except Exception as e:
+        logger.error(f"Error in Extrema job: {e}")
 
 def job_bonus():
+    """Update bonus calculations - runs every 3 minutes"""
     try:
-        subprocess.run(['python', 'bonus.py'])
-        print("SLAs Extrema atualizados")
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred in Bonus job: {e}")
+        logger.info("Starting bonus calculation job")
+        # Import and call the compute_phd function directly
+        from bonus import compute_phd
+        compute_phd()
+        logger.info("Bonus calculation completed successfully")
+    except Exception as e:
+        logger.error(f"Error in bonus job: {e}")
 
 def job_report_ops():
+    """Generate operations report - runs daily at 8 PM"""
     try:
-        subprocess.run(['python', 'report_ops.py'])
-        print("Report Ops atualizados")
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred in Report Ops job: {e}")
+        logger.info("Starting operations report job")
+        # Import and call the main function directly
+        from report_ops import main as report_main
+        report_main()
+        logger.info("Operations report completed successfully")
+    except Exception as e:
+        logger.error(f"Error in report ops job: {e}")
 
 def job_pp_repo():
+    """Update PP repository - runs every hour"""
     try:
-        subprocess.run(['python', 'PP_repo.py'])
-        print("PP Repo atualizados")
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred in PP Repo job: {e}")
+        logger.info("Starting PP repository update job")
+        # Import and call the main function directly
+        from PP_repo import main as pp_main
+        pp_main()
+        logger.info("PP repository update completed successfully")
+    except Exception as e:
+        logger.error(f"Error in PP repo job: {e}")
 
 def job_controle_fluxo_pedidos_natura():
+    """Update Natura order flow control - runs every 5 minutes"""
     try:
-        subprocess.run(['python', 'controle_fluxo_pedidos_natura.py'])
-        print("Controle de fluxo de pedidos atualizados")
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred in Controle de fluxo de pedidos job: {e}")
+        logger.info("Starting Natura order flow control job")
+        # Import and call the main function directly
+        from controle_fluxo_pedidos_natura import main as natura_main
+        natura_main()
+        logger.info("Natura order flow control completed successfully")
+    except Exception as e:
+        logger.error(f"Error in Natura order flow job: {e}")
 
 def job_nf_erro():
+    """Update NF error tracking - runs every 30 minutes"""
     try:
-        subprocess.run(['python', 'nf_erro_natura.py'])
-        print("NF com erro atualizados")
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred in NF com erro job: {e}")
+        logger.info("Starting NF error tracking job")
+        # Import and call the nf_erro function and send message
+        from nf_erro_natura import nf_erro
+        from google_chat_interface import send_message
+        import os
+        from dotenv import load_dotenv
+        
+        load_dotenv()
+        url = os.getenv('NF_ERRO_NATURA_URL')
+        
+        msg_pedidos_natura = nf_erro()
+        send_message(msg_pedidos_natura, "nf-erro-natura", webhook_url=url)
+        logger.info("NF error tracking completed successfully")
+    except Exception as e:
+        logger.error(f"Error in NF error job: {e}")
 
 def job_store_status():
+    """Update store status monitoring - runs every minute"""
     try:
-        subprocess.run(['python', 'loja_abre_fecha.py'])
-        print("Store status monitoring completed")
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred in store status job: {e}")
+        logger.info("Starting store status monitoring job")
+        # Import and call the main function directly
+        from loja_abre_fecha import main as store_main
+        store_main()
+        logger.info("Store status monitoring completed successfully")
+    except Exception as e:
+        logger.error(f"Error in store status job: {e}")
 
 def job_inventory_export():
     """Daily inventory export job - runs at 11 PM São Paulo time"""
@@ -341,23 +393,29 @@ def export_daily_inventory_to_sheets(target_date):
         app.logger.error(f"Error exporting inventory to Google Sheets for {target_date}: {str(e)}")
         return False
 
-scheduler.add_job(job_embu, 'interval', minutes=5, max_instances=10000)
-scheduler.add_job(job_extrema, 'interval', minutes=7, max_instances=10000)
-scheduler.add_job(job_bonus, 'interval', minutes=3, max_instances=10000)
-#scheduler.add_job(job_report_ops, 'cron', hour='20', minute='0', max_instances=10000)
-#scheduler.add_job(job_pp_repo, 'interval', hours=1, max_instances=10000)
-#scheduler.add_job(job_controle_fluxo_pedidos_natura, 'interval', minutes=5, max_instances=10000)
-scheduler.add_job(job_nf_erro, 'interval', minutes=30, max_instances=10000)
-scheduler.add_job(job_store_status, 'interval', minutes=1, max_instances=10000)
+# Configure jobs with proper settings
+scheduler.add_job(job_embu, 'interval', minutes=5, id='embu_sla', replace_existing=True)
+scheduler.add_job(job_extrema, 'interval', minutes=7, id='extrema_sla', replace_existing=True)
+scheduler.add_job(job_bonus, 'interval', minutes=3, id='bonus_calc', replace_existing=True)
+#scheduler.add_job(job_report_ops, 'cron', hour=20, minute=0, id='report_ops', replace_existing=True)
+#scheduler.add_job(job_pp_repo, 'interval', hours=1, id='pp_repo', replace_existing=True)
+#scheduler.add_job(job_controle_fluxo_pedidos_natura, 'interval', minutes=5, id='natura_flow', replace_existing=True)
+scheduler.add_job(job_nf_erro, 'interval', minutes=30, id='nf_error', replace_existing=True)
+scheduler.add_job(job_store_status, 'interval', minutes=1, id='store_status', replace_existing=True)
 
 # Inventory jobs - São Paulo timezone (America/Sao_Paulo)
-scheduler.add_job(job_inventory_export, CronTrigger(hour=23, minute=0, timezone='America/Sao_Paulo'), max_instances=1)
-scheduler.add_job(cleanup_old_inventory_data, CronTrigger(hour=0, minute=30, timezone='America/Sao_Paulo'), max_instances=1)
+scheduler.add_job(job_inventory_export, CronTrigger(hour=23, minute=0, timezone='America/Sao_Paulo'), id='inventory_export', replace_existing=True)
+scheduler.add_job(cleanup_old_inventory_data, CronTrigger(hour=0, minute=30, timezone='America/Sao_Paulo'), id='inventory_cleanup', replace_existing=True)
 
-@app.before_request
-def start_scheduler():
+# Remove the @app.before_request decorator and start scheduler properly
+def initialize_scheduler():
+    """Initialize and start the scheduler once"""
     if not scheduler.running:
-        scheduler.start()
+        try:
+            scheduler.start()
+            logger.info("APScheduler started successfully")
+        except Exception as e:
+            logger.error(f"Failed to start scheduler: {e}")
 
 @app.route('/')
 def inicio():
@@ -1688,6 +1746,96 @@ def api_inventory_comparison():
         app.logger.error(f"Error getting inventory comparison: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for monitoring"""
+    try:
+        # Check Redis connection
+        redis_status = "healthy" if redis_client.ping() else "unhealthy"
+        
+        # Check scheduler status
+        scheduler_status = "running" if scheduler.running else "stopped"
+        
+        # Get job counts
+        job_count = len(scheduler.get_jobs())
+        
+        return jsonify({
+            'status': 'healthy',
+            'scheduler_running': scheduler.running,
+            'scheduler_status': scheduler_status,
+            'redis_connected': redis_client.ping(),
+            'redis_status': redis_status,
+            'job_count': job_count,
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+@app.route('/metrics')
+@login_required
+def metrics():
+    """System metrics endpoint for monitoring"""
+    try:
+        import psutil
+        
+        # Get system metrics
+        cpu_percent = psutil.cpu_percent(interval=1)
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+        
+        # Get scheduler metrics
+        job_count = len(scheduler.get_jobs())
+        running_jobs = len([job for job in scheduler.get_jobs() if job.next_run_time])
+        
+        return jsonify({
+            'system': {
+                'cpu_percent': cpu_percent,
+                'memory_percent': memory.percent,
+                'memory_available_gb': round(memory.available / (1024**3), 2),
+                'disk_usage_percent': disk.percent,
+                'disk_free_gb': round(disk.free / (1024**3), 2)
+            },
+            'scheduler': {
+                'total_jobs': job_count,
+                'running_jobs': running_jobs,
+                'scheduler_running': scheduler.running
+            },
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        app.logger.error(f"Error getting metrics: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/jobs/status')
+@login_required
+def jobs_status():
+    """Get detailed status of all scheduled jobs"""
+    try:
+        jobs = []
+        for job in scheduler.get_jobs():
+            jobs.append({
+                'id': job.id,
+                'name': job.name,
+                'func': job.func.__name__ if job.func else 'Unknown',
+                'next_run_time': job.next_run_time.isoformat() if job.next_run_time else None,
+                'trigger': str(job.trigger),
+                'max_instances': job.max_instances,
+                'misfire_grace_time': job.misfire_grace_time
+            })
+        
+        return jsonify({
+            'scheduler_running': scheduler.running,
+            'total_jobs': len(jobs),
+            'jobs': jobs,
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        app.logger.error(f"Error getting jobs status: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == '__main__':
@@ -1695,7 +1843,7 @@ if __name__ == '__main__':
         check_redis_connectivity()
         update_jsons()
         job_nf_erro()
-        scheduler.start()
+        initialize_scheduler()  # Start scheduler once at startup
         app.run(host='0.0.0.0', debug=True)
     except Exception as e:
         logger.error(f"Failed to start the application: {e}")
