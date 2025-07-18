@@ -137,9 +137,16 @@ def job_report_ops():
     """Generate operations report - runs daily at 8 PM"""
     try:
         logger.info("Starting operations report job")
-        # Import and call the main function directly
-        from report_ops import main as report_main
-        report_main()
+        # Import and call the functions directly since there's no main function
+        from report_ops import ajuste_pendentes, get_google_sheet, generate_csv
+        
+        # Default: only process today's data
+        only_process_today = False
+        
+        data = ajuste_pendentes(only_process_today)
+        google_sheet_url = 'https://docs.google.com/spreadsheets/d/1mpFed0ZENWecHYT_VmHj6Kx_5JSBXC8Q4hrm7RU-4u0/edit#gid=395863523'
+        google_sheet_data = get_google_sheet(google_sheet_url, 'Operadores/dia')
+        generate_csv(data, google_sheet_data, google_sheet_url, only_process_today)
         logger.info("Operations report completed successfully")
     except Exception as e:
         logger.error(f"Error in report ops job: {e}")
@@ -148,10 +155,9 @@ def job_pp_repo():
     """Update PP repository - runs every hour"""
     try:
         logger.info("Starting PP repository update job")
-        # Import and call the main function directly
-        from PP_repo import main as pp_main
-        pp_main()
-        logger.info("PP repository update completed successfully")
+        # PP_repo.py doesn't exist, so we'll skip this job for now
+        logger.warning("PP_repo.py not found - skipping this job")
+        logger.info("PP repository update skipped (file not found)")
     except Exception as e:
         logger.error(f"Error in PP repo job: {e}")
 
@@ -159,9 +165,13 @@ def job_controle_fluxo_pedidos_natura():
     """Update Natura order flow control - runs every 5 minutes"""
     try:
         logger.info("Starting Natura order flow control job")
-        # Import and call the main function directly
-        from controle_fluxo_pedidos_natura import main as natura_main
-        natura_main()
+        # Import and call the controle_fluxo_pedidos_natura function and send message
+        from controle_fluxo_pedidos_natura import controle_fluxo_pedidos_natura
+        from slack_bot_interface import send_message
+        
+        message = controle_fluxo_pedidos_natura()
+        if message:
+            send_message(message, "fluxo-de-pedidos-natura")
         logger.info("Natura order flow control completed successfully")
     except Exception as e:
         logger.error(f"Error in Natura order flow job: {e}")
@@ -189,9 +199,19 @@ def job_store_status():
     """Update store status monitoring - runs every minute"""
     try:
         logger.info("Starting store status monitoring job")
-        # Import and call the main function directly
-        from loja_abre_fecha import main as store_main
-        store_main()
+        # Import and call the mensagem_lojas function and send message
+        from loja_abre_fecha import mensagem_lojas
+        from google_chat_interface import send_message
+        import os
+        from dotenv import load_dotenv, dotenv_values
+        
+        load_dotenv()
+        env_config = dotenv_values(".env")
+        url = env_config.get('STATUS_LOJAS_BR_URL') or os.getenv('STATUS_LOJAS_BR_URL')
+        
+        msg_lojas = mensagem_lojas()
+        if msg_lojas:
+            send_message(msg_lojas, "status-lojas-br", webhook_url=url)
         logger.info("Store status monitoring completed successfully")
     except Exception as e:
         logger.error(f"Error in store status job: {e}")
@@ -401,7 +421,7 @@ scheduler.add_job(job_embu, 'interval', minutes=5, id='embu_sla', replace_existi
 scheduler.add_job(job_extrema, 'interval', minutes=7, id='extrema_sla', replace_existing=True)
 scheduler.add_job(job_bonus, 'interval', minutes=3, id='bonus_calc', replace_existing=True)
 #scheduler.add_job(job_report_ops, 'cron', hour=20, minute=0, id='report_ops', replace_existing=True)
-#scheduler.add_job(job_pp_repo, 'interval', hours=1, id='pp_repo', replace_existing=True)
+#scheduler.add_job(job_pp_repo, 'interval', hours=1, id='pp_repo', replace_existing=True)  # Commented out - file doesn't exist
 #scheduler.add_job(job_controle_fluxo_pedidos_natura, 'interval', minutes=5, id='natura_flow', replace_existing=True)
 scheduler.add_job(job_nf_erro, 'interval', minutes=30, id='nf_error', replace_existing=True)
 scheduler.add_job(job_store_status, 'interval', minutes=1, id='store_status', replace_existing=True)
@@ -694,12 +714,6 @@ def advertencia():
                         temp_output.name,
                         mimetype='application/pdf',
                         resumable=True
-                    )
-                    
-                    file = drive_service.files().create(
-                        body=file_metadata,
-                        media_body=media,
-                        fields='id'
                     ).execute()
                     
                     return jsonify({'success': True, 'file_id': file.get('id')})
