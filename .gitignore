@@ -149,6 +149,7 @@ export_to_excel_sla_embu.py
 export_to_excel_sla_extrema.py
 report_ops.py
 PP_repo.py
-nf_erro_natura.py
 controle_fluxo_pedidos_natura.py
+google_chat_example.py
+
 

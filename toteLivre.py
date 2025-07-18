@@ -50,7 +50,7 @@ def get_tote_livre():
                         # 4. Get the number (1-5000)
                         try:
                             tote_number = int(number_part)
-                            if 1 <= tote_number <= 5000:
+                            if 5000 <= tote_number <= 10000:
                                 excluded_numbers.append(tote_number)
                         except ValueError:
                             # Skip if not a valid number
@@ -60,9 +60,9 @@ def get_tote_livre():
         excluded_numbers = list(set(excluded_numbers))
         print(f"Found {len(excluded_numbers)} existing totes to exclude")
         
-        # 6. Loop 1-5000 excluding those numbers
+        # 6. Loop 1-10000 excluding those numbers
         available_numbers = []
-        for i in range(1, 5001):
+        for i in range(1, 10001):
             if i not in excluded_numbers:
                 available_numbers.append(i)
         
