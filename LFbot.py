@@ -110,13 +110,13 @@ def mensagem_lf():
         for change in changes:
             movement = change['new_stock_quantity'] - change['previous_stock_quantity']
             if movement == 1:
-                message.append(f":wazowski: PERDIDO :wazowski: - {change['loja']}.upper(): {movement} unidade do produto: {change['produto']}")
+                message.append(f"🥳 ENCONTRADO 🥳 - {change['loja'].upper()}: {movement} unidade do produto: {change['produto']}")
             if movement > 1:
-                message.append(f":wazowski: PERDIDO :wazowski: - {change['loja']}.upper(): {movement} unidades do produto: {change['produto']}")
+                message.append(f"🥳 ENCONTRADO 🥳 - {change['loja'].upper()}: {movement} unidades do produto: {change['produto']}")
             if movement == -1:
-                message.append(f":party-parrot: ENCONTRADO :party-parrot: - {change['loja']}.upper(): {abs(movement)} unidade do produto: {change['produto']}")
+                message.append(f"😢 PERDIDO 😢 - {change['loja'].upper()}: {abs(movement)} unidade do produto: {change['produto']}")
             if movement < -1:
-                message.append(f":party-parrot: ENCONTRADO :party-parrot: - {change['loja']}.upper(): {abs(movement)} unidades do produto: {change['produto']}")
+                message.append(f"😢 PERDIDO 😢 - {change['loja'].upper()}: {abs(movement)} unidades do produto: {change['produto']}")
     print(message)
     return message
 
