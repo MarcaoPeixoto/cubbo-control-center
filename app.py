@@ -416,6 +416,23 @@ def export_daily_inventory_to_sheets(target_date):
         app.logger.error(f"Error exporting inventory to Google Sheets for {target_date}: {str(e)}")
         return False
 
+def job_lfbot():
+    """Run LFbot stock movement check and send message if needed - runs every minute"""
+    try:
+        logger.info("Starting LFbot job")
+        from LFbot import mensagem_lf
+        from google_chat_interface import send_message
+        import os
+        from dotenv import load_dotenv
+        load_dotenv()
+        url = os.getenv('LF_BOT_URL')
+        msg_lojas = mensagem_lf()
+        if msg_lojas:
+            send_message(msg_lojas, "teste-bot-marco", webhook_url=url)
+        logger.info("LFbot job completed successfully")
+    except Exception as e:
+        logger.error(f"Error in LFbot job: {e}")
+
 # Configure jobs with proper settings
 scheduler.add_job(job_embu, 'interval', minutes=5, id='embu_sla', replace_existing=True)
 scheduler.add_job(job_extrema, 'interval', minutes=7, id='extrema_sla', replace_existing=True)
@@ -425,6 +442,7 @@ scheduler.add_job(job_bonus, 'interval', minutes=3, id='bonus_calc', replace_exi
 #scheduler.add_job(job_controle_fluxo_pedidos_natura, 'interval', minutes=5, id='natura_flow', replace_existing=True)
 scheduler.add_job(job_nf_erro, 'interval', minutes=30, id='nf_error', replace_existing=True)
 scheduler.add_job(job_store_status, 'interval', minutes=1, id='store_status', replace_existing=True)
+scheduler.add_job(job_lfbot, 'interval', minutes=1, id='lfbot', replace_existing=True)
 
 # Inventory jobs - São Paulo timezone (America/Sao_Paulo)
 scheduler.add_job(job_inventory_export, CronTrigger(hour=23, minute=0, timezone='America/Sao_Paulo'), id='inventory_export', replace_existing=True)
