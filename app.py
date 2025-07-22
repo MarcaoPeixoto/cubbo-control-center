@@ -1610,12 +1610,29 @@ def get_or_create_employee_folder(drive_service, employee_cpf):
         app.logger.error(f"Error managing employee folder: {str(e)}")
         raise
 
+@app.route('/api/tote-livre/zpl-copied', methods=['POST'])
+@login_required
+def api_tote_livre_zpl_copied():
+    try:
+        now = datetime.now().isoformat()
+        redis_client.set('tote_livre:last_print_date', now)
+        return jsonify({'success': True, 'last_print_date': now})
+    except Exception as e:
+        app.logger.error(f"Error saving last print date: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/tote-livre', methods=['GET'])
 @login_required
 def api_tote_livre():
     try:
+        # Get last print date from Redis
+        last_print_date = redis_client.get('tote_livre:last_print_date')
+        if not last_print_date:
+            last_print_date = '2000-01-01T00:00:00'  # Default old date
+        elif isinstance(last_print_date, bytes):
+            last_print_date = last_print_date.decode('utf-8')
         # Get real-time data directly from the get_tote_livre function
-        tote_data = get_tote_livre()
+        tote_data = get_tote_livre(last_print_date=last_print_date)
         
         if "error" in tote_data:
             return jsonify({"error": tote_data["error"]}), 500
@@ -1630,8 +1647,14 @@ def api_tote_livre():
 @login_required
 def api_tote_livre_zpl():
     try:
+        # Get last print date from Redis
+        last_print_date = redis_client.get('tote_livre:last_print_date')
+        if not last_print_date:
+            last_print_date = '2000-01-01T00:00:00'  # Default old date
+        elif isinstance(last_print_date, bytes):
+            last_print_date = last_print_date.decode('utf-8')
         # Get real-time data directly from the get_tote_livre function
-        tote_data = get_tote_livre()
+        tote_data = get_tote_livre(last_print_date=last_print_date)
         
         if "error" in tote_data:
             return jsonify({"error": tote_data["error"]}), 500
@@ -1646,8 +1669,14 @@ def api_tote_livre_zpl():
 @login_required
 def download_tote_zpl():
     try:
+        # Get last print date from Redis
+        last_print_date = redis_client.get('tote_livre:last_print_date')
+        if not last_print_date:
+            last_print_date = '2000-01-01T00:00:00'  # Default old date
+        elif isinstance(last_print_date, bytes):
+            last_print_date = last_print_date.decode('utf-8')
         # Get real-time data directly from the get_tote_livre function
-        tote_data = get_tote_livre()
+        tote_data = get_tote_livre(last_print_date=last_print_date)
         
         if "error" in tote_data:
             return jsonify({"error": tote_data["error"]}), 500

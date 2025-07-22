@@ -5,32 +5,35 @@ from google_chat_interface import send_message
 from metabase import get_dataset
 import os
 from dotenv import load_dotenv
+from redis_connection import get_redis_connection
 
 date_format="%Y-%m-%dT%H:%M:%S"
 date_format2="%Y-%m-%dT%H:%M:%S.%f"
 
 
-def load_previous_data(filepath):
+def load_previous_data_redis(redis_client, redis_key):
+    data = redis_client.get(redis_key)
+    if not data:
+        return []
     try:
-        with open(filepath, 'r') as f:
-            content = f.read()
-            if not content.strip():  # If file is empty
-                return []
-            return json.loads(content)
-    except (FileNotFoundError, json.JSONDecodeError):
-        # Return empty list if file doesn't exist or is corrupted
+        loaded = json.loads(data)
+        # Convert executed_at back to datetime
+        for item in loaded:
+            try:
+                item['executed_at'] = datetime.strptime(item['executed_at'], date_format)
+            except ValueError:
+                item['executed_at'] = datetime.strptime(item['executed_at'], date_format2)
+        return loaded
+    except (json.JSONDecodeError, TypeError):
         return []
 
-def save_new_data(filepath, data):
-    # Convert datetime objects to strings before saving
+def save_new_data_redis(redis_client, redis_key, data):
     serializable_data = []
     for item in data:
         item_copy = item.copy()
         item_copy['executed_at'] = item_copy['executed_at'].strftime(date_format)
         serializable_data.append(item_copy)
-    
-    with open(filepath, 'w') as f:
-        json.dump(serializable_data, f, indent=2)
+    redis_client.set(redis_key, json.dumps(serializable_data))
 
 def compare_data(old_data, new_data):
     changes = []
@@ -72,7 +75,7 @@ def compare_data(old_data, new_data):
     
     return changes
 
-def status_lf(filepath):
+def status_lf_redis(redis_client, redis_key):
     itens_list = get_dataset('3920')
     new_data = []
 
@@ -83,7 +86,6 @@ def status_lf(filepath):
             executed_at = datetime.strptime(item['executed_at'], date_format)
         except:
             executed_at = datetime.strptime(item['executed_at'], date_format2)
-        
         new_data.append({
             'executed_at': executed_at,  # Store as datetime object
             'previous_stock_quantity': item['previous_stock_quantity'],
@@ -92,19 +94,18 @@ def status_lf(filepath):
             'loja': item['Stores__name']
         })
 
-    old_data = load_previous_data(filepath)
+    old_data = load_previous_data_redis(redis_client, redis_key)
     changes = compare_data(old_data, new_data)
 
     if changes:
-        save_new_data(filepath, new_data)
-    
+        save_new_data_redis(redis_client, redis_key, new_data)
     return changes
 
 def mensagem_lf():
-    filepath = 'json/lf_status.json'
-    changes = status_lf(filepath)
+    redis_client = get_redis_connection()
+    redis_key = 'lf_status'
+    changes = status_lf_redis(redis_client, redis_key)
     message = []
-    
     if changes:
         message.append("Novos movimentos de estoque detectados")
         for change in changes:

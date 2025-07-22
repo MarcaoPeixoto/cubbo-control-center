@@ -294,6 +294,17 @@
                 const feedback = document.getElementById('copyFeedback');
                 feedback.style.display = 'inline';
                 
+                // Register the print date in Redis
+                fetch('/api/tote-livre/zpl-copied', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.success) {
+                            console.warn('Falha ao registrar data de cópia:', data.error);
+                        }
+                    })
+                    .catch(err => {
+                        console.warn('Erro ao registrar data de cópia:', err);
+                    });
                 // Hide feedback after 2 seconds
                 setTimeout(function() {
                     feedback.style.display = 'none';
@@ -307,6 +318,17 @@
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
                 
+                // Register the print date in Redis
+                fetch('/api/tote-livre/zpl-copied', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.success) {
+                            console.warn('Falha ao registrar data de cópia:', data.error);
+                        }
+                    })
+                    .catch(err => {
+                        console.warn('Erro ao registrar data de cópia:', err);
+                    });
                 // Show feedback
                 const feedback = document.getElementById('copyFeedback');
                 feedback.style.display = 'inline';
