@@ -294,17 +294,25 @@
                 const feedback = document.getElementById('copyFeedback');
                 feedback.style.display = 'inline';
                 
-                // Register the print date in Redis
-                fetch('/api/tote-livre/zpl-copied', { method: 'POST' })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (!data.success) {
-                            console.warn('Falha ao registrar data de cópia:', data.error);
-                        }
-                    })
-                    .catch(err => {
-                        console.warn('Erro ao registrar data de cópia:', err);
-                    });
+                // Only register print date if we have valid ZPL data
+                if (zplData && zplData.total_available_totes > 0) {
+                    // Register the print date in Redis
+                    fetch('/api/tote-livre/zpl-copied', { method: 'POST' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (!data.success) {
+                                console.warn('Falha ao registrar data de cópia:', data.error);
+                            } else {
+                                console.log('Data de cópia registrada com sucesso:', data.last_print_date);
+                            }
+                        })
+                        .catch(err => {
+                            console.warn('Erro ao registrar data de cópia:', err);
+                        });
+                } else {
+                    console.warn('Não foi possível registrar data de cópia: dados ZPL inválidos');
+                }
+                
                 // Hide feedback after 2 seconds
                 setTimeout(function() {
                     feedback.style.display = 'none';
@@ -318,21 +326,28 @@
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
                 
-                // Register the print date in Redis
-                fetch('/api/tote-livre/zpl-copied', { method: 'POST' })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (!data.success) {
-                            console.warn('Falha ao registrar data de cópia:', data.error);
-                        }
-                    })
-                    .catch(err => {
-                        console.warn('Erro ao registrar data de cópia:', err);
-                    });
+                // Only register print date if we have valid ZPL data
+                if (zplData && zplData.total_available_totes > 0) {
+                    // Register the print date in Redis
+                    fetch('/api/tote-livre/zpl-copied', { method: 'POST' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (!data.success) {
+                                console.warn('Falha ao registrar data de cópia:', data.error);
+                            } else {
+                                console.log('Data de cópia registrada com sucesso:', data.last_print_date);
+                            }
+                        })
+                        .catch(err => {
+                            console.warn('Erro ao registrar data de cópia:', err);
+                        });
+                } else {
+                    console.warn('Não foi possível registrar data de cópia: dados ZPL inválidos');
+                }
+                
                 // Show feedback
                 const feedback = document.getElementById('copyFeedback');
                 feedback.style.display = 'inline';
-                
                 // Hide feedback after 2 seconds
                 setTimeout(function() {
                     feedback.style.display = 'none';

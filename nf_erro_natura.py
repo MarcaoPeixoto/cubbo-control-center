@@ -14,7 +14,7 @@ url = os.getenv('NF_ERRO_NATURA_URL')
 
 
 def nf_erro():
-    pedidos_natura = get_dataset('8790')
+    pedidos_natura = get_dataset('11926')
     if pedidos_natura is None:
         return ["Sem NF com erro"]
     

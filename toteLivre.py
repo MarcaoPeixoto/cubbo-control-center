@@ -36,9 +36,35 @@ def get_tote_livre(last_print_date=None):
         elif ' ' in last_print_date:
             last_print_date = last_print_date.split(' ')[0]
         print(f"[DEBUG] last_print_date sent to Metabase: {last_print_date}")
-        params = process_data({'data': last_print_date})
-        response = get_dataset('11808', params)
-        print(f"[DEBUG] Raw response from get_dataset: {response}")
+        
+        # Keep trying until we get valid data
+        max_retries = 10
+        for attempt in range(max_retries):
+            try:
+                print(f"[DEBUG] Attempt {attempt + 1}/{max_retries} to get dataset")
+                params = process_data({'data': last_print_date})
+                response = get_dataset('11808', params)
+                print(f"[DEBUG] Raw response from get_dataset: {response}")
+                
+                # Check if we got valid data
+                if response and isinstance(response, list):
+                    print(f"[DEBUG] Successfully retrieved {len(response)} rows from dataset")
+                    break
+                else:
+                    print(f"[DEBUG] Invalid response, retrying...")
+                    if attempt < max_retries - 1:
+                        import time
+                        time.sleep(5)  # Wait 5 seconds before retry
+                    else:
+                        raise Exception("Failed to get valid data after all retries")
+                        
+            except Exception as e:
+                print(f"[DEBUG] Error on attempt {attempt + 1}: {str(e)}")
+                if attempt < max_retries - 1:
+                    import time
+                    time.sleep(5)  # Wait 5 seconds before retry
+                else:
+                    raise Exception(f"Failed to get dataset after {max_retries} attempts: {str(e)}")
 
         # The dataset already returns only available totes
         available_totes = []
