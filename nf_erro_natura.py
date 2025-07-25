@@ -21,7 +21,13 @@ def nf_erro():
     
     message = []
     for pedido in pedidos_natura:
-        message.append(str(pedido))
+        # Parse datetime strings
+        pending_at = datetime.fromisoformat(pedido['pending_at'].replace('Z', '+00:00'))
+        picking_completed_at = datetime.fromisoformat(pedido['Picking Orders__completed_at'].replace('Z', '+00:00'))
+        
+        # Format the message
+        formatted_message = f"Order: {pedido['order_number']}, Pendente: {pending_at.strftime('%d/%m/%y')}, Status: {pedido['Invoices__status']}, Picking Completo: {picking_completed_at.strftime('%d/%m/%y %H:%M')}"
+        message.append(formatted_message)
     return message
 
 if __name__ == "__main__":
