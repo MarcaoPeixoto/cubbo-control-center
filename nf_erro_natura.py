@@ -5,6 +5,7 @@ from google_chat_interface import send_message
 from metabase import get_dataset
 import os
 from dotenv import load_dotenv
+from parseDT import parse_date
 
 # Load environment variables
 load_dotenv()
@@ -21,9 +22,13 @@ def nf_erro():
     
     message = []
     for pedido in pedidos_natura:
-        # Parse datetime strings
-        pending_at = datetime.fromisoformat(pedido['pending_at'].replace('Z', '+00:00'))
-        picking_completed_at = datetime.fromisoformat(pedido['Picking Orders__completed_at'].replace('Z', '+00:00'))
+        # Parse datetime strings using robust parsing
+        pending_at = parse_date(pedido['pending_at'])
+        picking_completed_at = parse_date(pedido['Picking Orders__completed_at'])
+        
+        # Skip if date parsing failed
+        if pending_at is None or picking_completed_at is None:
+            continue
         
         # Format the message
         formatted_message = f"Order: {pedido['order_number']}, Pendente: {pending_at.strftime('%d/%m/%y')}, Status: {pedido['Invoices__status']}, Picking Completo: {picking_completed_at.strftime('%d/%m/%y %H:%M')}"
